@@ -1,0 +1,29 @@
+{
+  "name": "new-chirag-tours-and-travels",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade travel management platform for New Chirag Tours & Travels (Owner: Faisal Bikanerwala)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:admin:clean": "npm run dev:clean --workspace=@chirag/admin-web",
+    "dev:agent": "npm run dev --workspace=@chirag/agent-web",
+    "dev:customer": "npm run dev --workspace=@chirag/customer-web",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+  },
+  "devDependencies": {
+    "turbo": "^2.1.0",
+    "typescript": "^5.4.5",
+    "prettier": "^3.2.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@11.6.1"
+}

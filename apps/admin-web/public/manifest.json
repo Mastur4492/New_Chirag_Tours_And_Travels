@@ -1,0 +1,39 @@
+{
+  "name": "New Chirag Tours — Admin Portal",
+  "short_name": "NC Admin",
+  "description": "Official Tour Booking, CRM & Quotation Admin Management Portal — New Chirag Tours & Travels",
+  "start_url": "/",
+  "id": "/admin-portal",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#09111e",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/branding/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/branding/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/branding/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/branding/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "travel", "productivity"]
+}

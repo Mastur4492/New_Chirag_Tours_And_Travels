@@ -1,0 +1,88 @@
+import { UserRole } from './user';
+
+export type AuditAction =
+  | 'USER_LOGIN'
+  | 'USER_LOGOUT'
+  | 'PASSWORD_CHANGED'
+  | 'AGENT_CREATED'
+  | 'AGENT_PERMISSIONS_UPDATED'
+  | 'AGENT_PROFILE_UPDATED'
+  | 'AGENT_STATUS_UPDATED'
+  | 'AGENT_PASSWORD_RESET'
+  | 'CUSTOMER_CREATED'
+  | 'CUSTOMER_UPDATED'
+  | 'LEAD_CREATED'
+  | 'LEAD_ASSIGNED'
+  | 'LEAD_STATUS_UPDATED'
+  | 'QUOTATION_CREATED'
+  | 'QUOTATION_REVISED'
+  | 'QUOTATION_STATUS_UPDATED'
+  | 'QUOTATION_PRICE_OVERRIDE_APPROVED'
+  | 'QUOTATION_PRICE_OVERRIDE_REJECTED'
+  | 'QUOTATION_VERSION_CREATED'
+  | 'BOOKING_CREATED'
+  | 'BOOKING_CONFIRMED'
+  | 'PAYMENT_SUBMITTED'
+  | 'PAYMENT_VERIFIED'
+  | 'PAYMENT_REJECTED'
+  | 'MASTER_DATA_CREATED'
+  | 'MASTER_DATA_UPDATED'
+  | 'MASTER_DATA_ACTIVATED'
+  | 'MASTER_DATA_DEACTIVATED'
+  | 'MASTER_DATA_DELETED'
+  | 'HOTEL_RESERVATION_INITIALIZED'
+  | 'HOTEL_RESERVATION_UPDATED'
+  | 'HOTEL_RESERVATION_CONFIRMED'
+  | 'HOTEL_RESERVATION_CANCELLED'
+  | 'HOTEL_VOUCHER_GENERATED'
+  | 'HOTEL_VOUCHER_REISSUED'
+  | 'TRANSPORT_ASSIGNMENT_INITIALIZED'
+  | 'TRANSPORT_ASSIGNED'
+  | 'TRANSPORT_REASSIGNED'
+  | 'DRIVER_DISPATCHED'
+  | 'TRANSPORT_ASSIGNMENT_CANCELLED'
+  | 'TRANSPORT_ASSIGNMENT_COMPLETED'
+  | 'DUTY_SLIP_GENERATED'
+  | 'DUTY_SLIP_REISSUED'
+  | 'OPERATIONS_INITIALIZED';
+
+export type AuditEntityType =
+  | 'USER'
+  | 'CUSTOMER'
+  | 'LEAD'
+  | 'QUOTATION'
+  | 'BOOKING'
+  | 'PAYMENT'
+  | 'DESTINATION'
+  | 'HOTEL'
+  | 'ROOM_CATEGORY'
+  | 'SEASON'
+  | 'RATE_CARD'
+  | 'VEHICLE_VENDOR'
+  | 'VEHICLE'
+  | 'DRIVER'
+  | 'TARIFF'
+  | 'PACKAGE'
+  | 'TAX_CONFIG'
+  | 'SETTINGS'
+  | 'HOTEL_RESERVATION'
+  | 'TRANSPORT_ASSIGNMENT'
+  | 'TRANSPORT_SCHEDULE_LOCK';
+
+export type AuditActorType = 'USER' | 'PUBLIC_CUSTOMER' | 'SYSTEM';
+
+export interface AuditLogDto {
+  id: string;
+  actorType?: AuditActorType;
+  actorId?: string;
+  actorRole?: UserRole;
+  action: AuditAction;
+  entityType: AuditEntityType;
+  entityId: string;
+  ipAddress?: string;
+  userAgent?: string;
+  previousState?: Record<string, unknown>;
+  newState?: Record<string, unknown>;
+  notes?: string;
+  timestamp: string;
+}

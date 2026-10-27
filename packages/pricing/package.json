@@ -1,0 +1,20 @@
+{
+  "name": "@chirag/pricing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Deterministic pricing and quotation calculation engine for New Chirag Tours & Travels",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@chirag/types": "*"
+  },
+  "devDependencies": {
+    "@chirag/config": "*",
+    "rimraf": "^5.0.7",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "New Chirag Tours — Agent Travel Desk",
+  "short_name": "NC Agent Desk",
+  "description": "Official Travel Agent Workspace & B2B Booking Portal — New Chirag Tours & Travels",
+  "start_url": "/",
+  "id": "/agent-desk",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#09111e",
+  "theme_color": "#0d9488",
+  "icons": [
+    {
+      "src": "/branding/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/branding/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/branding/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/branding/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "travel", "productivity"]
+}

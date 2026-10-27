@@ -1,0 +1,15 @@
+{
+  "extends": "./packages/config/tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@chirag/types": ["packages/types/src"],
+      "@chirag/validation": ["packages/validation/src"],
+      "@chirag/config": ["packages/config"],
+      "@chirag/utils": ["packages/utils/src"],
+      "@chirag/pricing": ["packages/pricing/src"],
+      "@chirag/ui": ["packages/ui/src"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".next"]
+}
