@@ -27,8 +27,8 @@ export default function PrivacyPage() {
         </div>
       </div>
 
-      <div className="container" style={{ marginTop: 48 }}>
-        <div style={{ maxWidth: 800, margin: '0 auto', background: '#FFFFFF', padding: 36, borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+      <div className="container-narrow" style={{ marginTop: 48 }}>
+        <div style={{ width: '100%', margin: '0 auto', background: '#FFFFFF', padding: '36px', borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24, fontSize: '0.92rem', color: '#334155', lineHeight: 1.7 }}>
             <section>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0B192C', marginBottom: 8 }}>

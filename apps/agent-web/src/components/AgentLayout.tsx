@@ -452,12 +452,19 @@ export function AgentLayout({ children }: AgentLayoutProps) {
         )}
 
         {/* Content Body */}
-        <main style={{ flex: 1, padding: '24px', maxWidth: 1400, width: '100%', margin: '0 auto' }}>
+        <main className="agent-main-content">
           {children}
         </main>
       </div>
 
       <style jsx global>{`
+        .agent-main-content {
+          flex: 1;
+          padding: 24px;
+          max-width: 1400px;
+          width: 100%;
+          margin: 0 auto;
+        }
         @keyframes spin {
           to { transform: rotate(360deg); }
         }

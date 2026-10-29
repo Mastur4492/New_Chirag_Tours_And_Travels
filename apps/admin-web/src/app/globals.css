@@ -475,7 +475,9 @@ input[type="checkbox"] {
   padding: 24px 32px;
   flex: 1;
   width: 100%;
-  max-width: 100%;
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
   box-sizing: border-box;
   animation: pageFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -889,6 +891,52 @@ button:disabled, .btn:disabled {
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+/* =========================================================================
+   DRAWER SYSTEM (SIDE SLIDE-OVER PANELS)
+   ========================================================================= */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  animation: drawerFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-panel {
+  background: #ffffff;
+  width: 100%;
+  max-width: 620px;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  box-shadow: -10px 0 36px rgba(15, 23, 42, 0.25);
+  display: flex;
+  flex-direction: column;
+  animation: drawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 101;
+}
+
+@keyframes drawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (max-width: 640px) {
+  .drawer-panel {
+    max-width: 100%;
   }
 }
 
@@ -1664,6 +1712,19 @@ table.data-table tr:hover td, table tr:hover td {
   .xl\:col-span-7 { grid-column: span 7 / span 7; }
   .xl\:flex { display: flex !important; }
   .xl\:hidden { display: none !important; }
+}
+
+/* Widescreen & High-Resolution Breakpoints */
+@media (min-width: 1536px) {
+  .\32xl\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .\32xl\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .\32xl\:flex { display: flex !important; }
+  .\32xl\:hidden { display: none !important; }
 }
 
 /* Vertical Spacing Utilities */

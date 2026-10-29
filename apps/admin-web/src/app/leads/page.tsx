@@ -437,6 +437,17 @@ export default function LeadsPage() {
     setIsDetailsOpen(true);
   };
 
+  useEffect(() => {
+    if (!isDetailsOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsDetailsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDetailsOpen]);
+
   return (
     <div className="space-y-6">
       {/* Toast Feedback */}
@@ -821,7 +832,7 @@ export default function LeadsPage() {
                     <th className="py-3.5 px-4 whitespace-nowrap min-w-[160px]">Current Stage</th>
                     <th className="py-3.5 px-4 whitespace-nowrap min-w-[160px]">Assigned Consultant</th>
                     <th className="py-3.5 px-4 whitespace-nowrap min-w-[150px]">Next Follow-Up</th>
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[100px]">Action</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[140px]">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -857,7 +868,7 @@ export default function LeadsPage() {
                       <td className="py-3.5 px-4">
                         <div className="skeleton" style={{ width: '95px', height: '22px', borderRadius: '6px' }} />
                       </td>
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap min-w-[140px]">
                         <div className="skeleton" style={{ width: '85px', height: '28px', borderRadius: '8px' }} />
                       </td>
                     </tr>
@@ -889,7 +900,7 @@ export default function LeadsPage() {
                     <th className="py-3.5 px-4 whitespace-nowrap min-w-[160px]">Current Stage</th>
                     <th className="py-3.5 px-4 whitespace-nowrap min-w-[160px]">Assigned Consultant</th>
                     <th className="py-3.5 px-4 whitespace-nowrap min-w-[150px]">Next Follow-Up</th>
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[100px]">Action</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[140px]">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1016,16 +1027,17 @@ export default function LeadsPage() {
                         </td>
 
                         {/* Action */}
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap min-w-[140px]">
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               openLeadDrawer(lead);
                             }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 whitespace-nowrap bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors shrink-0"
                           >
-                            View Enquiry
-                            <ChevronRight className="w-3.5 h-3.5" />
+                            <span>View Enquiry</span>
+                            <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                           </button>
                         </td>
                       </tr>

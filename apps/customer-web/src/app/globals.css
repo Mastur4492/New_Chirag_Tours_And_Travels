@@ -114,16 +114,16 @@ input, select, textarea {
 
 .container {
   width: 100%;
-  max-width: 1240px;
+  max-width: 1280px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 .container-narrow {
   width: 100%;
-  max-width: 860px;
+  max-width: 880px;
   margin-left: auto;
   margin-right: auto;
   padding-left: 20px;
@@ -148,7 +148,7 @@ input, select, textarea {
 }
 
 .site-header .container {
-  max-width: 1400px;
+  max-width: 1280px;
 }
 
 .site-header-inner {

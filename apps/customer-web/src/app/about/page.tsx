@@ -27,8 +27,8 @@ export default function AboutPage() {
         </div>
       </div>
 
-      <div className="container" style={{ marginTop: 56 }}>
-        <div style={{ maxWidth: 840, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 40 }}>
+      <div className="container-narrow" style={{ marginTop: 56 }}>
+        <div style={{ width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 40 }}>
           {/* Main Story */}
           <div style={{ background: '#FFFFFF', padding: 36, borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0B192C', marginBottom: 16 }}>
