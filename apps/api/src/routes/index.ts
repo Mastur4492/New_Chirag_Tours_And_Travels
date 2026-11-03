@@ -18,6 +18,7 @@ import { userRouter } from './user.routes';
 import { auditLogRouter } from './auditLog.routes';
 import { uploadRouter } from './upload.routes';
 import { webhookRouter } from './webhook.routes';
+import { aiRouter } from './ai.routes';
 
 const router = Router();
 
@@ -41,6 +42,7 @@ router.use('/audit-logs', auditLogRouter);
 router.use('/upload', uploadRouter);
 router.use('/uploads', uploadRouter);
 router.use('/webhooks', webhookRouter);
+router.use('/ai', aiRouter);
 
 export const apiRouter = router;
 

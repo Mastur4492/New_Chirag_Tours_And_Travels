@@ -35,6 +35,7 @@ import {
 import { clearAdminToken, getAdminToken, setAdminToken, getUserRole, getUserInfo, setUserSession } from '@/lib/api';
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { PwaManager } from './PwaManager';
+import { AdminAiCopilot } from './AdminAiCopilot';
 
 interface NavItem {
   name: string;
@@ -108,6 +109,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800">
         {children}
+        <AdminAiCopilot />
       </div>
     );
   }
@@ -434,6 +436,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="page-body">{children}</main>
+        <AdminAiCopilot />
       </div>
 
       {/* Admin Login Modal */}

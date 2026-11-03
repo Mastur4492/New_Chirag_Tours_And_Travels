@@ -12,8 +12,8 @@ export const corsOptions: CorsOptions = {
       return callback(null, true);
     }
 
-    // In development mode, allow localhost with any port
-    if (env.NODE_ENV === 'development' && /^http:\/\/localhost(:\d+)?$/.test(origin)) {
+    // In development mode, allow localhost or 127.0.0.1 with any port
+    if (env.NODE_ENV === 'development' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       return callback(null, true);
     }
 
@@ -21,7 +21,7 @@ export const corsOptions: CorsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-session-secret', 'x-portal-context'],
   exposedHeaders: ['Set-Cookie'],
   maxAge: 86400, // 24 hours
 };

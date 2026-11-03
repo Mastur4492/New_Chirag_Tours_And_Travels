@@ -23,6 +23,7 @@ import {
 import { authApi, getAgentToken, getAgentUser, clearAgentSession } from '@/lib/api';
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { PwaManager } from './PwaManager';
+import { AgentAiCopilot } from './AgentAiCopilot';
 
 interface AgentLayoutProps {
   children: React.ReactNode;
@@ -94,7 +95,12 @@ export function AgentLayout({ children }: AgentLayoutProps) {
   };
 
   if (isPublicPage) {
-    return <main>{children}</main>;
+    return (
+      <main>
+        {children}
+        <AgentAiCopilot />
+      </main>
+    );
   }
 
   if (loading && !currentUser) {
@@ -455,6 +461,7 @@ export function AgentLayout({ children }: AgentLayoutProps) {
         <main className="agent-main-content">
           {children}
         </main>
+        <AgentAiCopilot />
       </div>
 
       <style jsx global>{`
