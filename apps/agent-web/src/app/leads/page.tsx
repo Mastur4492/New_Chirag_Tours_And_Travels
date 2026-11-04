@@ -70,6 +70,14 @@ export default function AgentLeadsPage() {
 
   useEffect(() => {
     inventoryApi.getDestinations().then((res) => setDestinations(res.data || [])).catch(() => {});
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const openId = params.get('openLead');
+      if (openId) {
+        handleOpenLeadDrawer(openId);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -421,7 +429,9 @@ export default function AgentLeadsPage() {
               </thead>
               <tbody>
                 {leads.map((lead) => {
-                  const customer = lead.customerId || {};
+                  const custName = lead.customerName || (typeof lead.customerId === 'object' ? lead.customerId?.fullName : 'Traveler');
+                  const custMobile = lead.customerMobile || (typeof lead.customerId === 'object' ? lead.customerId?.mobile : '');
+                  const custId = typeof lead.customerId === 'object' ? lead.customerId?._id || lead.customerId?.id : lead.customerId;
                   const isDueToday = lead.nextFollowUpDate && new Date(lead.nextFollowUpDate).toDateString() === new Date().toDateString();
                   const isOverdue = lead.nextFollowUpDate && new Date(lead.nextFollowUpDate) < new Date() && !isDueToday;
 
@@ -456,14 +466,18 @@ export default function AgentLeadsPage() {
                       {/* Customer Details */}
                       <td style={{ padding: '14px 16px' }}>
                         <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-                          {customer.fullName || 'Traveler'}
+                          {custName}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          <Phone size={13} style={{ color: 'var(--primary)' }} />
-                          <a href={`tel:${customer.mobile}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                            {customer.mobile}
-                          </a>
-                        </div>
+                        {custMobile ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            <Phone size={13} style={{ color: 'var(--primary)' }} />
+                            <a href={`tel:${custMobile}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                              {custMobile}
+                            </a>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No phone</span>
+                        )}
                       </td>
 
                       {/* Destination & Pax */}
@@ -538,7 +552,7 @@ export default function AgentLeadsPage() {
                             Timeline & Details
                           </button>
                           <Link
-                            href={`/quotations/new?leadId=${lead.id}&customerId=${customer.id || ''}&destId=${lead.destinationId || ''}`}
+                            href={`/quotations/new?leadId=${lead.id}&customerId=${custId || ''}&destId=${lead.destinationId || ''}`}
                             prefetch={false}
                             className="btn btn-primary"
                             style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none' }}
@@ -785,131 +799,211 @@ export default function AgentLeadsPage() {
       )}
 
       {/* ===================== LEAD DETAIL & TIMELINE DRAWER ===================== */}
-      {drawerOpen && selectedLead && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
-            zIndex: 100,
-            display: 'flex',
-            justifyContent: 'flex-end',
-          }}
-        >
+      {drawerOpen && selectedLead && (() => {
+        const selCustName = selectedLead.customerName || (typeof selectedLead.customerId === 'object' ? selectedLead.customerId?.fullName : 'Traveler Inquiry');
+        const selCustMobile = selectedLead.customerMobile || (typeof selectedLead.customerId === 'object' ? selectedLead.customerId?.mobile : '');
+        const selCustEmail = selectedLead.customerEmail || (typeof selectedLead.customerId === 'object' ? selectedLead.customerId?.email : '');
+        const selCustId = typeof selectedLead.customerId === 'object' ? selectedLead.customerId?._id || selectedLead.customerId?.id : selectedLead.customerId;
+        const cleanDigits = (selCustMobile || '').replace(/\D/g, '');
+        const waDigits = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
+
+        return (
           <div
             style={{
-              width: 540,
-              maxWidth: '100%',
-              background: '#ffffff',
-              height: '100%',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(15, 23, 42, 0.6)',
+              zIndex: 100,
               display: 'flex',
-              flexDirection: 'column',
-              boxShadow: 'var(--shadow-modal)',
-              overflowY: 'auto',
-              padding: '24px 28px',
+              justifyContent: 'flex-end',
             }}
           >
-            {/* Drawer Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid var(--border-subtle)', marginBottom: 18 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="badge badge-primary">{selectedLead.leadNumber}</span>
-                  <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Origin: {selectedLead.source}</span>
-                </div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginTop: 4 }}>
-                  {selectedLead.customerId?.fullName || 'Traveler Inquiry'}
-                </h2>
-              </div>
-              <button
-                onClick={() => setDrawerOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-              >
-                <X size={22} />
-              </button>
-            </div>
-
-            {/* Quick Status Bar */}
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>
-                Pipeline Stage Progression:
-              </label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {['ASSIGNED', 'CONTACTED', 'QUOTED', 'NEGOTIATING', 'CONVERTED', 'LOST'].map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => handleStatusChange(st)}
-                    disabled={updatingStatus}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: 'var(--radius-full)',
-                      fontSize: '0.75rem',
-                      fontWeight: selectedLead.status === st ? 800 : 500,
-                      border: '1px solid',
-                      borderColor: selectedLead.status === st ? 'var(--primary)' : 'var(--border-subtle)',
-                      background: selectedLead.status === st ? 'var(--primary)' : 'var(--bg-surface-subtle)',
-                      color: selectedLead.status === st ? '#ffffff' : 'var(--text-body)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {st}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Traveler & Trip Overview Card */}
             <div
               style={{
-                padding: '16px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-surface-subtle)',
-                border: '1px solid var(--border-subtle)',
-                marginBottom: 20,
+                width: 560,
+                maxWidth: '100%',
+                background: '#ffffff',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: 'var(--shadow-modal)',
+                overflowY: 'auto',
+                padding: '24px 28px',
               }}
             >
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: '0.82rem' }}>
+              {/* Drawer Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid var(--border-subtle)', marginBottom: 16 }}>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Mobile:</span>{' '}
-                  <strong>{selectedLead.customerId?.mobile}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="badge badge-primary">{selectedLead.leadNumber}</span>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Origin: {selectedLead.source}</span>
+                  </div>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', marginTop: 4 }}>
+                    {selCustName}
+                  </h2>
                 </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Destination:</span>{' '}
-                  <strong>{selectedLead.destinationName || 'N/A'}</strong>
-                </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Pax:</span>{' '}
-                  <strong>{selectedLead.numberOfAdults || 2} Adults, {selectedLead.numberOfChildren || 0} Children</strong>
-                </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Duration:</span>{' '}
-                  <strong>{selectedLead.durationNights ? `${selectedLead.durationNights} Nights` : 'Flexible'}</strong>
-                </div>
-              </div>
-
-              {selectedLead.specialRequirements && (
-                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-subtle)', fontSize: '0.8rem', color: 'var(--text-body)' }}>
-                  <strong>Notes:</strong> {selectedLead.specialRequirements}
-                </div>
-              )}
-
-              {/* Fast Quote CTA */}
-              <div style={{ marginTop: 14 }}>
-                <Link
-                  href={`/quotations/new?leadId=${selectedLead.id}&customerId=${selectedLead.customerId?.id || ''}&destId=${selectedLead.destinationId || ''}`}
-                  prefetch={false}
-                  className="btn btn-primary"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '9px 14px', fontSize: '0.85rem', textDecoration: 'none' }}
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
                 >
-                  <PlusCircle size={16} />
-                  <span>Build Quotation for this Traveler</span>
-                </Link>
+                  <X size={22} />
+                </button>
               </div>
-            </div>
 
-            {/* Follow-up Schedule Form */}
+              {/* Direct Quick-Action Bar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                {selCustMobile && (
+                  <>
+                    <a
+                      href={`tel:${selCustMobile}`}
+                      className="btn btn-secondary"
+                      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', fontSize: '0.82rem', textDecoration: 'none' }}
+                    >
+                      <Phone size={14} style={{ color: 'var(--primary)' }} />
+                      <span>Call Client</span>
+                    </a>
+                    <a
+                      href={`https://wa.me/${waDigits}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-secondary"
+                      style={{
+                        flex: 1,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        padding: '8px 12px',
+                        fontSize: '0.82rem',
+                        textDecoration: 'none',
+                        color: '#047857',
+                        background: '#ecfdf5',
+                        borderColor: '#a7f3d0',
+                        fontWeight: 700,
+                      }}
+                    >
+                      <MessageSquare size={14} />
+                      <span>WhatsApp</span>
+                    </a>
+                  </>
+                )}
+                {selCustEmail && (
+                  <a
+                    href={`mailto:${selCustEmail}`}
+                    className="btn btn-secondary"
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', fontSize: '0.82rem', textDecoration: 'none' }}
+                  >
+                    <Mail size={14} />
+                    <span>Email</span>
+                  </a>
+                )}
+              </div>
+
+              {/* Quick Status Bar */}
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>
+                  Pipeline Stage Progression:
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {['ASSIGNED', 'CONTACTED', 'QUOTED', 'NEGOTIATING', 'CONVERTED', 'LOST'].map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => handleStatusChange(st)}
+                      disabled={updatingStatus}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: '0.75rem',
+                        fontWeight: selectedLead.status === st ? 800 : 500,
+                        border: '1px solid',
+                        borderColor: selectedLead.status === st ? 'var(--primary)' : 'var(--border-subtle)',
+                        background: selectedLead.status === st ? 'var(--primary)' : 'var(--bg-surface-subtle)',
+                        color: selectedLead.status === st ? '#ffffff' : 'var(--text-body)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Traveler & Trip Overview Card */}
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-surface-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  marginBottom: 20,
+                }}
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: '0.82rem' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Mobile:</span>{' '}
+                    <strong>{selCustMobile || 'Not provided'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Email:</span>{' '}
+                    <strong>{selCustEmail || 'Not provided'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Destination:</span>{' '}
+                    <strong>{selectedLead.destinationName || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Travelers:</span>{' '}
+                    <strong>{selectedLead.numberOfAdults || 2} Adults{selectedLead.numberOfChildren ? `, ${selectedLead.numberOfChildren} Children` : ''}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Duration:</span>{' '}
+                    <strong>{selectedLead.durationNights ? `${selectedLead.durationNights} Nights / ${selectedLead.durationNights + 1} Days` : 'Flexible'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Travel Dates:</span>{' '}
+                    <strong>{selectedLead.tentativeTravelDate ? selectedLead.tentativeTravelDate.split('T')[0] : 'Flexible / Open'}</strong>
+                  </div>
+                  {selectedLead.budgetEstimate ? (
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Budget Estimate:</span>{' '}
+                      <strong>₹{Number(selectedLead.budgetEstimate).toLocaleString('en-IN')}</strong>
+                    </div>
+                  ) : null}
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Assigned By:</span>{' '}
+                    <strong style={{ color: 'var(--primary)' }}>
+                      {selectedLead.assignedByName ? selectedLead.assignedByName : 'Admin Desk'}
+                    </strong>
+                  </div>
+                </div>
+
+                {selectedLead.specialRequirements && (
+                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-subtle)', fontSize: '0.82rem', color: 'var(--text-body)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Client Requirements & Travel Notes:</span>
+                    <p style={{ margin: '4px 0 0 0', whiteSpace: 'pre-wrap', fontWeight: 500 }}>
+                      {selectedLead.specialRequirements}
+                    </p>
+                  </div>
+                )}
+
+                {/* Fast Quote CTA */}
+                <div style={{ marginTop: 14 }}>
+                  <Link
+                    href={`/quotations/new?leadId=${selectedLead.id}&customerId=${selCustId || ''}&destId=${selectedLead.destinationId || ''}`}
+                    prefetch={false}
+                    className="btn btn-primary"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    <PlusCircle size={16} />
+                    <span>Build Quotation for {selCustName}</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Follow-up Schedule Form */}
             <form onSubmit={handleSaveFollowUp} style={{ padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', marginBottom: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                 <Clock size={16} style={{ color: 'var(--accent-amber)' }} />
@@ -1022,7 +1116,8 @@ export default function AgentLeadsPage() {
             </div>
           </div>
         </div>
-      )}
+      );
+    })()}
     </div>
   );
 }

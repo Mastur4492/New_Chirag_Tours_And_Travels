@@ -311,7 +311,7 @@ export default function QuotationsPage() {
   }, [quotations]);
 
   return (
-    <div style={{ maxWidth: 1300, margin: '0 auto' }}>
+    <div style={{ width: '100%', minWidth: 0 }}>
       {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
         <div>
@@ -477,17 +477,17 @@ export default function QuotationsPage() {
 
       {/* Quotations Data Table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="table-container">
+        <div className="table-container" style={{ width: '100%', overflowX: 'auto' }}>
           <table className="table" style={{ margin: 0, width: '100%' }}>
             <thead>
               <tr>
-                <th style={{ width: 170 }}>Proposal # & Ver</th>
-                <th>Traveler / Customer</th>
-                <th>Destination & Duration</th>
-                <th>Travel Dates</th>
-                <th style={{ textAlign: 'right' }}>Total Selling Price</th>
-                <th style={{ textAlign: 'center' }}>Status</th>
-                <th style={{ textAlign: 'right', paddingRight: 20 }}>Actions</th>
+                <th style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>Proposal & Ver</th>
+                <th style={{ padding: '12px 10px' }}>Traveler / Customer</th>
+                <th style={{ padding: '12px 10px' }}>Destination & Duration</th>
+                <th style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>Travel Dates</th>
+                <th style={{ padding: '12px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>Total Price</th>
+                <th style={{ padding: '12px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>Status</th>
+                <th style={{ padding: '12px 12px 12px 6px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -534,9 +534,9 @@ export default function QuotationsPage() {
                   return (
                     <tr key={q.id}>
                       {/* Quote Number & Version */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.92rem', fontFamily: 'monospace' }}>
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.88rem', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
                             {q.quoteNumber}
                           </span>
                           <span
@@ -545,7 +545,7 @@ export default function QuotationsPage() {
                               fontWeight: 700,
                               background: '#f1f5f9',
                               color: '#475569',
-                              padding: '2px 6px',
+                              padding: '2px 5px',
                               borderRadius: 4,
                             }}
                           >
@@ -561,67 +561,67 @@ export default function QuotationsPage() {
                       </td>
 
                       {/* Customer */}
-                      <td>
-                        <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                      <td style={{ padding: '12px 10px' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.86rem' }}>
                           {sanitizeDisplayName(q.customerName)}
                         </div>
                         {q.customerMobile && (
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
                             {q.customerMobile}
                           </div>
                         )}
                       </td>
 
                       {/* Destination & Duration */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
-                          <MapPin size={14} color="var(--primary)" />
+                      <td style={{ padding: '12px 10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600, fontSize: '0.86rem' }}>
+                          <MapPin size={13} color="var(--primary)" />
                           <span>{q.destinationName || 'Tour Package'}</span>
                         </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>
                           {q.durationNights} Nights / {q.durationDays} Days · {q.numberOfAdults} Adults {q.numberOfChildren ? `, ${q.numberOfChildren} Ch` : ''}
                         </div>
                       </td>
 
                       {/* Travel Dates */}
-                      <td>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                      <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-main)' }}>
                           {formatDate(q.travelStartDate)}
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                           to {formatDate(q.travelEndDate)}
                         </div>
                       </td>
 
                       {/* Selling Price */}
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                      <td style={{ padding: '12px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>
                           {formatCurrency(q.pricingSummary?.finalSellingPrice)}
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: q.pricingSummary?.isTaxConfirmed ? '#059669' : '#d97706', fontWeight: 600 }}>
+                        <div style={{ fontSize: '0.7rem', color: q.pricingSummary?.isTaxConfirmed ? '#059669' : '#d97706', fontWeight: 600 }}>
                           {q.pricingSummary?.isTaxConfirmed ? 'GST Confirmed' : 'GST Pending'}
                         </div>
                       </td>
 
                       {/* Status */}
-                      <td style={{ textAlign: 'center' }}>
-                        <span className={`badge ${statusConfig.badgeClass}`} title={statusConfig.description}>
+                      <td style={{ padding: '12px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <span className={`badge ${statusConfig.badgeClass}`} style={{ padding: '3px 8px', fontSize: '0.74rem' }} title={statusConfig.description}>
                           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
-                          {statusConfig.label}
+                          {q.status === 'ISSUED' || q.status === 'SENT' ? 'Issued' : q.status === 'ACCEPTED' ? 'Accepted' : statusConfig.label}
                         </span>
                       </td>
 
                       {/* Actions */}
-                      <td style={{ textAlign: 'right', paddingRight: 20 }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <td style={{ padding: '12px 12px 12px 4px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap' }}>
                           {/* Details Drawer */}
                           <button
                             onClick={() => handleOpenDetails(q)}
                             className="btn btn-secondary"
-                            style={{ padding: '6px 10px', height: 32, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4 }}
+                            style={{ padding: '4px 8px', height: 28, fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: 3 }}
                             title="View Itinerary & Pricing Breakdown"
                           >
-                            <Eye size={14} />
+                            <Eye size={12} />
                             <span>View</span>
                           </button>
 
@@ -630,10 +630,10 @@ export default function QuotationsPage() {
                             <button
                               onClick={() => handleOpenShare(q)}
                               className="btn btn-secondary"
-                              style={{ padding: '6px 10px', height: 32, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4, color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                              style={{ padding: '4px 8px', height: 28, fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--primary)', borderColor: 'var(--primary)' }}
                               title="Share Proposal Link & WhatsApp"
                             >
-                              <Share2 size={14} />
+                              <Share2 size={12} />
                               <span>Share</span>
                             </button>
                           )}
@@ -644,13 +644,13 @@ export default function QuotationsPage() {
                               onClick={() => handleIssueQuotation(q.id)}
                               disabled={issuingId === q.id}
                               className="btn btn-primary"
-                              style={{ padding: '6px 12px', height: 32, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4 }}
+                              style={{ padding: '4px 10px', height: 28, fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: 3 }}
                               title="Issue proposal to traveler & generate public link"
                             >
                               {issuingId === q.id ? (
-                                <RefreshCw size={14} className="animate-spin" />
+                                <RefreshCw size={12} className="animate-spin" />
                               ) : (
-                                <Send size={14} />
+                                <Send size={12} />
                               )}
                               <span>Issue</span>
                             </button>
@@ -661,10 +661,10 @@ export default function QuotationsPage() {
                             <button
                               onClick={() => handleOpenRevise(q)}
                               className="btn btn-secondary"
-                              style={{ padding: '6px 10px', height: 32, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4 }}
+                              style={{ padding: '4px 8px', height: 28, fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: 3 }}
                               title="Revise Itinerary & Rates"
                             >
-                              <History size={14} />
+                              <History size={12} />
                               <span>Revise</span>
                             </button>
                           )}
@@ -673,10 +673,10 @@ export default function QuotationsPage() {
                           <button
                             onClick={() => handleOpenHistory(q)}
                             className="btn btn-secondary"
-                            style={{ padding: '6px 8px', height: 32 }}
+                            style={{ padding: '4px 6px', height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                             title="View Version History"
                           >
-                            <Clock size={14} />
+                            <Clock size={12} />
                           </button>
                         </div>
                       </td>
@@ -1266,7 +1266,7 @@ export default function QuotationsPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <a
                     href={`https://wa.me/${shareQuote.customerMobile ? shareQuote.customerMobile.replace(/\D/g, '') : ''}?text=${encodeURIComponent(
-                      `Namaste ${sanitizeDisplayName(shareQuote.customerName)},\n\nHere is your customized holiday proposal for ${shareQuote.destinationName || 'your upcoming trip'} from New Chirag Tours & Travels (${shareQuote.durationNights} Nights / ${shareQuote.durationDays} Days):\n\nProposal Link: ${urlInfo.url}\nTotal Package Price: ${formatCurrency(shareQuote.pricingSummary?.finalSellingPrice)}\nValid Until: ${formatDate(shareQuote.validUntil)}\n\nPlease review your day-wise itinerary, accommodations, and terms. You can accept directly or let us know if any adjustments are desired!\n\nWarm regards,\nNew Chirag Tours & Travels`
+                      `Hello ${sanitizeDisplayName(shareQuote.customerName)},\n\nHere is your customized holiday proposal for ${shareQuote.destinationName || 'your upcoming trip'} from New Chirag Tours & Travels (${shareQuote.durationNights} Nights / ${shareQuote.durationDays} Days):\n\nProposal Link: ${urlInfo.url}\nTotal Package Price: ${formatCurrency(shareQuote.pricingSummary?.finalSellingPrice)}\nValid Until: ${formatDate(shareQuote.validUntil)}\n\nPlease review your day-wise itinerary, accommodations, and terms. You can accept directly or let us know if any adjustments are desired!\n\nWarm regards,\nNew Chirag Tours & Travels`
                     )}`}
                     onClick={(e) => {
                       if (urlInfo.isDevelopmentOrLocalhost) {

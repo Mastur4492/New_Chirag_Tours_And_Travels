@@ -20,6 +20,22 @@ export interface WhatsAppBookingPayload {
   advancePaid: number;
 }
 
+export interface WhatsAppAgentLeadPayload {
+  agentMobile: string;
+  agentName: string;
+  leadNumber: string;
+  customerName: string;
+  customerMobile: string;
+  customerEmail?: string;
+  destinationName: string;
+  durationNights?: number;
+  numberOfAdults: number;
+  numberOfChildren: number;
+  travelDate?: string;
+  specialRequirements?: string;
+  assignedByName?: string;
+}
+
 export class WhatsAppService {
   private readonly isConfigured: boolean;
   private readonly apiToken?: string;
@@ -49,7 +65,7 @@ export class WhatsAppService {
   async sendQuoteBrochure(payload: WhatsAppQuotePayload): Promise<{ success: boolean; messageId?: string }> {
     const quoteUrl = `${this.customerWebUrl}/quote/${payload.token}`;
     const message =
-      `🌟 *Namaste ${payload.customerName}!* Your customized travel proposal for *${payload.destinationName}* (${payload.durationNights} Nights) is ready.\n\n` +
+      `*Hello ${payload.customerName}!* Your customized travel proposal for *${payload.destinationName}* (${payload.durationNights} Nights) is ready.\n\n` +
       `📋 *Quotation Reference:* ${payload.quotationNumber}\n` +
       `💰 *Total Package Cost:* ₹${payload.totalAmount.toLocaleString('en-IN')}\n\n` +
       `🔗 *View Your Interactive Proposal & PDF:* \n${quoteUrl}\n\n` +
@@ -83,6 +99,28 @@ export class WhatsAppService {
   async sendAdminAlert(alertText: string): Promise<{ success: boolean }> {
     const adminMessage = `🔔 *[NEW CHIRAG HOT LEAD ALERT]*\n\n${alertText}\n\n_Check Admin Portal to assign or follow up immediately._`;
     return this.dispatchMessage(this.businessMobile, adminMessage);
+  }
+
+  /**
+   * Send WhatsApp lead assignment alert with complete customer details to the assigned agent
+   */
+  async sendLeadAssignmentAlert(payload: WhatsAppAgentLeadPayload): Promise<{ success: boolean; messageId?: string }> {
+    const message =
+      `🎯 *New Customer Lead Assigned to You!*\n\n` +
+      `Hello *${payload.agentName}*, a new traveler inquiry has been assigned to you by ${payload.assignedByName || 'Admin'}.\n\n` +
+      `📋 *Lead Reference:* ${payload.leadNumber}\n` +
+      `👤 *Traveler Name:* ${payload.customerName}\n` +
+      `📱 *Customer Phone:* ${payload.customerMobile}\n` +
+      (payload.customerEmail ? `✉️ *Email:* ${payload.customerEmail}\n` : '') +
+      `📍 *Destination:* ${payload.destinationName}\n` +
+      `⏳ *Duration:* ${payload.durationNights || 1} Nights / ${(payload.durationNights || 1) + 1} Days\n` +
+      `👥 *Travelers:* ${payload.numberOfAdults} Adults${payload.numberOfChildren ? `, ${payload.numberOfChildren} Children` : ''}\n` +
+      (payload.travelDate ? `🗓️ *Dates:* ${payload.travelDate}\n` : '') +
+      (payload.specialRequirements ? `📝 *Requirements:* ${payload.specialRequirements}\n` : '') +
+      `\n👉 Open Agent CRM to quote & connect with the traveler.\n` +
+      `_New Chirag Tours & Travels Internal Dispatch Desk_`;
+
+    return this.dispatchMessage(payload.agentMobile, message);
   }
 
   /**
@@ -123,7 +161,7 @@ export class WhatsAppService {
 
       if (upper === 'HI' || upper === 'HELLO' || upper === 'HEY' || upper === 'NAMASTE') {
         reply =
-          `Namaste! 🙏 Welcome to *New Chirag Tours & Travels*.\n\n` +
+          `Hello! Welcome to *New Chirag Tours & Travels*.\n\n` +
           `How can we assist you today?\n` +
           `1️⃣ Type *PACKAGES* to browse our top luxury circuits\n` +
           `2️⃣ Type *QUOTE <Reference>* to check your travel quote status\n` +

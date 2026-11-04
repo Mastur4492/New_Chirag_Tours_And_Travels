@@ -36,6 +36,7 @@ import { clearAdminToken, getAdminToken, setAdminToken, getUserRole, getUserInfo
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { PwaManager } from './PwaManager';
 import { AdminAiCopilot } from './AdminAiCopilot';
+import { NotificationBell } from './NotificationBell';
 
 interface NavItem {
   name: string;
@@ -75,6 +76,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isAiCopilotOpen, setIsAiCopilotOpen] = useState(false);
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -109,7 +111,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800">
         {children}
-        <AdminAiCopilot />
+        <AdminAiCopilot
+          isOpen={isAiCopilotOpen}
+          onToggle={() => setIsAiCopilotOpen(!isAiCopilotOpen)}
+          onClose={() => setIsAiCopilotOpen(false)}
+        />
       </div>
     );
   }
@@ -366,6 +372,38 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="topbar-actions">
+            {/* Executive AI Navbar Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsAiCopilotOpen(!isAiCopilotOpen)}
+              aria-label="Toggle Admin AI Copilot"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-full)',
+                background: isAiCopilotOpen
+                  ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
+                  : 'linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%)',
+                color: isAiCopilotOpen ? '#38bdf8' : '#0d9488',
+                border: '1.5px solid',
+                borderColor: isAiCopilotOpen ? '#38bdf8' : '#99f6e4',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: isAiCopilotOpen
+                  ? '0 2px 8px rgba(56, 189, 248, 0.35)'
+                  : '0 1px 3px rgba(13, 148, 136, 0.12)',
+              }}
+              title="Launch Executive AI Copilot"
+            >
+              <Sparkles size={15} color={isAiCopilotOpen ? '#38bdf8' : '#0d9488'} className={isAiCopilotOpen ? 'animate-pulse' : ''} />
+              <span className="hidden sm:inline">Executive AI</span>
+              <span className="sm:hidden">AI</span>
+            </button>
+
             <PwaManager />
 
             <Link
@@ -374,7 +412,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               title="Add a new customer enquiry immediately"
             >
               <Plus size={16} />
-              <span className="hidden sm:inline">+ New Enquiry</span>
+              <span className="hidden sm:inline">New Enquiry</span>
               <span className="sm:hidden">Enquiry</span>
             </Link>
 
@@ -393,25 +431,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {isAuthenticated ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span
-                  className="admin-status-badge hidden sm:flex"
-                  style={{
-                    background: userRole === 'AGENT' ? '#eff6ff' : '#ecfdf5',
-                    borderColor: userRole === 'AGENT' ? '#bfdbfe' : '#a7f3d0',
-                    color: userRole === 'AGENT' ? '#1d4ed8' : '#047857',
-                  }}
-                >
-                  <span
-                    style={{
-                      width: '7px',
-                      height: '7px',
-                      borderRadius: '50%',
-                      background: userRole === 'AGENT' ? '#2563eb' : 'var(--accent-emerald)',
-                    }}
-                  ></span>
-                  {userRole === 'AGENT' ? 'Travel Agent' : 'Operations Admin'}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <NotificationBell />
                 <button
                   onClick={handleLogout}
                   className="btn btn-secondary btn-sm"
@@ -436,7 +457,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="page-body">{children}</main>
-        <AdminAiCopilot />
+        <AdminAiCopilot
+          isOpen={isAiCopilotOpen}
+          onToggle={() => setIsAiCopilotOpen(!isAiCopilotOpen)}
+          onClose={() => setIsAiCopilotOpen(false)}
+        />
       </div>
 
       {/* Admin Login Modal */}

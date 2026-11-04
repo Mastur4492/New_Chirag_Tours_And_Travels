@@ -438,6 +438,18 @@ export default function LeadsPage() {
   };
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const openLeadId = urlParams.get('openLead');
+    if (openLeadId && leads.length > 0) {
+      const match = leads.find((l) => l.id === openLeadId || l.leadNumber === openLeadId);
+      if (match) {
+        openLeadDrawer(match);
+      }
+    }
+  }, [leads]);
+
+  useEffect(() => {
     if (!isDetailsOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -1381,35 +1393,35 @@ export default function LeadsPage() {
                   <span className="font-bold text-slate-900 text-sm">
                     {selectedLead.assignedAgentName || '⚠️ Unassigned'}
                   </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => {
-                        setStatusDialogLead(selectedLead);
-                        setTargetStatus('CONTACTED');
-                      }}
-                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium text-xs"
-                    >
-                      Mark Contacted
-                    </button>
-                    <button
-                      onClick={() => {
-                        setStatusDialogLead(selectedLead);
-                        setTargetStatus('CONVERTED');
-                      }}
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-md font-bold text-xs"
-                    >
-                      Won / Confirmed
-                    </button>
-                    <button
-                      onClick={() => {
-                        setStatusDialogLead(selectedLead);
-                        setTargetStatus('LOST');
-                      }}
-                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-md font-medium text-xs"
-                    >
-                      Not Converted
-                    </button>
-                  </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    setStatusDialogLead(selectedLead);
+                    setTargetStatus('CONTACTED');
+                  }}
+                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-lg font-medium text-xs transition border border-slate-200 cursor-pointer shadow-2xs"
+                >
+                  Mark Contacted
+                </button>
+                <button
+                  onClick={() => {
+                    setStatusDialogLead(selectedLead);
+                    setTargetStatus('CONVERTED');
+                  }}
+                  className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 rounded-lg font-bold text-xs transition border border-emerald-200 cursor-pointer shadow-2xs"
+                >
+                  Won / Confirmed
+                </button>
+                <button
+                  onClick={() => {
+                    setStatusDialogLead(selectedLead);
+                    setTargetStatus('LOST');
+                  }}
+                  className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-800 rounded-lg font-medium text-xs transition border border-rose-200 cursor-pointer shadow-2xs"
+                >
+                  Not Converted
+                </button>
+              </div>
                 </div>
               </div>
 
@@ -1518,7 +1530,14 @@ export default function LeadsPage() {
               <h3 className="modal-title flex items-center gap-2">
                 <UserCheck className="w-5 h-5 text-teal-600" /> Assign / Reassign Consultant
               </h3>
-              <button onClick={() => setReassignLead(null)} className="btn-icon">✕</button>
+              <button
+                type="button"
+                onClick={() => setReassignLead(null)}
+                className="w-8 h-8 rounded-full border border-slate-200 bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
             <form onSubmit={handleReassign} className="modal-body space-y-4">
               {reassignError && (
@@ -1551,11 +1570,11 @@ export default function LeadsPage() {
                 </div>
                 <input type="hidden" value={selectedAgentId} required />
               </div>
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setReassignLead(null)}
-                  className="btn-secondary"
+                  className="btn btn-secondary px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs transition"
                 >
                   Cancel
                 </button>
@@ -1563,7 +1582,7 @@ export default function LeadsPage() {
                   id="btn-confirm-assignment"
                   type="submit"
                   disabled={reassigning || !selectedAgentId}
-                  className="btn-primary"
+                  className="btn btn-primary px-4 py-2 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition disabled:opacity-50"
                 >
                   {reassigning ? 'Assigning...' : 'Confirm Assignment'}
                 </button>
@@ -1582,7 +1601,14 @@ export default function LeadsPage() {
                 <CheckCircle className="w-5 h-5 text-teal-600" />
                 Change Stage to &ldquo;{LEAD_STATUS_CONFIG[targetStatus]?.label}&rdquo;
               </h3>
-              <button onClick={() => { setStatusDialogLead(null); setStatusDialogError(null); }} className="btn-icon">✕</button>
+              <button
+                type="button"
+                onClick={() => { setStatusDialogLead(null); setStatusDialogError(null); }}
+                className="w-8 h-8 rounded-full border border-slate-200 bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
             <div className="modal-body space-y-4">
               <p className="text-xs text-slate-600">
@@ -1613,11 +1639,11 @@ export default function LeadsPage() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => { setStatusDialogLead(null); setStatusDialogError(null); }}
-                  className="btn-secondary"
+                  className="btn btn-secondary px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs transition"
                 >
                   Cancel
                 </button>
@@ -1625,7 +1651,7 @@ export default function LeadsPage() {
                   type="button"
                   onClick={handleConfirmStatusChange}
                   disabled={updatingStatus}
-                  className="btn-primary"
+                  className="btn btn-primary px-4 py-2 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition disabled:opacity-50"
                 >
                   {updatingStatus ? 'Updating...' : 'Confirm Stage Change'}
                 </button>

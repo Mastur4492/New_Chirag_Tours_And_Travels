@@ -1313,9 +1313,10 @@ input, select, textarea {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 10mm 12mm 10mm;
+    margin: 6mm 8mm 6mm 8mm;
   }
 
+  /* Force hide web UI controls */
   .no-print,
   .print-hide,
   .site-header,
@@ -1327,20 +1328,47 @@ input, select, textarea {
   nav,
   aside,
   button:not(.print-show),
-  [data-print-hide] {
+  [data-print-hide],
+  div[style*="position: fixed"] {
     display: none !important;
   }
 
-  .print-show {
+  .print-show,
+  .print-only {
     display: block !important;
   }
 
   body {
     background: #ffffff !important;
     color: #0f172a !important;
-    font-size: 11pt !important;
+    font-size: 9pt !important;
+    line-height: 1.35 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main {
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .quote-page-wrapper {
+    padding: 0 !important;
+    background: #ffffff !important;
+    min-height: auto !important;
+  }
+
+  .quote-page-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 5px !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   .container,
@@ -1356,15 +1384,126 @@ input, select, textarea {
     background: #ffffff !important;
   }
 
-  /* Page break rules for clean multi-page document */
+  /* Card Print Rules & Zero Splits */
+  .quote-print-card,
   .print-avoid-break,
   .hotel-card,
+  .transport-card,
+  .inclusions-card,
   .itinerary-day-card,
   .pricing-summary-card,
   .bank-details-card,
   .specs-bar {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    background: #ffffff !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Compact Letterhead for Print */
+  .quote-letterhead-card {
+    padding: 6px 10px !important;
+    border-radius: 6px !important;
+    border: 1.5px solid #065f46 !important;
+    background: linear-gradient(135deg, #04140d 0%, #064e3b 100%) !important;
+    color: #ffffff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  .quote-letterhead-card img {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .quote-letterhead-card span {
+    font-size: 1.08rem !important;
+  }
+
+  .quote-letterhead-card p {
+    font-size: 0.68rem !important;
+    margin-top: 1px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Density & typography in print */
+  .pricing-summary-card {
+    padding: 6px 10px !important;
+  }
+
+  .pricing-summary-card h2 {
+    font-size: 1.15rem !important;
+    margin: 0 !important;
+  }
+
+  .quote-price-lg {
+    font-size: 1.35rem !important;
+    line-height: 1 !important;
+  }
+
+  .specs-bar {
+    padding: 4px 8px !important;
+  }
+
+  .specs-bar > div > div:last-child {
+    font-size: 0.82rem !important;
+  }
+
+  .hotel-card,
+  .transport-card {
+    padding: 6px 10px !important;
+  }
+
+  .hotel-card h3,
+  .transport-card h3,
+  .inclusions-card h3,
+  .bank-details-card h3 {
+    font-size: 0.86rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  .hotel-card > div > div,
+  .transport-card > div > div {
+    padding: 4px 8px !important;
+  }
+
+  /* Compact bank and payment cards in print */
+  .bank-details-card > div:first-child {
+    margin-bottom: 4px !important;
+  }
+
+  .bank-details-card > div:nth-child(2) > div,
+  .inclusions-card > div > div {
+    padding: 5px 8px !important;
+  }
+
+  .bank-details-card ul,
+  .inclusions-card ul {
+    line-height: 1.25 !important;
+    font-size: 7pt !important;
+  }
+
+  .inclusions-card > div {
+    gap: 8px !important;
+  }
+
+  .bank-details-card {
+    font-size: 7.2pt !important;
+  }
+
+  /* Hide interactive tooltips / helper badges in print */
+  .info-badge,
+  [data-info-badge] {
+    display: none !important;
   }
 
   * {

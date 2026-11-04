@@ -14,11 +14,16 @@ export interface FindLeadsFilter {
 
 export class LeadRepository {
   async findById(id: string): Promise<ILeadDocument | null> {
-    return LeadModel.findById(id)
+    if (!Types.ObjectId.isValid(id)) {
+      return this.findByLeadNumber(id);
+    }
+    const doc = await LeadModel.findById(id)
       .populate('customerId')
       .populate('destinationId')
       .populate('assignedAgentId', 'fullName email')
+      .populate('assignedBy', 'fullName email')
       .exec();
+    return doc || this.findByLeadNumber(id);
   }
 
   async findByLeadNumber(leadNumber: string): Promise<ILeadDocument | null> {
@@ -26,6 +31,7 @@ export class LeadRepository {
       .populate('customerId')
       .populate('destinationId')
       .populate('assignedAgentId', 'fullName email')
+      .populate('assignedBy', 'fullName email')
       .exec();
   }
 
@@ -64,6 +70,7 @@ export class LeadRepository {
         .populate('customerId')
         .populate('destinationId')
         .populate('assignedAgentId', 'fullName email')
+        .populate('assignedBy', 'fullName email')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -81,8 +88,9 @@ export class LeadRepository {
   }
 
   async update(id: string, data: Partial<ILeadDocument>): Promise<ILeadDocument | null> {
-    await LeadModel.findByIdAndUpdate(id, { $set: data }, { new: true, runValidators: true }).exec();
-    return this.findById(id);
+    const filter = Types.ObjectId.isValid(id) ? { _id: id } : { leadNumber: id };
+    const updated = await LeadModel.findOneAndUpdate(filter, { $set: data }, { new: true, runValidators: true }).exec();
+    return updated ? this.findById(updated._id.toString()) : null;
   }
 
   async addTimelineEvent(
@@ -96,8 +104,9 @@ export class LeadRepository {
       createdAt?: Date;
     }
   ): Promise<ILeadDocument | null> {
-    await LeadModel.findByIdAndUpdate(
-      id,
+    const filter = Types.ObjectId.isValid(id) ? { _id: id } : { leadNumber: id };
+    const updated = await LeadModel.findOneAndUpdate(
+      filter,
       {
         $push: {
           timeline: {
@@ -108,7 +117,7 @@ export class LeadRepository {
       },
       { new: true }
     ).exec();
-    return this.findById(id);
+    return updated ? this.findById(updated._id.toString()) : null;
   }
 
   async countByStatus(assignedAgentId?: string): Promise<Record<LeadStatus, number>> {

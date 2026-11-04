@@ -97,22 +97,23 @@ export default function UnifiedBookingCard({
   onCopyText,
   formatINR,
 }: UnifiedBookingCardProps) {
+  const [showBankDetails, setShowBankDetails] = React.useState(false);
   return (
     <div
       style={{
         background: '#FFFFFF',
         borderRadius: 24,
-        border: '2px solid #059669',
-        boxShadow: '0 24px 50px -12px rgba(5, 35, 23, 0.22), 0 0 0 1px rgba(5, 150, 105, 0.15)',
+        border: '1.5px solid #10B981',
+        boxShadow: '0 20px 45px -10px rgba(5, 35, 23, 0.18)',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {/* 1. UNIFIED MASTER HEADER BANNER */}
+      {/* 1. CLEAN HEADER BANNER */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #052618 0%, #064E3B 55%, #047857 100%)',
+          background: 'linear-gradient(135deg, #052618 0%, #064E3B 60%, #047857 100%)',
           padding: '18px 24px',
           color: '#FFFFFF',
           display: 'flex',
@@ -120,7 +121,7 @@ export default function UnifiedBookingCard({
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: 12,
-          borderBottom: '2px solid rgba(52, 211, 153, 0.35)',
+          borderBottom: '1.5px solid rgba(52, 211, 153, 0.3)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -143,24 +144,24 @@ export default function UnifiedBookingCard({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span
                 style={{
-                  fontSize: '0.68rem',
-                  fontWeight: 900,
-                  letterSpacing: '0.08em',
+                  fontSize: '0.70rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.06em',
                   textTransform: 'uppercase',
-                  background: 'rgba(251, 191, 36, 0.2)',
+                  background: 'rgba(251, 191, 36, 0.18)',
                   color: '#FDE68A',
-                  border: '1px solid rgba(251, 191, 36, 0.4)',
+                  border: '1px solid rgba(251, 191, 36, 0.35)',
                   padding: '3px 8px',
                   borderRadius: 6,
                 }}
               >
-                Official Master Booking Console
+                Instant Quotation
               </span>
               <span style={{ fontSize: '0.74rem', color: '#A7F3D0', fontWeight: 600 }}>
-                ⚡ 100% Rate Lock Guarantee
+                100% Rate Lock Guarantee
               </span>
             </div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#FFFFFF', marginTop: 2 }}>
+            <div style={{ fontSize: '1.18rem', fontWeight: 900, color: '#FFFFFF', marginTop: 3 }}>
               {circuitName || 'Your Custom Tour Package'}
             </div>
           </div>
@@ -172,7 +173,7 @@ export default function UnifiedBookingCard({
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            background: 'rgba(0, 0, 0, 0.25)',
+            background: 'rgba(0, 0, 0, 0.28)',
             border: '1px solid rgba(52, 211, 153, 0.3)',
             padding: '8px 16px',
             borderRadius: 12,
@@ -180,7 +181,7 @@ export default function UnifiedBookingCard({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.84rem', color: '#6EE7B7', fontWeight: 800 }}>
             <Calendar size={15} />
-            <span>{calculation.days} Days / {durationNights} Nights ({durationNights}N/{calculation.days}D)</span>
+            <span>{durationNights} Nights / {calculation.days} Days</span>
           </div>
           <div style={{ width: 1, height: 16, background: 'rgba(255, 255, 255, 0.2)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.80rem', color: '#E2E8F0', fontWeight: 700 }}>
@@ -190,7 +191,7 @@ export default function UnifiedBookingCard({
         </div>
       </div>
 
-      {/* 2. UNIFIED BODY (LEFT QUOTE PANE + RIGHT BOOKING/BANK PANE) */}
+      {/* 2. UNIFIED BODY (LEFT QUOTE PANE + RIGHT ENQUIRY PANE) */}
       <div className="unified-booking-grid">
         {/* ================= LEFT PANE: QUOTATION & INCLUSIONS ================= */}
         <div className="unified-booking-left">
@@ -210,7 +211,7 @@ export default function UnifiedBookingCard({
                 }}
               >
                 <Sparkles size={14} color="#FBBF24" />
-                <span>All-Inclusive Transparent Quote</span>
+                <span>All-Inclusive Package Price</span>
               </div>
 
               <div style={{ fontSize: '2.6rem', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.1, marginTop: 4 }}>
@@ -218,28 +219,28 @@ export default function UnifiedBookingCard({
               </div>
 
               <div style={{ fontSize: '0.90rem', color: '#A7F3D0', marginTop: 4 }}>
-                Approx <strong style={{ color: '#FBBF24', fontSize: '1.08rem' }}>{formatINR(calculation.perPersonPrice)}</strong> / person
+                Approx <strong style={{ color: '#FBBF24', fontSize: '1.08rem' }}>{formatINR(calculation.perPersonPrice)}</strong> / person (All-inclusive with 5% GST)
               </div>
 
-              {selectedHotel && selectedRoom && (
+              {selectedHotel && (
                 <div
                   style={{
-                    fontSize: '0.78rem',
+                    fontSize: '0.80rem',
                     color: '#E2E8F0',
                     marginTop: 10,
                     background: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    border: '1px solid rgba(255, 255, 255, 0.18)',
                     padding: '6px 12px',
                     borderRadius: 8,
                     display: 'inline-block',
                   }}
                 >
-                  🏨 <strong>{selectedHotel.name}</strong> • {selectedRoom.name}
+                  Stay: <strong>{selectedHotel.name}</strong> {selectedRoom ? `• ${selectedRoom.name}` : ''}
                 </div>
               )}
             </div>
 
-            {/* Inclusions Breakdown */}
+            {/* Inclusions Breakdown (Clean & Readable) */}
             <div
               style={{
                 borderTop: '1px solid rgba(255, 255, 255, 0.14)',
@@ -260,11 +261,11 @@ export default function UnifiedBookingCard({
                 What is 100% Included:
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.84rem', color: '#E2E8F0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.85rem', color: '#E2E8F0' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <CheckCircle2 size={17} color="#34D399" style={{ flexShrink: 0, marginTop: 2 }} />
                   <span>
-                    <strong>{calculation.roomsCount} Room(s)</strong>: {selectedHotel?.name || 'Selected Hotel'} ({selectedRoom?.name || 'Deluxe Room'} @ {formatINR(calculation.effectiveHotelRate)}/nt)
+                    <strong>{calculation.roomsCount} Room(s)</strong> at verified hotel ({selectedRoom?.name || 'Deluxe Room'})
                   </span>
                 </div>
 
@@ -278,27 +279,27 @@ export default function UnifiedBookingCard({
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <CheckCircle2 size={17} color="#34D399" style={{ flexShrink: 0, marginTop: 2 }} />
                   <span>
-                    <strong>Dedicated AC Cab:</strong> {vehicleLabel} ({calculation.days} Days Full Sightseeing)
+                    <strong>Dedicated Private Cab:</strong> {vehicleLabel} for all {calculation.days} days transfers & sightseeing
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <CheckCircle2 size={17} color="#34D399" style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span>All Tolls, Parking, State Permits & Driver Allowances 100% covered</span>
+                  <span>All Tolls, Parking, State Permits & Driver Night Allowances 100% Covered</span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <CheckCircle2 size={17} color="#34D399" style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span>5% GST on Tour Services included ({formatINR(calculation.gstAmount)})</span>
+                  <span>5% Tour GST Fully Included (Zero Hidden Charges)</span>
                 </div>
               </div>
             </div>
 
-            {/* 25% Advance Lock Banner */}
+            {/* 25% Advance Notice */}
             <div
               style={{
-                background: 'rgba(245, 158, 11, 0.16)',
-                border: '1.5px solid rgba(245, 158, 11, 0.45)',
+                background: 'rgba(245, 158, 11, 0.15)',
+                border: '1.5px solid rgba(245, 158, 11, 0.4)',
                 borderRadius: 12,
                 padding: '12px 16px',
                 fontSize: '0.84rem',
@@ -311,7 +312,7 @@ export default function UnifiedBookingCard({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Lock size={16} color="#FBBF24" />
-                <span>25% Advance to Lock Allotment:</span>
+                <span>Advance to Confirm (25%):</span>
               </div>
               <strong style={{ color: '#FBBF24', fontSize: '1.08rem' }}>
                 {formatINR(calculation.advancePayable)}
@@ -319,7 +320,7 @@ export default function UnifiedBookingCard({
             </div>
           </div>
 
-          {/* Quick Action Buttons */}
+          {/* Quick Contact & WhatsApp Actions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <a
               href={whatsappUrl}
@@ -342,7 +343,7 @@ export default function UnifiedBookingCard({
               }}
             >
               <MessageCircle size={18} />
-              <span>Send Quote to WhatsApp (+91 99786 55529)</span>
+              <span>Chat with Travel Expert on WhatsApp</span>
             </a>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -392,11 +393,10 @@ export default function UnifiedBookingCard({
           </div>
         </div>
 
-        {/* ================= RIGHT PANE: BOOKING FORM + VERIFIED BANK LOCK ================= */}
+        {/* ================= RIGHT PANE: ENQUIRY FORM / CONFIRMATION ================= */}
         <div className="unified-booking-right">
-          {/* Top Form Section: Confirm Booking */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div
                   style={{
@@ -414,11 +414,11 @@ export default function UnifiedBookingCard({
                   <Send size={17} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '1.02rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.2 }}>
-                    Confirm Booking / Request Official Call
+                  <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.2 }}>
+                    Request Official Call & Quotation
                   </div>
                   <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
-                    Lock your preferred hotel room & cab with Faisal Bikanerwala
+                    Receive day-by-day customized itinerary & lock your dates
                   </div>
                 </div>
               </div>
@@ -435,28 +435,100 @@ export default function UnifiedBookingCard({
                   textTransform: 'uppercase',
                 }}
               >
-                ⚡ 15-Min Response
+                15-Min Response
               </span>
             </div>
 
             {submittedLeadRef ? (
-              <div
-                style={{
-                  background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
-                  border: '1.5px solid #6EE7B7',
-                  borderRadius: 14,
-                  padding: '18px 16px',
-                  color: '#065F46',
-                  marginBottom: 16,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 900, fontSize: '0.96rem' }}>
-                  <CheckCircle2 size={22} color="#059669" />
-                  <span>Booking Request Dispatched! Ref: {submittedLeadRef}</span>
+              <div>
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+                    border: '1.5px solid #6EE7B7',
+                    borderRadius: 14,
+                    padding: '18px 16px',
+                    color: '#065F46',
+                    marginBottom: 16,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 900, fontSize: '1.02rem' }}>
+                    <CheckCircle2 size={22} color="#059669" />
+                    <span>Enquiry Received! Ref: #{submittedLeadRef}</span>
+                  </div>
+                  <p style={{ margin: '8px 0 0', fontSize: '0.84rem', color: '#047857', lineHeight: 1.5 }}>
+                    Our Senior Holiday Specialist has received your request and will call you on <strong>{customerMobile}</strong> within 15 minutes with complete hotel confirmations!
+                  </p>
                 </div>
-                <p style={{ margin: '8px 0 0', fontSize: '0.84rem', color: '#047857', lineHeight: 1.5 }}>
-                  Faisal Bikanerwala has received your quotation request and will contact you directly at <strong>{customerMobile}</strong> shortly with your official confirmation!
-                </p>
+
+                {/* SHOW BANK ACCOUNT HERE AFTER SUBMISSION */}
+                <div
+                  style={{
+                    background: '#F8FAFC',
+                    borderRadius: 14,
+                    border: '1.5px solid #CBD5E1',
+                    padding: '16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <ShieldCheck size={18} color="#059669" />
+                    <div style={{ fontSize: '0.84rem', fontWeight: 900, color: '#0F172A' }}>
+                      Ready to lock? 25% Advance Account Details
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.74rem', color: '#64748B', margin: '0 0 10px' }}>
+                    Transfer {formatINR(calculation.advancePayable)} advance to reserve hotel and cab immediately:
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6, fontSize: '0.78rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                      <span style={{ color: '#64748B', fontWeight: 600 }}>Bank:</span>
+                      <strong style={{ color: '#0F172A' }}>{bankDetails.bankName} ({bankDetails.branch})</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                      <span style={{ color: '#64748B', fontWeight: 600 }}>Beneficiary:</span>
+                      <strong style={{ color: '#0F172A' }}>{bankDetails.accountName}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                      <span style={{ color: '#64748B', fontWeight: 600 }}>Account No:</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{bankDetails.accountNumber}</strong>
+                        <button
+                          type="button"
+                          onClick={() => onCopyText(bankDetails.accountNumber, 'acc')}
+                          style={{ padding: '2px 6px', fontSize: '0.68rem', borderRadius: 4, background: '#F1F5F9', border: '1px solid #CBD5E1', cursor: 'pointer' }}
+                        >
+                          {copiedKey === 'acc' ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                      <span style={{ color: '#64748B', fontWeight: 600 }}>IFSC:</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{bankDetails.ifsc}</strong>
+                        <button
+                          type="button"
+                          onClick={() => onCopyText(bankDetails.ifsc, 'ifsc')}
+                          style={{ padding: '2px 6px', fontSize: '0.68rem', borderRadius: 4, background: '#F1F5F9', border: '1px solid #CBD5E1', cursor: 'pointer' }}
+                        >
+                          {copiedKey === 'ifsc' ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                      <span style={{ color: '#64748B', fontWeight: 600 }}>UPI ID:</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{bankDetails.upiId}</strong>
+                        <button
+                          type="button"
+                          onClick={() => onCopyText(bankDetails.upiId, 'upi')}
+                          style={{ padding: '2px 6px', fontSize: '0.68rem', borderRadius: 4, background: '#F1F5F9', border: '1px solid #CBD5E1', cursor: 'pointer' }}
+                        >
+                          {copiedKey === 'upi' ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -507,7 +579,7 @@ export default function UnifiedBookingCard({
 
                   <div>
                     <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 800, color: '#334155', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                      WhatsApp / Mobile *
+                      WhatsApp / Mobile Number *
                     </label>
                     <div style={{ position: 'relative' }}>
                       <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', display: 'flex' }}>
@@ -589,15 +661,15 @@ export default function UnifiedBookingCard({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8,
-                    padding: '12px 18px',
+                    padding: '13px 18px',
                     borderRadius: 12,
                     background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                     color: '#FFFFFF',
                     fontWeight: 800,
-                    fontSize: '0.94rem',
+                    fontSize: '0.96rem',
                     border: 'none',
                     cursor: 'pointer',
-                    marginTop: 2,
+                    marginTop: 4,
                     boxShadow: '0 6px 18px rgba(5, 150, 105, 0.25)',
                     transition: 'all 0.15s ease',
                   }}
@@ -606,150 +678,131 @@ export default function UnifiedBookingCard({
                   <span>Submit Request to Travel Desk</span>
                 </button>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: '0.72rem', color: '#64748B', flexWrap: 'wrap' }}>
-                  <span>🔒 100% Rate Guarantee</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: '0.72rem', color: '#64748B', flexWrap: 'wrap', marginTop: 4 }}>
+                  <span>🔒 100% Rate Lock Guarantee</span>
                   <span>•</span>
-                  <span>⚡ Verified Allotment</span>
+                  <span>⚡ Verified Hotels & Cabs</span>
                   <span>•</span>
                   <span>Zero Spam Call Policy</span>
                 </div>
-              </form>
-            )}
-          </div>
 
-          {/* Integrated Bottom Section: Official Bank Lock Details */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, #F0FDF4 0%, #F8FAFC 100%)',
-              borderRadius: 16,
-              border: '1.5px solid #A7F3D0',
-              padding: '16px 18px',
-              boxShadow: '0 4px 14px rgba(5, 150, 105, 0.05)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Assurance & Next Steps Box (Fills height cleanly) */}
                 <div
                   style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: 8,
-                    background: '#059669',
-                    color: '#FFFFFF',
+                    marginTop: 16,
+                    background: 'linear-gradient(135deg, #F0FDF4 0%, #F8FAFC 100%)',
+                    border: '1px solid #A7F3D0',
+                    borderRadius: 14,
+                    padding: '14px 16px',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    gap: 8,
                   }}
                 >
-                  <ShieldCheck size={15} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.80rem', fontWeight: 900, color: '#064E3B', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                    Official Bank Lock Account
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <ShieldCheck size={16} color="#059669" />
+                    <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#064E3B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Next Steps After Submitting:
+                    </span>
                   </div>
-                  <div style={{ fontSize: '0.70rem', color: '#047857' }}>
-                    Transfer 25% Advance ({formatINR(calculation.advancePayable)}) for immediate allotment
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6, fontSize: '0.76rem', color: '#334155', lineHeight: 1.4 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontSize: '0.68rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                        1
+                      </span>
+                      <span><strong>15-Min Callback:</strong> Senior Kashmir travel specialist calls you to confirm dates & room choices.</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontSize: '0.68rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                        2
+                      </span>
+                      <span><strong>Official PDF Itinerary:</strong> Customized day-by-day sightseeing proposal sent to your WhatsApp.</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontSize: '0.68rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                        3
+                      </span>
+                      <span><strong>Zero Price Hike Lock:</strong> Lock your verified room allotment with 25% advance when you are 100% satisfied.</span>
+                    </div>
+                  </div>
+
+                  {/* Clean Optional Toggle for Direct Advance Details */}
+                  <div style={{ marginTop: 4, paddingTop: 8, borderTop: '1px dashed #A7F3D0', textAlign: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowBankDetails(!showBankDetails)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#047857',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '2px 6px',
+                      }}
+                    >
+                      <span>{showBankDetails ? '▲ Hide Bank & UPI Transfer Details' : '▼ Prefer direct advance transfer? Click to view Bank & UPI details'}</span>
+                    </button>
+
+                    {showBankDetails && (
+                      <div style={{ marginTop: 10, textAlign: 'left', display: 'grid', gridTemplateColumns: '1fr', gap: 6, fontSize: '0.76rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 8px', background: '#FFFFFF', borderRadius: 6, border: '1px solid #E2E8F0' }}>
+                          <span style={{ color: '#64748B', fontWeight: 600 }}>Bank:</span>
+                          <strong style={{ color: '#0F172A' }}>{bankDetails.bankName} ({bankDetails.branch})</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 8px', background: '#FFFFFF', borderRadius: 6, border: '1px solid #E2E8F0' }}>
+                          <span style={{ color: '#64748B', fontWeight: 600 }}>Beneficiary:</span>
+                          <strong style={{ color: '#0F172A' }}>{bankDetails.accountName}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: '#FFFFFF', borderRadius: 6, border: '1px solid #E2E8F0' }}>
+                          <span style={{ color: '#64748B', fontWeight: 600 }}>Account No:</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{bankDetails.accountNumber}</strong>
+                            <button
+                              type="button"
+                              onClick={() => onCopyText(bankDetails.accountNumber, 'acc')}
+                              style={{ padding: '2px 5px', fontSize: '0.66rem', borderRadius: 4, background: '#F1F5F9', border: '1px solid #CBD5E1', cursor: 'pointer' }}
+                            >
+                              {copiedKey === 'acc' ? 'Copied' : 'Copy'}
+                            </button>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: '#FFFFFF', borderRadius: 6, border: '1px solid #E2E8F0' }}>
+                          <span style={{ color: '#64748B', fontWeight: 600 }}>IFSC:</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{bankDetails.ifsc}</strong>
+                            <button
+                              type="button"
+                              onClick={() => onCopyText(bankDetails.ifsc, 'ifsc')}
+                              style={{ padding: '2px 5px', fontSize: '0.66rem', borderRadius: 4, background: '#F1F5F9', border: '1px solid #CBD5E1', cursor: 'pointer' }}
+                            >
+                              {copiedKey === 'ifsc' ? 'Copied' : 'Copy'}
+                            </button>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: '#FFFFFF', borderRadius: 6, border: '1px solid #E2E8F0' }}>
+                          <span style={{ color: '#64748B', fontWeight: 600 }}>UPI ID:</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{bankDetails.upiId}</strong>
+                            <button
+                              type="button"
+                              onClick={() => onCopyText(bankDetails.upiId, 'upi')}
+                              style={{ padding: '2px 5px', fontSize: '0.66rem', borderRadius: 4, background: '#F1F5F9', border: '1px solid #CBD5E1', cursor: 'pointer' }}
+                            >
+                              {copiedKey === 'upi' ? 'Copied' : 'Copy'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6, fontSize: '0.78rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '6px 10px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Bank:</div>
-                <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.78rem' }}>
-                  {bankDetails.bankName} <span style={{ fontWeight: 500, color: '#64748B' }}>({bankDetails.branch})</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '6px 10px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Beneficiary:</div>
-                <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.78rem' }}>
-                  {bankDetails.accountName}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '6px 10px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                <div>
-                  <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Current A/C</div>
-                  <div style={{ fontWeight: 900, color: '#0F172A', fontFamily: 'monospace', fontSize: '0.86rem', letterSpacing: '0.03em' }}>
-                    {bankDetails.accountNumber}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onCopyText(bankDetails.accountNumber, 'acc')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '3px 8px',
-                    borderRadius: 6,
-                    background: copiedKey === 'acc' ? '#ECFDF5' : '#F1F5F9',
-                    border: copiedKey === 'acc' ? '1px solid #059669' : '1px solid #CBD5E1',
-                    color: copiedKey === 'acc' ? '#047857' : '#334155',
-                    fontSize: '0.70rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {copiedKey === 'acc' ? <Check size={12} /> : <Copy size={12} />}
-                  <span>{copiedKey === 'acc' ? 'Copied' : 'Copy'}</span>
-                </button>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '6px 10px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                  <div>
-                    <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>IFSC</div>
-                    <div style={{ fontWeight: 800, color: '#0F172A', fontFamily: 'monospace', fontSize: '0.78rem' }}>{bankDetails.ifsc}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onCopyText(bankDetails.ifsc, 'ifsc')}
-                    style={{
-                      padding: '3px 6px',
-                      borderRadius: 6,
-                      background: copiedKey === 'ifsc' ? '#ECFDF5' : '#F1F5F9',
-                      border: copiedKey === 'ifsc' ? '1px solid #059669' : '1px solid #CBD5E1',
-                      color: copiedKey === 'ifsc' ? '#047857' : '#334155',
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {copiedKey === 'ifsc' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '6px 10px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                  <div>
-                    <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>UPI ID</div>
-                    <div style={{ fontWeight: 800, color: '#0F172A', fontFamily: 'monospace', fontSize: '0.78rem' }}>{bankDetails.upiId}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onCopyText(bankDetails.upiId, 'upi')}
-                    style={{
-                      padding: '3px 6px',
-                      borderRadius: 6,
-                      background: copiedKey === 'upi' ? '#ECFDF5' : '#F1F5F9',
-                      border: copiedKey === 'upi' ? '1px solid #059669' : '1px solid #CBD5E1',
-                      color: copiedKey === 'upi' ? '#047857' : '#334155',
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {copiedKey === 'upi' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 8, padding: '6px 10px', background: '#ECFDF5', borderRadius: 6, border: '1px dashed #A7F3D0', fontSize: '0.70rem', color: '#065F46' }}>
-              💡 <strong>Quick Step:</strong> Share advance transfer receipt on WhatsApp (+91 99786 55529) for immediate official booking voucher.
-            </div>
+              </form>
+            )}
           </div>
         </div>
       </div>

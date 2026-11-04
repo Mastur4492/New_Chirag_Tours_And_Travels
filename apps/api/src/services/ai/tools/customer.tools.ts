@@ -3,8 +3,10 @@ import { AiToolDefinition } from '../ai.types';
 import { destinationRepository } from '../../../repositories/destination.repository';
 import { tourPackageRepository } from '../../../repositories/package.repository';
 import { bookingRepository } from '../../../repositories/booking.repository';
+import { hotelService } from '../../hotel.service';
+import { transportRepository } from '../../../repositories/transport.repository';
 import { leadService } from '../../lead.service';
-import { calculateQuotationTotals, roundHalfUp } from '@chirag/pricing';
+import { VehicleCategory } from '@chirag/types';
 
 /**
  * 1. Search Destinations Tool
@@ -35,17 +37,37 @@ export const searchDestinationsTool: AiToolDefinition<z.infer<typeof SearchDesti
           (d.description && d.description.toLowerCase().includes(q))
       );
     }
+    const PORTAL_CIRCUITS_META: Record<string, { startingFrom: number; defaultNights: number; bestSeason: string; tagline: string }> = {
+      kashmir: { startingFrom: 24500, defaultNights: 5, bestSeason: 'Apr–Oct & Dec–Feb (Snow)', tagline: 'Srinagar Shikara • Gulmarg Gondola • Pahalgam Lidder Valley' },
+      kerala: { startingFrom: 21500, defaultNights: 6, bestSeason: 'Sep–Mar (Peak Season)', tagline: 'Munnar Tea Hills • Alleppey Houseboat • Thekkady Forest' },
+      himachal: { startingFrom: 18500, defaultNights: 5, bestSeason: 'Mar–Jun & Dec–Feb (Snow)', tagline: 'Shimla Ridge • Manali Snow Valley • Rohtang Pass' },
+      rajasthan: { startingFrom: 19500, defaultNights: 6, bestSeason: 'Oct–Mar (Pleasant Winter)', tagline: 'Jaipur Amber Fort • Jodhpur Blue City • Udaipur Lake Palace' },
+      goa: { startingFrom: 16500, defaultNights: 4, bestSeason: 'Nov–Feb (Peak Beach Season)', tagline: 'Calangute Baga Beaches • Old Goa Heritage • Sunset River Cruise' },
+      andaman: { startingFrom: 28500, defaultNights: 5, bestSeason: 'Oct–May (Calm Seas)', tagline: 'Radhanagar White Sands • Havelock Coral Reefs • Cellular Jail' },
+      uttarakhand: { startingFrom: 17500, defaultNights: 5, bestSeason: 'Mar–Jun & Sep–Nov', tagline: 'Nainital Lake Boating • Mussoorie Kempty Falls • Rishikesh Ganga Aarti' },
+    };
+
     return {
       count: filtered.length,
-      destinations: filtered.slice(0, 6).map((d) => ({
-        id: d._id.toString(),
-        name: d.name,
-        slug: d.slug,
-        description: d.description || '',
-        highlights: d.highlights || [],
-        state: d.state || 'India',
-        region: d.region,
-      })),
+      destinations: filtered.slice(0, 7).map((d) => {
+        const slugLower = (d.slug || '').toLowerCase();
+        const nameLower = (d.name || '').toLowerCase();
+        const metaKey = Object.keys(PORTAL_CIRCUITS_META).find((k) => slugLower.includes(k) || nameLower.includes(k)) || 'kashmir';
+        const meta = PORTAL_CIRCUITS_META[metaKey];
+        return {
+          id: d._id.toString(),
+          name: d.name,
+          slug: d.slug,
+          description: d.description || meta?.tagline || '',
+          highlights: d.highlights || [],
+          state: d.state || 'India',
+          region: d.region,
+          startingFromPerPerson: meta ? meta.startingFrom : 21000,
+          recommendedNights: meta ? meta.defaultNights : 5,
+          bestSeason: meta ? meta.bestSeason : 'Round the year',
+          portalCustomizerAvailable: true,
+        };
+      }),
     };
   },
 };
@@ -100,88 +122,227 @@ export const searchTourPackagesTool: AiToolDefinition<z.infer<typeof SearchPacka
 };
 
 /**
- * 3. Calculate Trip Price Tool (RULE 1: AI must never calculate prices itself!)
+ * 3. Calculate Trip Price Tool (Synchronized 100% with Customer Portal Trip Customizer)
  */
 const CalculateTripPriceSchema = z.object({
-  destinationName: z.string().optional().describe('Destination name'),
-  nights: z.number().min(1).default(5).describe('Total nights of stay'),
-  adults: z.number().min(1).default(2).describe('Total adult travelers'),
+  destinationName: z.string().optional().describe('Destination name e.g. "Kashmir", "Kerala", "Himachal", "Goa", "Rajasthan", "Andaman", "Uttarakhand"'),
+  nights: z.number().min(1).default(5).describe('Total nights of stay (default is 5 nights)'),
+  adults: z.number().min(1).default(2).describe('Total adult travelers (1 room per 2 adults)'),
   children: z.number().min(0).default(0).describe('Total child travelers'),
-  hotelTier: z.enum(['Comfort', 'Deluxe', 'Luxury']).default('Deluxe').describe('Preferred hotel tier'),
-  vehicleType: z.enum(['Sedan', 'SUV', 'Innova Crysta', 'Tempo Traveller']).default('Sedan').describe('Preferred vehicle'),
+  hotelTier: z.string().optional().default('Deluxe').describe('Hotel category: Comfort / 3 Star, Deluxe / 4 Star, or Luxury / 5 Star'),
+  hotelName: z.string().optional().describe('Specific hotel property name e.g. "Kolahoi Green Resort", "The Lalit Grand Palace", "The Khyber"'),
+  mealPlan: z.string().optional().default('MAP').describe('Meal plan: MAP (Breakfast + Dinner included - standard) or CP (Breakfast only)'),
+  vehicleType: z.string().optional().default('Sedan').describe('Dedicated private vehicle: Sedan (up to 4 pax), SUV (up to 7 pax), Innova Crysta, or Tempo Traveller'),
 });
 
 export const calculateTripPriceTool: AiToolDefinition<z.infer<typeof CalculateTripPriceSchema>> = {
   name: 'calculateTripPrice',
-  description: 'Calculate an accurate, all-inclusive tour quotation using the official New Chirag Tours & Travels pricing engine.',
+  description: 'Calculate an accurate, all-inclusive tour quotation strictly synchronized with the New Chirag Tours & Travels Customer Portal pricing customizer.',
   schema: CalculateTripPriceSchema,
   parametersJsonSchema: {
     type: 'object',
     properties: {
-      destinationName: { type: 'string', description: 'Destination name' },
+      destinationName: { type: 'string', description: 'Destination name e.g. Kashmir, Kerala, Himachal, Rajasthan, Goa, Andaman, Uttarakhand' },
       nights: { type: 'number', description: 'Number of nights' },
       adults: { type: 'number', description: 'Number of adult travelers' },
       children: { type: 'number', description: 'Number of children' },
-      hotelTier: { type: 'string', enum: ['Comfort', 'Deluxe', 'Luxury'], description: 'Hotel category' },
-      vehicleType: { type: 'string', enum: ['Sedan', 'SUV', 'Innova Crysta', 'Tempo Traveller'], description: 'Vehicle type' },
+      hotelTier: { type: 'string', description: 'Hotel category: Comfort / 3 Star, Deluxe / 4 Star, or Luxury / 5 Star' },
+      hotelName: { type: 'string', description: 'Optional specific hotel name e.g. Kolahoi Green Resort, The Lalit Grand Palace' },
+      mealPlan: { type: 'string', description: 'Meal plan: MAP (Breakfast + Dinner) or CP (Breakfast only)' },
+      vehicleType: { type: 'string', description: 'Vehicle type: Sedan, SUV, Innova Crysta, or Tempo Traveller' },
     },
     required: ['nights', 'adults'],
   },
   execute: async (args) => {
-    const roomsCount = Math.max(1, Math.ceil(args.adults / 2));
-    
-    // Benchmark rack rates per tier
-    const roomRatePerNight =
-      args.hotelTier === 'Luxury' ? 7500 : args.hotelTier === 'Deluxe' ? 4500 : 2800;
-    const vehicleRatePerDay =
-      args.vehicleType === 'Innova Crysta'
-        ? 4500
-        : args.vehicleType === 'SUV'
-        ? 3500
-        : args.vehicleType === 'Tempo Traveller'
-        ? 6500
-        : 2500;
+    const adults = Math.max(1, args.adults || 2);
+    const children = Math.max(0, args.children || 0);
+    const nights = Math.max(1, args.nights || 5);
+    const totalDays = nights + 1;
+    const roomsCount = Math.max(1, Math.ceil(adults / 2));
 
-    const totalDays = args.nights + 1;
-    const totalHotelBase = roomRatePerNight * roomsCount * args.nights;
-    const totalTransportBase = vehicleRatePerDay * totalDays;
-    const baseSupplierCost = totalHotelBase + totalTransportBase;
+    // Resolve Hotel Star Rating & Base Rate (Strict match to Customer Portal page.tsx)
+    const rawTier = (args.hotelTier || 'Deluxe').toLowerCase();
+    let starRating = 4; // Default Deluxe
+    if (rawTier.includes('deluxe') || rawTier.includes('4')) {
+      starRating = 4;
+    } else if (rawTier.includes('lux') || rawTier.includes('5')) {
+      starRating = 5;
+    } else if (rawTier.includes('comf') || rawTier.includes('stan') || rawTier.includes('3')) {
+      starRating = 3;
+    }
+    const hotelTierLabel = starRating === 5 ? 'Luxury (5★)' : starRating === 3 ? 'Standard (3★)' : 'Deluxe (4★)';
 
-    // Call pure calculation engine from @chirag/pricing
-    const pricing = calculateQuotationTotals({
-      baseSupplierCost,
-      markupType: 'PERCENT',
-      markupPercent: 12, // Standard company margin
-      taxRatePercent: 5,  // 5% Tour Package GST
-      isTaxApplicable: true,
-      isTaxConfirmed: true,
-    });
+    // Benchmark rates in Customer Portal page.tsx line 559 & 822: 5★ = 7500, 4★ = 4800, 3★ = 3500
+    let baseHotelRate = starRating === 5 ? 7500 : starRating === 3 ? 3500 : 4800;
+    let hotelName = starRating === 5 ? 'The Lalit Grand Palace Srinagar' : starRating === 3 ? 'Comfort Heritage 3★ Partner Hotel' : 'Kolahoi Green Resort Pahalgam';
+    let roomCategoryName = starRating === 5 ? 'Heritage Lake View Suite' : starRating === 3 ? 'Standard Room' : 'Deluxe Pine Room';
 
-    const perPersonPrice = roundHalfUp(pricing.finalSellingPrice / args.adults);
+    // Resolve Destination from Database (Prefer live production circuits over demo records)
+    let destinationDoc: any = null;
+    let destDisplayName = args.destinationName || 'Kashmir';
+    try {
+      const { destinations } = await destinationRepository.findMany({ isActive: true });
+      if (args.destinationName) {
+        const q = args.destinationName.toLowerCase();
+        destinationDoc = destinations.find(
+          (d) =>
+            !d.name.toLowerCase().includes('demo') &&
+            !d.slug.toLowerCase().includes('demo') &&
+            (d.name.toLowerCase().includes(q) || d.slug.toLowerCase().includes(q))
+        ) || destinations.find(
+          (d) => d.name.toLowerCase().includes(q) || d.slug.toLowerCase().includes(q)
+        );
+      }
+      if (!destinationDoc && destinations.length > 0) {
+        destinationDoc = destinations.find(
+          (d) => !d.slug.includes('demo') && d.slug.includes('kashmir')
+        ) || destinations.find((d) => d.slug.includes('kashmir')) || destinations[0];
+      }
+      if (destinationDoc) {
+        destDisplayName = destinationDoc.name;
+        // Query live hotels with room categories from hotelService (identical to Customer Portal /api/proxy/hotels)
+        const { items: destinationHotels } = await hotelService.listHotels({
+          destinationId: destinationDoc._id.toString(),
+          isActive: true,
+          limit: 50,
+        });
+
+        if (destinationHotels && destinationHotels.length > 0) {
+          // Check if specific hotel name was requested or match by star rating
+          let matchedHotel = destinationHotels.find((h) => {
+            if (args.hotelName && h.name.toLowerCase().includes(args.hotelName.toLowerCase())) return true;
+            if (args.hotelTier && h.name.toLowerCase().includes(args.hotelTier.toLowerCase())) return true;
+            return false;
+          });
+          if (!matchedHotel) {
+            matchedHotel = destinationHotels.find((h) => h.starRating === starRating) || destinationHotels[0];
+          }
+
+          if (matchedHotel) {
+            hotelName = matchedHotel.name;
+            const firstRoom = matchedHotel.roomCategories && matchedHotel.roomCategories[0];
+            if (firstRoom) {
+              roomCategoryName = firstRoom.name;
+              if (firstRoom.pricePerNight && firstRoom.pricePerNight > 0) {
+                baseHotelRate = firstRoom.pricePerNight;
+              }
+            } else {
+              baseHotelRate = matchedHotel.starRating >= 5 ? 7500 : matchedHotel.starRating === 3 ? 3500 : 4800;
+            }
+          }
+        }
+      }
+    } catch {
+      // Graceful fallback to portal defaults
+    }
+
+    // Meal Plan: MAP (Breakfast + Dinner) is standard. CP (Breakfast only) gives 10% discount on hotel rate (page.tsx line 823)
+    const isCP = (args.mealPlan || '').toUpperCase().includes('CP');
+    const effectiveHotelRate = isCP ? Math.round(baseHotelRate * 0.9) : baseHotelRate;
+    const mealPlanLabel = isCP ? 'CP (Daily Breakfast Included)' : 'MAP (Daily Breakfast & Dinner Included)';
+
+    // Resolve Vehicle & Per Day Cost (Strict match to Customer Portal VEHICLE_TIER_RATES page.tsx line 235 & line 824)
+    const rawVeh = (args.vehicleType || 'Sedan').toLowerCase();
+    let resolvedVehicle = 'Sedan';
+    let targetCategory: VehicleCategory = 'SEDAN';
+    let defaultRate = 2800;
+    let vehicleModel = 'AC Sedan (Dzire / Etios)';
+
+    if (rawVeh.includes('tempo') || rawVeh.includes('traveller')) {
+      resolvedVehicle = 'Tempo Traveller';
+      targetCategory = 'TEMPO_TRAVELLER';
+      defaultRate = 7500;
+      vehicleModel = 'Tempo Traveller (12-17 Seater)';
+    } else if (rawVeh.includes('crysta') || rawVeh.includes('premium')) {
+      resolvedVehicle = 'Innova Crysta';
+      targetCategory = 'PREMIUM_SUV';
+      defaultRate = 5500;
+      vehicleModel = 'Innova Crysta Premium';
+    } else if (rawVeh.includes('suv') || rawVeh.includes('ertiga') || rawVeh.includes('innova')) {
+      resolvedVehicle = 'SUV';
+      targetCategory = 'SUV';
+      defaultRate = 4200;
+      vehicleModel = 'AC SUV (Innova / Ertiga)';
+    }
+
+    // Auto-upgrade to SUV if passenger count exceeds 4 (page.tsx line 794)
+    if (adults + children > 4 && resolvedVehicle === 'Sedan') {
+      resolvedVehicle = 'SUV';
+      targetCategory = 'SUV';
+      defaultRate = 4200;
+      vehicleModel = 'AC SUV (Innova / Ertiga)';
+    }
+
+    let vehicleRatePerDay = defaultRate;
+    try {
+      const { tariffs } = await transportRepository.findTariffs({ isActive: true });
+      const matchedTariff = tariffs.find(
+        (t) =>
+          t.vehicleCategory === targetCategory &&
+          (!t.destinationId || (destinationDoc && t.destinationId.toString() === destinationDoc._id.toString()))
+      ) || tariffs.find((t) => t.vehicleCategory === targetCategory);
+
+      if (matchedTariff && matchedTariff.standardSellingRate > 0) {
+        vehicleRatePerDay = matchedTariff.standardSellingRate;
+      }
+    } catch {
+      // Fallback to defaultRate
+    }
+
+    // Exact Customer Portal Financial Calculation (page.tsx lines 826-838)
+    const totalHotelCost = nights * roomsCount * effectiveHotelRate;
+    const totalVehicleCost = totalDays * vehicleRatePerDay;
+    const subtotal = totalHotelCost + totalVehicleCost;
+
+    // 10% Standard Agency Margin (page.tsx line 830)
+    const agencyMargin = Math.round(subtotal * 0.10);
+    const taxableAmount = subtotal + agencyMargin;
+    // 5% Tour Package GST (page.tsx line 832)
+    const gstAmount = Math.round(taxableAmount * 0.05);
+    const finalTotal = taxableAmount + gstAmount;
+
+    const effectiveTravelers = adults + (children > 0 ? children * 0.5 : 0);
+    const perPersonPrice = Math.round(finalTotal / (effectiveTravelers || 1));
+    const advancePayable = Math.round(finalTotal * 0.25);
 
     return {
       currency: 'INR (₹)',
-      nights: args.nights,
+      destination: destDisplayName,
+      nights,
       days: totalDays,
-      adults: args.adults,
-      children: args.children,
+      adults,
+      children,
       roomsAllocated: roomsCount,
-      hotelTier: args.hotelTier,
-      vehicleType: args.vehicleType,
+      hotelTier: hotelTierLabel,
+      hotelName,
+      roomCategory: roomCategoryName,
+      mealPlan: mealPlanLabel,
+      vehicleType: resolvedVehicle,
+      vehicleModel,
       financials: {
-        totalSellingPrice: pricing.finalSellingPrice,
+        totalSellingPrice: finalTotal,
         perPersonPrice,
         gstRatePercent: 5,
-        gstAmountIncluded: pricing.taxAmount,
-        advanceToLock25Percent: roundHalfUp(pricing.finalSellingPrice * 0.25),
+        gstAmountIncluded: gstAmount,
+        advanceToLock25Percent: advancePayable,
+        breakdown: {
+          hotelPerNight: effectiveHotelRate,
+          totalHotelCost,
+          vehiclePerDay: vehicleRatePerDay,
+          totalVehicleCost,
+          subtotal,
+          agencyMargin10Percent: agencyMargin,
+          taxableAmount,
+          gst5Percent: gstAmount,
+        },
       },
       inclusions: [
-        `${roomsCount} Room(s) at verified ${args.hotelTier} partner hotels`,
-        'Daily Breakfast & Dinner (MAP Meal Plan)',
-        `Private Dedicated AC ${args.vehicleType} for all ${totalDays} days sightseeing`,
-        'All Tolls, State Border Permits, Parking & Driver Night Allowances',
-        '5% Tour GST included with zero hidden charges',
+        `${roomsCount} Room(s) at verified ${hotelName} (${roomCategoryName}) on ${mealPlanLabel}`,
+        `Dedicated Private ${vehicleModel} for all ${totalDays} days of transfers & sightseeing`,
+        'All Toll Taxes, State Border Permits, Parking & Driver Night Allowances 100% Included',
+        '5% Tour GST fully included with zero hidden charges',
       ],
+      portalMatchNote: 'This quotation is 100% synchronized with the Customer Portal Trip Customizer.',
     };
   },
 };
@@ -283,7 +444,7 @@ export const checkBookingStatusTool: AiToolDefinition<z.infer<typeof CheckBookin
 
     const dto = booking.toDto('CUSTOMER');
     const cleanInputPhone = args.customerMobile.replace(/\D/g, '').slice(-10);
-    const bookingPhone = (dto.customerPhone || '').replace(/\D/g, '').slice(-10);
+    const bookingPhone = (dto.customerPhone || (booking.customerId as any)?.mobile || '').replace(/\D/g, '').slice(-10);
 
     if (cleanInputPhone !== bookingPhone) {
       return {

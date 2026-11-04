@@ -63,6 +63,22 @@ router.put(
   leadController.update.bind(leadController)
 );
 
+// Support PATCH /:id/status (used by Admin Web to update lead status/stage)
+router.patch(
+  '/:id/status',
+  requireRole('ADMIN', 'AGENT'),
+  validateRequest({ params: idParamSchema, body: updateLeadSchema }),
+  leadController.update.bind(leadController)
+);
+
+// Support PATCH /:id (partial update)
+router.patch(
+  '/:id',
+  requireRole('ADMIN', 'AGENT'),
+  validateRequest({ params: idParamSchema, body: updateLeadSchema }),
+  leadController.update.bind(leadController)
+);
+
 // Admin-only lead assignment / reassignment
 router.post(
   '/:id/assign',

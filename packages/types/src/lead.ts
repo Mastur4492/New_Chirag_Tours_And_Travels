@@ -23,9 +23,12 @@ export interface LeadDto {
   customerId: string;
   customerName?: string;
   customerMobile?: string;
+  customerEmail?: string;
+  customerCity?: string;
   destinationId: string;
   destinationName?: string;
   packageId?: string;
+  packageName?: string;
   tentativeTravelDate?: string;
   durationNights?: number;
   numberOfAdults: number;
@@ -37,6 +40,7 @@ export interface LeadDto {
   assignedAgentId?: string;
   assignedAgentName?: string;
   assignedBy?: string;
+  assignedByName?: string;
   assignedAt?: string;
   lostReason?: string;
   nextFollowUpDate?: string;

@@ -132,16 +132,39 @@ export class AiSessionService {
       functionResponse?: { name: string; response: Record<string, unknown> };
     }>;
   }> {
-    return session.messages.map((m) => ({
-      role: m.role,
-      parts: m.parts.map((p) => {
-        const part: any = {};
-        if (p.text) part.text = p.text;
-        if (p.functionCall) part.functionCall = p.functionCall;
-        if (p.functionResponse) part.functionResponse = p.functionResponse;
-        return part;
-      }),
-    }));
+    const rawMessages = session.messages || [];
+    return rawMessages.map((m) => {
+      const parts: any[] = [];
+
+      for (const rawP of m.parts || []) {
+        const p = typeof (rawP as any).toObject === 'function' ? (rawP as any).toObject() : rawP;
+
+        if (p.functionResponse && p.functionResponse.name) {
+          parts.push({
+            functionResponse: {
+              name: p.functionResponse.name,
+              response: p.functionResponse.response || {},
+            },
+          });
+        } else if (p.functionCall && p.functionCall.name) {
+          parts.push({
+            functionCall: {
+              name: p.functionCall.name,
+              args: p.functionCall.args || {},
+            },
+          });
+        } else if (p.text && typeof p.text === 'string' && p.text.trim()) {
+          parts.push({
+            text: p.text,
+          });
+        }
+      }
+
+      return {
+        role: m.role,
+        parts: parts.length > 0 ? parts : [{ text: '' }],
+      };
+    });
   }
 
   /**

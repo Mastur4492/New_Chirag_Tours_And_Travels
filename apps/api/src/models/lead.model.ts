@@ -213,6 +213,8 @@ LeadSchema.methods.toDto = function (): LeadDto {
     customerId: customer ? customer._id.toString() : this.customerId ? this.customerId.toString() : '',
     customerName: customer ? customer.fullName : undefined,
     customerMobile: customer ? customer.mobile : undefined,
+    customerEmail: customer ? customer.email : undefined,
+    customerCity: customer ? customer.city : undefined,
     destinationId: destination ? destination._id.toString() : this.destinationId ? this.destinationId.toString() : '',
     destinationName: destination ? destination.name : undefined,
     packageId: this.packageId ? this.packageId.toString() : undefined,
@@ -232,7 +234,10 @@ LeadSchema.methods.toDto = function (): LeadDto {
         ? this.assignedAgentId.toString()
         : undefined,
     assignedAgentName: assignedAgent ? assignedAgent.fullName : undefined,
-    assignedBy: this.assignedBy ? this.assignedBy.toString() : undefined,
+    assignedBy: this.assignedBy ? (this.assignedBy as any)._id?.toString() || this.assignedBy.toString() : undefined,
+    assignedByName: this.populated('assignedBy') && (this.assignedBy as any)?.fullName
+      ? (this.assignedBy as any).fullName
+      : undefined,
     assignedAt: this.assignedAt
       ? (this.assignedAt instanceof Date ? this.assignedAt : new Date(this.assignedAt)).toISOString()
       : undefined,

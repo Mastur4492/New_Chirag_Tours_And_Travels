@@ -19,6 +19,7 @@ import { auditLogRouter } from './auditLog.routes';
 import { uploadRouter } from './upload.routes';
 import { webhookRouter } from './webhook.routes';
 import { aiRouter } from './ai.routes';
+import { notificationRoutes } from './notification.routes';
 
 const router = Router();
 
@@ -33,6 +34,7 @@ router.use('/packages', tourPackageRouter);
 router.use('/taxes', taxConfigRouter);
 router.use('/customers', customerRouter);
 router.use('/leads', leadRouter);
+router.use('/notifications', notificationRoutes);
 router.use('/quotations', quotationRouter);
 router.use('/payments', paymentRouter);
 router.use('/bookings', bookingRouter);

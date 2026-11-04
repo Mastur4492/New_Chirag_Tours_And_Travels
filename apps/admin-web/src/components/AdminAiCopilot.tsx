@@ -22,6 +22,7 @@ import {
   Minimize2,
 } from 'lucide-react';
 import { getAdminToken } from '@/lib/api';
+import { AiMessageRenderer } from './AiMessageRenderer';
 
 interface ChatMessage {
   id: string;
@@ -42,8 +43,37 @@ const ADMIN_QUICK_CHIPS = [
   { icon: Briefcase, label: 'Lead Pipeline by Stage', prompt: 'Summarize our current sales pipeline: count of NEW, CONTACTED, QUOTED, and WON leads.' },
 ];
 
-export function AdminAiCopilot() {
-  const [isOpen, setIsOpen] = useState(false);
+export interface AdminAiCopilotProps {
+  isOpen?: boolean;
+  onToggle?: () => void;
+  onClose?: () => void;
+}
+
+export function AdminAiCopilot({
+  isOpen: controlledIsOpen,
+  onToggle: controlledOnToggle,
+  onClose: controlledOnClose,
+}: AdminAiCopilotProps = {}) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+
+  const handleToggle = () => {
+    if (controlledOnToggle) {
+      controlledOnToggle();
+    } else {
+      setInternalIsOpen(!internalIsOpen);
+    }
+    setIsMinimized(false);
+  };
+
+  const handleClose = () => {
+    if (controlledOnClose) {
+      controlledOnClose();
+    } else {
+      setInternalIsOpen(false);
+    }
+  };
+
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -55,6 +85,13 @@ export function AdminAiCopilot() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Global event listener for external triggers
+  useEffect(() => {
+    const handleToggleEvent = () => handleToggle();
+    window.addEventListener('toggle-admin-ai', handleToggleEvent);
+    return () => window.removeEventListener('toggle-admin-ai', handleToggleEvent);
+  }, [controlledOnToggle, internalIsOpen]);
 
   // Check admin auth state and restore session
   useEffect(() => {
@@ -179,7 +216,9 @@ export function AdminAiCopilot() {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const events = buffer.split('\n\n');
+        // Normalize CRLF to LF for reliable event chunking
+        const normalized = buffer.replace(/\r\n/g, '\n');
+        const events = normalized.split('\n\n');
         buffer = events.pop() || '';
 
         for (const eventStr of events) {
@@ -323,72 +362,6 @@ export function AdminAiCopilot() {
 
   return (
     <>
-      {/* Floating Trigger Button: Refined, sleek, and compact */}
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen(!isOpen);
-          setIsMinimized(false);
-        }}
-        aria-label="Toggle Admin AI Copilot"
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '7px',
-          padding: '7px 14px',
-          borderRadius: '9999px',
-          background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.95) 0%, rgba(49, 46, 129, 0.95) 50%, rgba(67, 56, 202, 0.95) 100%)',
-          backdropFilter: 'blur(8px)',
-          color: '#ffffff',
-          boxShadow: '0 4px 16px -2px rgba(67, 56, 202, 0.45), 0 2px 6px rgba(0,0,0,0.18)',
-          border: '1px solid rgba(165, 180, 252, 0.28)',
-          cursor: 'pointer',
-          fontWeight: 600,
-          fontSize: '12.5px',
-          letterSpacing: '0.01em',
-          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          transform: isOpen && !isMinimized ? 'scale(0.96)' : 'scale(1)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
-          e.currentTarget.style.boxShadow =
-            '0 8px 24px -2px rgba(67, 56, 202, 0.6), 0 3px 10px rgba(0,0,0,0.22)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = isOpen && !isMinimized ? 'scale(0.96)' : 'scale(1)';
-          e.currentTarget.style.boxShadow =
-            '0 4px 16px -2px rgba(67, 56, 202, 0.45), 0 2px 6px rgba(0,0,0,0.18)';
-        }}
-      >
-        <span
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Sparkles size={15} color="#a5b4fc" className="animate-spin-slow" />
-          <span
-            style={{
-              position: 'absolute',
-              top: '-2px',
-              right: '-2px',
-              width: '6px',
-              height: '6px',
-              backgroundColor: '#818cf8',
-              borderRadius: '50%',
-              boxShadow: '0 0 6px #818cf8',
-            }}
-          />
-        </span>
-        <span style={{ whiteSpace: 'nowrap' }}>Executive AI</span>
-      </button>
-
       {/* Floating Copilot Modal Window */}
       {isOpen && (
         <div
@@ -396,22 +369,22 @@ export function AdminAiCopilot() {
           aria-label="Admin Executive AI Copilot"
           style={{
             position: 'fixed',
-            bottom: isMinimized ? '74px' : '20px',
+            bottom: '20px',
             right: '20px',
-            width: isMaximized ? '840px' : '380px',
+            width: isMaximized ? '840px' : '400px',
             maxWidth: 'calc(100vw - 32px)',
             height: isMinimized
               ? '48px'
               : isMaximized
               ? 'min(720px, calc(100vh - 40px))'
-              : '525px',
+              : '540px',
             maxHeight: 'calc(100vh - 40px)',
             zIndex: 10000,
             borderRadius: '16px',
-            backgroundColor: '#090c17',
-            color: '#f8fafc',
-            border: '1px solid rgba(99, 102, 241, 0.35)',
-            boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255,255,255,0.06)',
+            backgroundColor: '#ffffff',
+            color: '#0f172a',
+            border: '1px solid #cbd5e1',
+            boxShadow: '0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.06)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -422,9 +395,9 @@ export function AdminAiCopilot() {
           {/* Header Bar */}
           <div
             style={{
-              padding: '9px 14px',
-              backgroundColor: '#101428',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+              padding: '10px 14px',
+              backgroundColor: '#ffffff',
+              borderBottom: '1px solid #e2e8f0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -434,37 +407,38 @@ export function AdminAiCopilot() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div
                 style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '7px',
-                  background: 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 2px 6px rgba(79, 70, 229, 0.4)',
+                  boxShadow: '0 2px 6px rgba(15, 118, 110, 0.3)',
                 }}
               >
-                <Bot size={15} color="#e0e7ff" />
+                <Bot size={16} color="#ffffff" />
               </div>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
                     Executive AI
                   </h3>
                   <span
                     style={{
                       fontSize: '9.5px',
-                      padding: '1px 5px',
+                      padding: '1.5px 6px',
                       borderRadius: '4px',
-                      backgroundColor: 'rgba(99, 102, 241, 0.22)',
-                      color: '#a5b4fc',
+                      backgroundColor: '#f0fdfa',
+                      color: '#0f766e',
+                      border: '1px solid #ccfbf1',
                       fontWeight: 600,
                     }}
                   >
                     Super Admin
                   </span>
                 </div>
-                <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8' }}>
+                <p style={{ margin: 0, fontSize: '10px', color: '#64748b' }}>
                   Financial Telemetry, Operations & Lead Reallocation
                 </p>
               </div>
@@ -479,7 +453,7 @@ export function AdminAiCopilot() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   padding: '5px',
                   cursor: 'pointer',
                   borderRadius: '5px',
@@ -488,12 +462,12 @@ export function AdminAiCopilot() {
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#0f172a';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.color = '#64748b';
                 }}
               >
                 <RotateCcw size={14} />
@@ -510,7 +484,7 @@ export function AdminAiCopilot() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   padding: '5px',
                   cursor: 'pointer',
                   borderRadius: '5px',
@@ -519,12 +493,12 @@ export function AdminAiCopilot() {
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#0f172a';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.color = '#64748b';
                 }}
               >
                 {isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -538,7 +512,7 @@ export function AdminAiCopilot() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   padding: '5px',
                   cursor: 'pointer',
                   borderRadius: '5px',
@@ -547,12 +521,12 @@ export function AdminAiCopilot() {
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#0f172a';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.color = '#64748b';
                 }}
               >
                 <Minus size={14} />
@@ -561,12 +535,12 @@ export function AdminAiCopilot() {
               {/* Close */}
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 title="Close Copilot"
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   padding: '5px',
                   cursor: 'pointer',
                   borderRadius: '5px',
@@ -575,12 +549,12 @@ export function AdminAiCopilot() {
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.18)';
-                  e.currentTarget.style.color = '#f87171';
+                  e.currentTarget.style.backgroundColor = '#fee2e2';
+                  e.currentTarget.style.color = '#ef4444';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.color = '#64748b';
                 }}
               >
                 <X size={15} />
@@ -600,7 +574,7 @@ export function AdminAiCopilot() {
                   padding: '24px',
                   textAlign: 'center',
                   gap: '12px',
-                  backgroundColor: '#060811',
+                  backgroundColor: '#f8fafc',
                 }}
               >
                 <div
@@ -608,19 +582,19 @@ export function AdminAiCopilot() {
                     width: '44px',
                     height: '44px',
                     borderRadius: '12px',
-                    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    backgroundColor: '#f0fdfa',
+                    border: '1px solid #ccfbf1',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <ShieldAlert size={22} color="#a5b4fc" />
+                  <ShieldAlert size={22} color="#0f766e" />
                 </div>
-                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>
+                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>
                   Admin Authentication Required
                 </h4>
-                <p style={{ margin: 0, fontSize: '11.5px', color: '#94a3b8', lineHeight: '1.5', maxWidth: '280px' }}>
+                <p style={{ margin: 0, fontSize: '11.5px', color: '#64748b', lineHeight: '1.5', maxWidth: '280px' }}>
                   Please sign in to your administrator account to query financial revenue trends, reassign leads, and inspect operations.
                 </p>
                 <a
@@ -628,13 +602,13 @@ export function AdminAiCopilot() {
                   style={{
                     marginTop: '8px',
                     padding: '8px 18px',
-                    backgroundColor: '#4f46e5',
+                    backgroundColor: '#0f766e',
                     color: '#ffffff',
                     borderRadius: '8px',
                     textDecoration: 'none',
                     fontSize: '12px',
                     fontWeight: 600,
-                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)',
+                    boxShadow: '0 4px 12px rgba(15, 118, 110, 0.3)',
                   }}
                 >
                   Sign In as Admin
@@ -651,27 +625,50 @@ export function AdminAiCopilot() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '12px',
-                  backgroundColor: '#060811',
+                  backgroundColor: '#f8fafc',
                 }}
               >
+                <style
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                  @keyframes nctDotPulse {
+                    0%, 80%, 100% {
+                      transform: scale(0.65);
+                      opacity: 0.35;
+                    }
+                    40% {
+                      transform: scale(1.2);
+                      opacity: 1;
+                    }
+                  }
+                  .nct-stream-dot {
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                    display: inline-block;
+                    animation: nctDotPulse 1.1s infinite ease-in-out;
+                  }
+                `,
+                  }}
+                />
                 {/* Intro / Welcome Message if empty */}
                 {messages.length === 0 && (
                   <div
                     style={{
-                      background: 'linear-gradient(145deg, rgba(20, 24, 46, 0.8) 0%, rgba(12, 16, 32, 0.95) 100%)',
-                      border: '1px solid rgba(99, 102, 241, 0.24)',
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '12px',
-                      padding: isMaximized ? '18px' : '12px',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+                      padding: isMaximized ? '18px' : '14px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '6px' }}>
-                      <ShieldAlert size={15} color="#a5b4fc" />
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#f1f5f9' }}>
+                      <ShieldAlert size={15} color="#0f766e" />
+                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>
                         Executive Intelligence & Operations Desk
                       </span>
                     </div>
-                    <p style={{ margin: 0, fontSize: '11px', lineHeight: '1.45', color: '#94a3b8' }}>
+                    <p style={{ margin: 0, fontSize: '11px', lineHeight: '1.45', color: '#475569' }}>
                       Cross-agency visibility: revenue trends, net profit margins, unassigned leads reallocation, and operational health with strict audit logging.
                     </p>
 
@@ -680,7 +677,7 @@ export function AdminAiCopilot() {
                         style={{
                           fontSize: '10px',
                           fontWeight: 700,
-                          color: '#818cf8',
+                          color: '#0f766e',
                           textTransform: 'uppercase',
                           letterSpacing: '0.05em',
                           display: 'block',
@@ -708,32 +705,37 @@ export function AdminAiCopilot() {
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 gap: '8px',
-                                padding: '7px 10px',
-                                borderRadius: '7px',
-                                backgroundColor: 'rgba(255, 255, 255, 0.035)',
-                                border: '1px solid rgba(255, 255, 255, 0.06)',
-                                color: '#e2e8f0',
+                                padding: '8px 11px',
+                                borderRadius: '8px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                color: '#1e293b',
                                 fontSize: '11.5px',
                                 textAlign: 'left',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(79, 70, 229, 0.18)';
-                                e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                                e.currentTarget.style.backgroundColor = '#f0fdfa';
+                                e.currentTarget.style.borderColor = '#14b8a6';
+                                e.currentTarget.style.color = '#0f766e';
                                 e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(15, 118, 110, 0.1)';
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.035)';
-                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                                e.currentTarget.style.backgroundColor = '#ffffff';
+                                e.currentTarget.style.borderColor = '#e2e8f0';
+                                e.currentTarget.style.color = '#1e293b';
                                 e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)';
                               }}
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                                <IconComp size={13} color="#818cf8" />
-                                <span style={{ fontWeight: 500 }}>{chip.label}</span>
+                                <IconComp size={13} color="#0d9488" />
+                                <span style={{ fontWeight: 600 }}>{chip.label}</span>
                               </div>
-                              <ChevronRight size={12} color="#64748b" />
+                              <ChevronRight size={12} color="#94a3b8" />
                             </button>
                           );
                         })}
@@ -743,8 +745,9 @@ export function AdminAiCopilot() {
                 )}
 
                 {/* Message stream */}
-                {messages.map((msg) => {
+                {messages.map((msg, idx) => {
                   const isUser = msg.role === 'user';
+                  const isLastAssistantMessage = !isUser && idx === messages.length - 1;
                   return (
                     <div
                       key={msg.id}
@@ -766,36 +769,43 @@ export function AdminAiCopilot() {
                         {/* Avatar */}
                         <div
                           style={{
-                            width: '22px',
-                            height: '22px',
+                            width: '24px',
+                            height: '24px',
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             flexShrink: 0,
-                            backgroundColor: isUser ? '#4f46e5' : '#1e1b4b',
-                            color: '#ffffff',
+                            backgroundColor: isUser ? '#0f766e' : '#f0fdfa',
+                            border: isUser ? 'none' : '1px solid #ccfbf1',
+                            color: isUser ? '#ffffff' : '#0f766e',
                             marginTop: '2px',
+                            boxShadow: isUser ? '0 2px 4px rgba(15, 118, 110, 0.25)' : 'none',
                           }}
                         >
-                          {isUser ? <User size={12} /> : <Bot size={12} color="#a5b4fc" />}
+                          {isUser ? <User size={12} /> : <Bot size={13} color="#0f766e" />}
                         </div>
 
                         {/* Bubble */}
                         <div
                           style={{
-                            padding: '8px 12px',
+                            padding: '9px 13px',
                             borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                            backgroundColor: isUser ? '#3730a3' : '#111628',
-                            color: isUser ? '#ffffff' : '#f1f5f9',
+                            backgroundColor: isUser ? '#0f766e' : '#ffffff',
+                            background: isUser
+                              ? 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)'
+                              : '#ffffff',
+                            color: isUser ? '#ffffff' : '#1e293b',
                             fontSize: '12px',
-                            lineHeight: '1.5',
+                            lineHeight: '1.55',
                             border: isUser
-                              ? '1px solid rgba(255, 255, 255, 0.15)'
-                              : '1px solid rgba(255, 255, 255, 0.08)',
-                            whiteSpace: 'pre-wrap',
+                              ? '1px solid #0f766e'
+                              : '1px solid #e2e8f0',
+                            whiteSpace: isUser ? 'pre-wrap' : 'normal',
                             wordBreak: 'break-word',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                            boxShadow: isUser
+                              ? '0 2px 6px rgba(15, 118, 110, 0.22)'
+                              : '0 2px 8px rgba(0,0,0,0.04)',
                           }}
                         >
                           {/* Tool Status Badge */}
@@ -805,23 +815,29 @@ export function AdminAiCopilot() {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '5px',
-                                padding: '3px 7px',
+                                padding: '3px 8px',
                                 borderRadius: '9999px',
                                 backgroundColor:
                                   msg.toolStatus.status === 'running'
-                                    ? 'rgba(245, 158, 11, 0.15)'
+                                    ? '#fffbeb'
                                     : msg.toolStatus.status === 'completed'
-                                    ? 'rgba(16, 185, 129, 0.15)'
-                                    : 'rgba(239, 68, 68, 0.15)',
+                                    ? '#ecfdf5'
+                                    : '#fef2f2',
+                                border:
+                                  msg.toolStatus.status === 'running'
+                                    ? '1px solid #fde68a'
+                                    : msg.toolStatus.status === 'completed'
+                                    ? '1px solid #a7f3d0'
+                                    : '1px solid #fecaca',
                                 color:
                                   msg.toolStatus.status === 'running'
-                                    ? '#fbbf24'
+                                    ? '#b45309'
                                     : msg.toolStatus.status === 'completed'
-                                    ? '#34d399'
-                                    : '#f87171',
+                                    ? '#047857'
+                                    : '#b91c1c',
                                 fontSize: '10.5px',
                                 fontWeight: 600,
-                                marginBottom: msg.text ? '6px' : '0',
+                                marginBottom: msg.text ? '8px' : '0',
                               }}
                             >
                               {msg.toolStatus.status === 'running' && (
@@ -834,25 +850,42 @@ export function AdminAiCopilot() {
                           )}
 
                           {msg.text ? (
-                            <div>{msg.text}</div>
-                          ) : (
-                            !msg.toolStatus && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#94a3b8' }}>
-                                <Loader2 size={13} className="animate-spin" />
-                                <span style={{ fontSize: '11.5px' }}>Querying executive engine...</span>
-                              </div>
+                            isUser ? (
+                              <div style={{ color: '#ffffff', fontWeight: 500 }}>{msg.text}</div>
+                            ) : (
+                              <AiMessageRenderer
+                                content={msg.text}
+                                theme="admin"
+                                isStreaming={isLoading && isLastAssistantMessage}
+                              />
                             )
-                          )}
+                          ) : isLoading && isLastAssistantMessage ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0f766e', marginTop: msg.toolStatus ? '6px' : '0' }}>
+                              <Loader2 size={12} className="animate-spin text-teal-600" />
+                              <span style={{ fontSize: '11.5px', fontWeight: 600 }}>
+                                {msg.toolStatus ? 'Analyzing CRM telemetry...' : 'Thinking'}
+                              </span>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                <span className="nct-stream-dot" style={{ backgroundColor: '#0d9488', animationDelay: '0s' }} />
+                                <span className="nct-stream-dot" style={{ backgroundColor: '#0d9488', animationDelay: '0.2s' }} />
+                                <span className="nct-stream-dot" style={{ backgroundColor: '#0d9488', animationDelay: '0.4s' }} />
+                              </span>
+                            </div>
+                          ) : !isLoading && !msg.text ? (
+                            <div style={{ color: '#64748b', fontSize: '11.5px', marginTop: msg.toolStatus ? '6px' : '0' }}>
+                              Administrative action executed successfully.
+                            </div>
+                          ) : null}
                         </div>
                       </div>
 
                       <span
                         style={{
                           fontSize: '9.5px',
-                          color: '#64748b',
+                          color: '#94a3b8',
                           marginTop: '3px',
-                          marginRight: isUser ? '28px' : '0',
-                          marginLeft: isUser ? '0' : '28px',
+                          marginRight: isUser ? '30px' : '0',
+                          marginLeft: isUser ? '0' : '30px',
                         }}
                       >
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -867,9 +900,9 @@ export function AdminAiCopilot() {
               {/* Input Footer */}
               <div
                 style={{
-                  padding: '9px 12px',
-                  backgroundColor: '#090c17',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.07)',
+                  padding: '10px 14px',
+                  backgroundColor: '#ffffff',
+                  borderTop: '1px solid #e2e8f0',
                 }}
               >
                 <form
@@ -877,7 +910,7 @@ export function AdminAiCopilot() {
                     e.preventDefault();
                     sendMessage();
                   }}
-                  style={{ display: 'flex', gap: '7px', alignItems: 'center' }}
+                  style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
                 >
                   <input
                     ref={inputRef}
@@ -889,26 +922,35 @@ export function AdminAiCopilot() {
                     style={{
                       flex: 1,
                       padding: '8px 12px',
-                      backgroundColor: '#13182b',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: '#f8fafc',
+                      border: '1.5px solid #cbd5e1',
                       borderRadius: '8px',
-                      color: '#f8fafc',
+                      color: '#0f172a',
                       fontSize: '12px',
                       outline: 'none',
-                      transition: 'border-color 0.15s ease',
+                      transition: 'border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease',
                     }}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = '#6366f1')}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = '#0d9488';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13, 148, 136, 0.14)';
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = '#cbd5e1';
+                      e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                    }}
                   />
 
                   <button
                     type="submit"
                     disabled={isLoading || !input.trim()}
                     style={{
-                      width: '32px',
-                      height: '32px',
+                      width: '34px',
+                      height: '34px',
                       borderRadius: '8px',
-                      backgroundColor: '#4f46e5',
+                      backgroundColor: '#0f766e',
+                      background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
                       color: '#ffffff',
                       border: 'none',
                       display: 'flex',
@@ -918,6 +960,7 @@ export function AdminAiCopilot() {
                       opacity: isLoading || !input.trim() ? 0.45 : 1,
                       transition: 'all 0.15s ease',
                       flexShrink: 0,
+                      boxShadow: '0 2px 6px rgba(15, 118, 110, 0.25)',
                     }}
                   >
                     {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={13} />}
@@ -928,14 +971,14 @@ export function AdminAiCopilot() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginTop: '5px',
+                    marginTop: '6px',
                     padding: '0 2px',
                   }}
                 >
                   <span style={{ fontSize: '9.5px', color: '#64748b' }}>
                     Executive Command • Strict Audit Ledger Active
                   </span>
-                  <span style={{ fontSize: '9.5px', color: '#818cf8', fontWeight: 600 }}>
+                  <span style={{ fontSize: '9.5px', color: '#0f766e', fontWeight: 700 }}>
                     Global Access
                   </span>
                 </div>

@@ -285,4 +285,28 @@ export async function apiPaginatedRequest<T>(
   }
 }
 
+export const notificationsApi = {
+  list: async (params: { limit?: number; skip?: number; unreadOnly?: boolean } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.limit) qs.append('limit', String(params.limit));
+    if (params.skip) qs.append('skip', String(params.skip));
+    if (params.unreadOnly) qs.append('unreadOnly', 'true');
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+    return apiRequest<{ notifications: any[]; total: number; unreadCount: number }>(
+      `notifications${query}`,
+      { skipCache: true }
+    );
+  },
+  getUnreadCount: async () => {
+    return apiRequest<{ unreadCount: number }>('notifications/unread-count', { skipCache: true });
+  },
+  markRead: async (id: string) => {
+    return apiRequest<any>(`notifications/${id}/read`, { method: 'PATCH' });
+  },
+  markAllRead: async () => {
+    return apiRequest<{ success: boolean }>('notifications/read-all', { method: 'PATCH' });
+  },
+};
+
+
 

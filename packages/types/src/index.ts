@@ -15,4 +15,5 @@ export * from './audit';
 export * from './taxConfig';
 export * from './analytics';
 export * from './operations';
+export * from './notification';
 

@@ -184,12 +184,13 @@ export default function CustomerQuotationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="quote-page-wrapper min-h-screen bg-slate-50 text-slate-800 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="quote-page-container max-w-5xl mx-auto space-y-6">
         {/* Top Branding Header */}
         {/* Official Company Letterhead Header */}
         <header
           id="quote-letterhead"
+          className="quote-letterhead-card quote-print-card"
           style={{
             background: 'linear-gradient(135deg, #082216 0%, #0d3824 50%, #124d32 100%)',
             borderRadius: 20,
@@ -413,7 +414,7 @@ export default function CustomerQuotationPage() {
             </section>
 
             {/* Hotels & Accommodation */}
-            <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <section className="quote-print-card hotel-card print-avoid-break bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-4">
                 <Building2 className="w-5 h-5 text-teal-600" />
                 Selected Accommodations & Meal Plans
@@ -446,7 +447,7 @@ export default function CustomerQuotationPage() {
             </section>
 
             {/* Transport & Sightseeing Vehicle */}
-            <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <section className="quote-print-card transport-card print-avoid-break bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-4">
                 <Car className="w-5 h-5 text-teal-600" />
                 Transportation & Logistics
@@ -473,7 +474,7 @@ export default function CustomerQuotationPage() {
             </section>
 
             {/* Inclusions, Exclusions & Terms */}
-            <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <section className="quote-print-card inclusions-card print-avoid-break bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-teal-600" />
                 Package Terms & Inclusions

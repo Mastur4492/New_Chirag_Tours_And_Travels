@@ -24,6 +24,7 @@ import { authApi, getAgentToken, getAgentUser, clearAgentSession } from '@/lib/a
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { PwaManager } from './PwaManager';
 import { AgentAiCopilot } from './AgentAiCopilot';
+import { NotificationBell } from './NotificationBell';
 
 interface AgentLayoutProps {
   children: React.ReactNode;
@@ -36,6 +37,7 @@ export function AgentLayout({ children }: AgentLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isAiCopilotOpen, setIsAiCopilotOpen] = useState(false);
 
   const isPublicPage = pathname === '/login' || pathname.startsWith('/quote/');
 
@@ -98,7 +100,11 @@ export function AgentLayout({ children }: AgentLayoutProps) {
     return (
       <main>
         {children}
-        <AgentAiCopilot />
+        <AgentAiCopilot
+          isOpen={isAiCopilotOpen}
+          onToggle={() => setIsAiCopilotOpen(!isAiCopilotOpen)}
+          onClose={() => setIsAiCopilotOpen(false)}
+        />
       </main>
     );
   }
@@ -348,8 +354,40 @@ export function AgentLayout({ children }: AgentLayoutProps) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* AI Agent Copilot Navbar Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsAiCopilotOpen(!isAiCopilotOpen)}
+              aria-label="Toggle Agent AI Copilot"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 13px',
+                borderRadius: 'var(--radius-full)',
+                background: isAiCopilotOpen
+                  ? 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)'
+                  : '#f0fdfa',
+                color: isAiCopilotOpen ? '#ffffff' : '#0f766e',
+                border: '1.5px solid',
+                borderColor: isAiCopilotOpen ? '#0d9488' : '#99f6e4',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: isAiCopilotOpen
+                  ? '0 2px 8px rgba(13, 148, 136, 0.35)'
+                  : '0 1px 3px rgba(13, 148, 136, 0.1)',
+              }}
+              title="Launch Agent AI Copilot"
+            >
+              <Sparkles size={14} className={isAiCopilotOpen ? 'animate-pulse' : ''} />
+              <span>AI Agent</span>
+            </button>
+
             <PwaManager />
+            <NotificationBell />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--accent-emerald-light)', borderRadius: 'var(--radius-full)', border: '1px solid var(--accent-emerald-border)' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-emerald)', display: 'inline-block' }} />
@@ -461,16 +499,21 @@ export function AgentLayout({ children }: AgentLayoutProps) {
         <main className="agent-main-content">
           {children}
         </main>
-        <AgentAiCopilot />
+        <AgentAiCopilot
+          isOpen={isAiCopilotOpen}
+          onToggle={() => setIsAiCopilotOpen(!isAiCopilotOpen)}
+          onClose={() => setIsAiCopilotOpen(false)}
+        />
       </div>
 
       <style jsx global>{`
         .agent-main-content {
           flex: 1;
-          padding: 24px;
-          max-width: 1400px;
+          padding: 20px 24px;
+          max-width: 100%;
           width: 100%;
-          margin: 0 auto;
+          min-width: 0;
+          box-sizing: border-box;
         }
         @keyframes spin {
           to { transform: rotate(360deg); }

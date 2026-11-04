@@ -1170,11 +1170,14 @@ export default function QuotationsPage() {
                         <option value="">No Hotel (Transport Only)</option>
                         {hotels
                           .filter((h) => !selectedDestinationId || h.destinationId === selectedDestinationId)
-                          .map((h) => (
-                            <option key={h.id} value={h.id}>
-                              {h.name} ({h.starRating}★)
-                            </option>
-                          ))}
+                          .map((h) => {
+                            const details = [h.city, h.starRating ? `${h.starRating}★` : null].filter(Boolean).join(' • ');
+                            return (
+                              <option key={h.id} value={h.id}>
+                                {h.name}{details ? ` (${details})` : ''}
+                              </option>
+                            );
+                          })}
                       </select>
                     </div>
 

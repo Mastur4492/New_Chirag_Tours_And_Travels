@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AiToolDefinition } from '../ai.types';
 import { leadService } from '../../lead.service';
+import { FindLeadsFilter } from '../../../repositories/lead.repository';
 import { AiAuditPolicy } from '../aiAuditPolicy';
 import { AppError } from '../../../utils/appError';
 
@@ -35,7 +36,7 @@ export const listMyLeadsTool: AiToolDefinition<z.infer<typeof ListMyLeadsSchema>
       throw AppError.forbidden('Only authenticated travel consultants or administrators can access agent leads.');
     }
 
-    const filter: any = { page: 1, limit: args.limit };
+    const filter: FindLeadsFilter = { limit: args.limit };
     if (args.status !== 'ALL') {
       filter.status = args.status;
     }
@@ -43,9 +44,29 @@ export const listMyLeadsTool: AiToolDefinition<z.infer<typeof ListMyLeadsSchema>
     // leadService automatically enforces queryFilter.assignedAgentId = actor.userId
     const { leads, total } = await leadService.listLeads(filter, context.actor);
 
+    let activeLeadsNotice = '';
+    let otherAssignedLeads: any[] = [];
+    if (leads.length === 0 && args.status !== 'ALL') {
+      const allRes = await leadService.listLeads({ limit: args.limit }, context.actor);
+      if (allRes.leads.length > 0) {
+        otherAssignedLeads = allRes.leads.map((l) => ({
+          id: l.id,
+          leadNumber: l.leadNumber,
+          customerName: l.customerName,
+          customerMobile: l.customerMobile,
+          destinationName: l.destinationName,
+          status: l.status,
+          nextFollowUpDate: l.nextFollowUpDate,
+        }));
+        activeLeadsNotice = `No leads found with status ${args.status}, but ${allRes.total} total active assigned leads exist across other pipeline stages.`;
+      }
+    }
+
     return {
       totalAssigned: total,
       returnedCount: leads.length,
+      requestedStatus: args.status,
+      notice: activeLeadsNotice || undefined,
       leads: leads.map((l) => ({
         id: l.id,
         leadNumber: l.leadNumber,
@@ -57,6 +78,7 @@ export const listMyLeadsTool: AiToolDefinition<z.infer<typeof ListMyLeadsSchema>
         nextFollowUpDate: l.nextFollowUpDate,
         followUpNotes: l.followUpNotes,
       })),
+      otherAssignedLeads: otherAssignedLeads.length > 0 ? otherAssignedLeads : undefined,
     };
   },
 };

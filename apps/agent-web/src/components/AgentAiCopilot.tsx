@@ -20,9 +20,9 @@ import {
   Maximize2,
   Minimize2,
   ChevronRight,
-  Sparkle,
 } from 'lucide-react';
 import { getAgentToken } from '@/lib/api';
+import { AiMessageRenderer } from './AiMessageRenderer';
 
 interface ChatMessage {
   id: string;
@@ -40,11 +40,40 @@ const AGENT_QUICK_CHIPS = [
   { icon: Clock, label: 'Pending Follow-ups', prompt: 'List all my assigned leads that have follow-ups due or overdue.' },
   { icon: TrendingUp, label: 'My Performance', prompt: 'Show my performance metrics and conversion rate for this month.' },
   { icon: Calculator, label: 'Kashmir Quote (4 Pax)', prompt: 'Calculate quotation for 5 Nights Kashmir, 4 adults, 2 Deluxe rooms with AC SUV.' },
-  { icon: UserCheck, label: 'New Assigned Leads', prompt: 'Show my latest 5 new leads requiring initial customer contact.' },
+  { icon: UserCheck, label: 'My Assigned Leads', prompt: 'Show my latest assigned leads that require customer contact or review.' },
 ];
 
-export function AgentAiCopilot() {
-  const [isOpen, setIsOpen] = useState(false);
+export interface AgentAiCopilotProps {
+  isOpen?: boolean;
+  onToggle?: () => void;
+  onClose?: () => void;
+}
+
+export function AgentAiCopilot({
+  isOpen: controlledIsOpen,
+  onToggle: controlledOnToggle,
+  onClose: controlledOnClose,
+}: AgentAiCopilotProps = {}) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+
+  const handleToggle = () => {
+    if (controlledOnToggle) {
+      controlledOnToggle();
+    } else {
+      setInternalIsOpen(!internalIsOpen);
+    }
+    setIsMinimized(false);
+  };
+
+  const handleClose = () => {
+    if (controlledOnClose) {
+      controlledOnClose();
+    } else {
+      setInternalIsOpen(false);
+    }
+  };
+
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -56,6 +85,13 @@ export function AgentAiCopilot() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Global event listener for external triggers
+  useEffect(() => {
+    const handleToggleEvent = () => handleToggle();
+    window.addEventListener('toggle-agent-ai', handleToggleEvent);
+    return () => window.removeEventListener('toggle-agent-ai', handleToggleEvent);
+  }, [controlledOnToggle, internalIsOpen]);
 
   // Check auth and restore session
   useEffect(() => {
@@ -180,7 +216,9 @@ export function AgentAiCopilot() {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const events = buffer.split('\n\n');
+        // Normalize CRLF to LF for reliable event chunking
+        const normalized = buffer.replace(/\r\n/g, '\n');
+        const events = normalized.split('\n\n');
         buffer = events.pop() || '';
 
         for (const eventStr of events) {
@@ -228,7 +266,7 @@ export function AgentAiCopilot() {
                         toolStatus: {
                           toolName: friendlyName,
                           status: 'running',
-                          details: 'Consulting CRM & pricing engine...',
+                          details: 'Executing CRM query & calculation...',
                         },
                       }
                     : msg
@@ -270,7 +308,7 @@ export function AgentAiCopilot() {
                   msg.id === assistantMessageId
                     ? {
                         ...msg,
-                        text: msg.text + `\n\n⚠️ *System Notice:* ${data.message || 'An error occurred.'}`,
+                        text: msg.text + `\n\n⚠️ *Notice:* ${data.message || 'An error occurred.'}`,
                         toolStatus: {
                           toolName: 'System',
                           status: 'error',
@@ -287,7 +325,7 @@ export function AgentAiCopilot() {
         }
       }
     } catch (err: any) {
-      console.error('Chat error:', err);
+      console.error('Agent Chat error:', err);
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantMessageId
@@ -295,7 +333,7 @@ export function AgentAiCopilot() {
                 ...msg,
                 text:
                   msg.text ||
-                  `Sorry, I encountered an issue connecting to the AI Copilot. Please check your network and try again.`,
+                  `Sorry, I encountered an issue connecting to the Agent AI Copilot. Please check your connection and try again.`,
               }
             : msg
         )
@@ -307,16 +345,12 @@ export function AgentAiCopilot() {
 
   const getFriendlyToolName = (toolName: string) => {
     switch (toolName) {
-      case 'listMyLeads':
+      case 'searchAssignedLeads':
         return 'Searching your CRM leads';
-      case 'getLeadDetails':
-        return 'Loading complete lead dossier';
       case 'updateFollowUpSchedule':
-        return 'Updating follow-up schedule';
-      case 'addLeadActivityNote':
-        return 'Logging note to customer activity timeline';
-      case 'getMyPerformanceMetrics':
-        return 'Computing conversion analytics';
+        return 'Scheduling customer follow-up';
+      case 'recordCallNote':
+        return 'Recording consultation notes';
       case 'calculateTripPrice':
         return 'Running official pricing engine';
       case 'searchTourPackages':
@@ -328,72 +362,6 @@ export function AgentAiCopilot() {
 
   return (
     <>
-      {/* Floating Trigger Button: Refined, sleek, and compact */}
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen(!isOpen);
-          setIsMinimized(false);
-        }}
-        aria-label="Toggle Agent AI Copilot"
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '7px',
-          padding: '7px 14px',
-          borderRadius: '9999px',
-          background: 'linear-gradient(135deg, rgba(13, 148, 136, 0.95) 0%, rgba(15, 118, 110, 0.95) 100%)',
-          backdropFilter: 'blur(8px)',
-          color: '#ffffff',
-          boxShadow: '0 4px 16px -2px rgba(13, 148, 136, 0.4), 0 2px 6px rgba(0,0,0,0.14)',
-          border: '1px solid rgba(255,255,255,0.22)',
-          cursor: 'pointer',
-          fontWeight: 600,
-          fontSize: '12.5px',
-          letterSpacing: '0.01em',
-          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          transform: isOpen && !isMinimized ? 'scale(0.96)' : 'scale(1)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
-          e.currentTarget.style.boxShadow =
-            '0 8px 24px -2px rgba(13, 148, 136, 0.55), 0 3px 10px rgba(0,0,0,0.2)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = isOpen && !isMinimized ? 'scale(0.96)' : 'scale(1)';
-          e.currentTarget.style.boxShadow =
-            '0 4px 16px -2px rgba(13, 148, 136, 0.4), 0 2px 6px rgba(0,0,0,0.14)';
-        }}
-      >
-        <span
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Sparkles size={15} className="animate-spin-slow" />
-          <span
-            style={{
-              position: 'absolute',
-              top: '-2px',
-              right: '-2px',
-              width: '6px',
-              height: '6px',
-              backgroundColor: '#34d399',
-              borderRadius: '50%',
-              boxShadow: '0 0 6px #34d399',
-            }}
-          />
-        </span>
-        <span style={{ whiteSpace: 'nowrap' }}>AI Agent</span>
-      </button>
-
       {/* Floating Copilot Modal Window */}
       {isOpen && (
         <div
@@ -401,22 +369,22 @@ export function AgentAiCopilot() {
           aria-label="Agent AI Copilot Window"
           style={{
             position: 'fixed',
-            bottom: isMinimized ? '74px' : '20px',
+            bottom: '20px',
             right: '20px',
-            width: isMaximized ? '820px' : '375px',
+            width: isMaximized ? '840px' : '400px',
             maxWidth: 'calc(100vw - 32px)',
             height: isMinimized
               ? '48px'
               : isMaximized
-              ? 'min(700px, calc(100vh - 40px))'
-              : '520px',
+              ? 'min(720px, calc(100vh - 40px))'
+              : '540px',
             maxHeight: 'calc(100vh - 40px)',
             zIndex: 10000,
             borderRadius: '16px',
-            backgroundColor: '#0c1322',
-            color: '#f8fafc',
-            border: '1px solid rgba(13, 148, 136, 0.35)',
-            boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.06)',
+            backgroundColor: '#ffffff',
+            color: '#0f172a',
+            border: '1px solid #cbd5e1',
+            boxShadow: '0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.06)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -427,9 +395,9 @@ export function AgentAiCopilot() {
           {/* Header Bar */}
           <div
             style={{
-              padding: '9px 14px',
-              backgroundColor: '#111b2f',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+              padding: '10px 14px',
+              backgroundColor: '#ffffff',
+              borderBottom: '1px solid #e2e8f0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -439,37 +407,38 @@ export function AgentAiCopilot() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div
                 style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '7px',
-                  background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 2px 6px rgba(13, 148, 136, 0.35)',
+                  boxShadow: '0 2px 6px rgba(15, 118, 110, 0.3)',
                 }}
               >
-                <Bot size={15} color="#ffffff" />
+                <Bot size={16} color="#ffffff" />
               </div>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
                     Agent Copilot
                   </h3>
                   <span
                     style={{
                       fontSize: '9.5px',
-                      padding: '1px 5px',
+                      padding: '1.5px 6px',
                       borderRadius: '4px',
-                      backgroundColor: 'rgba(13, 148, 136, 0.22)',
-                      color: '#2dd4bf',
+                      backgroundColor: '#f0fdfa',
+                      color: '#0f766e',
+                      border: '1px solid #ccfbf1',
                       fontWeight: 600,
                     }}
                   >
-                    RBAC
+                    Travel Desk
                   </span>
                 </div>
-                <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8' }}>
+                <p style={{ margin: 0, fontSize: '10px', color: '#64748b' }}>
                   Live CRM Actions & Pricing Engine
                 </p>
               </div>
@@ -484,7 +453,7 @@ export function AgentAiCopilot() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   padding: '5px',
                   cursor: 'pointer',
                   borderRadius: '5px',
@@ -493,12 +462,12 @@ export function AgentAiCopilot() {
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#0f172a';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.color = '#64748b';
                 }}
               >
                 <RotateCcw size={14} />
@@ -515,7 +484,7 @@ export function AgentAiCopilot() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   padding: '5px',
                   cursor: 'pointer',
                   borderRadius: '5px',
@@ -524,12 +493,12 @@ export function AgentAiCopilot() {
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#0f172a';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.color = '#64748b';
                 }}
               >
                 {isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -543,7 +512,7 @@ export function AgentAiCopilot() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   padding: '5px',
                   cursor: 'pointer',
                   borderRadius: '5px',
@@ -552,12 +521,12 @@ export function AgentAiCopilot() {
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#0f172a';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.color = '#64748b';
                 }}
               >
                 <Minus size={14} />
@@ -566,12 +535,12 @@ export function AgentAiCopilot() {
               {/* Close */}
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 title="Close Copilot"
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   padding: '5px',
                   cursor: 'pointer',
                   borderRadius: '5px',
@@ -580,12 +549,12 @@ export function AgentAiCopilot() {
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.18)';
-                  e.currentTarget.style.color = '#f87171';
+                  e.currentTarget.style.backgroundColor = '#fee2e2';
+                  e.currentTarget.style.color = '#ef4444';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.color = '#64748b';
                 }}
               >
                 <X size={15} />
@@ -605,7 +574,7 @@ export function AgentAiCopilot() {
                   padding: '24px',
                   textAlign: 'center',
                   gap: '12px',
-                  backgroundColor: '#080d19',
+                  backgroundColor: '#f8fafc',
                 }}
               >
                 <div
@@ -613,19 +582,19 @@ export function AgentAiCopilot() {
                     width: '44px',
                     height: '44px',
                     borderRadius: '12px',
-                    backgroundColor: 'rgba(13, 148, 136, 0.15)',
-                    border: '1px solid rgba(13, 148, 136, 0.3)',
+                    backgroundColor: '#f0fdfa',
+                    border: '1px solid #ccfbf1',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <UserCheck size={22} color="#2dd4bf" />
+                  <UserCheck size={22} color="#0f766e" />
                 </div>
-                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>
+                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>
                   Agent Authentication Required
                 </h4>
-                <p style={{ margin: 0, fontSize: '11.5px', color: '#94a3b8', lineHeight: '1.5', maxWidth: '280px' }}>
+                <p style={{ margin: 0, fontSize: '11.5px', color: '#64748b', lineHeight: '1.5', maxWidth: '280px' }}>
                   Please sign in to your agent account to query assigned leads, record call notes, and calculate verified quotes.
                 </p>
                 <a
@@ -633,13 +602,13 @@ export function AgentAiCopilot() {
                   style={{
                     marginTop: '8px',
                     padding: '8px 18px',
-                    backgroundColor: '#0d9488',
+                    backgroundColor: '#0f766e',
                     color: '#ffffff',
                     borderRadius: '8px',
                     textDecoration: 'none',
                     fontSize: '12px',
                     fontWeight: 600,
-                    boxShadow: '0 4px 12px rgba(13, 148, 136, 0.35)',
+                    boxShadow: '0 4px 12px rgba(15, 118, 110, 0.3)',
                   }}
                 >
                   Sign In to Agent Desk
@@ -656,27 +625,50 @@ export function AgentAiCopilot() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '12px',
-                  backgroundColor: '#080d19',
+                  backgroundColor: '#f8fafc',
                 }}
               >
+                <style
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                  @keyframes nctDotPulse {
+                    0%, 80%, 100% {
+                      transform: scale(0.65);
+                      opacity: 0.35;
+                    }
+                    40% {
+                      transform: scale(1.2);
+                      opacity: 1;
+                    }
+                  }
+                  .nct-stream-dot {
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                    display: inline-block;
+                    animation: nctDotPulse 1.1s infinite ease-in-out;
+                  }
+                `,
+                  }}
+                />
                 {/* Intro / Welcome Message if empty */}
                 {messages.length === 0 && (
                   <div
                     style={{
-                      background: 'linear-gradient(145deg, rgba(16, 26, 45, 0.8) 0%, rgba(10, 16, 30, 0.95) 100%)',
-                      border: '1px solid rgba(13, 148, 136, 0.22)',
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '12px',
-                      padding: isMaximized ? '18px' : '12px',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+                      padding: isMaximized ? '18px' : '14px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '6px' }}>
-                      <ShieldCheck size={15} color="#2dd4bf" />
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#f1f5f9' }}>
+                      <ShieldCheck size={15} color="#0f766e" />
+                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>
                         Welcome to Agent AI Desk
                       </span>
                     </div>
-                    <p style={{ margin: 0, fontSize: '11px', lineHeight: '1.45', color: '#94a3b8' }}>
+                    <p style={{ margin: 0, fontSize: '11px', lineHeight: '1.45', color: '#475569' }}>
                       I query your assigned leads, update follow-ups, calculate instant package quotes with the official pricing engine, and record client call notes.
                     </p>
 
@@ -685,7 +677,7 @@ export function AgentAiCopilot() {
                         style={{
                           fontSize: '10px',
                           fontWeight: 700,
-                          color: '#2dd4bf',
+                          color: '#0f766e',
                           textTransform: 'uppercase',
                           letterSpacing: '0.05em',
                           display: 'block',
@@ -713,32 +705,37 @@ export function AgentAiCopilot() {
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 gap: '8px',
-                                padding: '7px 10px',
-                                borderRadius: '7px',
-                                backgroundColor: 'rgba(255, 255, 255, 0.035)',
-                                border: '1px solid rgba(255, 255, 255, 0.06)',
-                                color: '#e2e8f0',
+                                padding: '8px 11px',
+                                borderRadius: '8px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                color: '#1e293b',
                                 fontSize: '11.5px',
                                 textAlign: 'left',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(13, 148, 136, 0.16)';
-                                e.currentTarget.style.borderColor = 'rgba(13, 148, 136, 0.4)';
+                                e.currentTarget.style.backgroundColor = '#f0fdfa';
+                                e.currentTarget.style.borderColor = '#14b8a6';
+                                e.currentTarget.style.color = '#0f766e';
                                 e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(15, 118, 110, 0.1)';
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.035)';
-                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                                e.currentTarget.style.backgroundColor = '#ffffff';
+                                e.currentTarget.style.borderColor = '#e2e8f0';
+                                e.currentTarget.style.color = '#1e293b';
                                 e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)';
                               }}
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                                <IconComp size={13} color="#2dd4bf" />
-                                <span style={{ fontWeight: 500 }}>{chip.label}</span>
+                                <IconComp size={13} color="#0d9488" />
+                                <span style={{ fontWeight: 600 }}>{chip.label}</span>
                               </div>
-                              <ChevronRight size={12} color="#64748b" />
+                              <ChevronRight size={12} color="#94a3b8" />
                             </button>
                           );
                         })}
@@ -748,8 +745,9 @@ export function AgentAiCopilot() {
                 )}
 
                 {/* Message stream */}
-                {messages.map((msg) => {
+                {messages.map((msg, idx) => {
                   const isUser = msg.role === 'user';
+                  const isLastAssistantMessage = !isUser && idx === messages.length - 1;
                   return (
                     <div
                       key={msg.id}
@@ -771,36 +769,43 @@ export function AgentAiCopilot() {
                         {/* Avatar */}
                         <div
                           style={{
-                            width: '22px',
-                            height: '22px',
+                            width: '24px',
+                            height: '24px',
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             flexShrink: 0,
-                            backgroundColor: isUser ? '#0d9488' : '#1e293b',
-                            color: '#ffffff',
+                            backgroundColor: isUser ? '#0f766e' : '#f0fdfa',
+                            border: isUser ? 'none' : '1px solid #ccfbf1',
+                            color: isUser ? '#ffffff' : '#0f766e',
                             marginTop: '2px',
+                            boxShadow: isUser ? '0 2px 4px rgba(15, 118, 110, 0.25)' : 'none',
                           }}
                         >
-                          {isUser ? <User size={12} /> : <Bot size={12} color="#2dd4bf" />}
+                          {isUser ? <User size={12} /> : <Bot size={13} color="#0f766e" />}
                         </div>
 
                         {/* Bubble */}
                         <div
                           style={{
-                            padding: '8px 12px',
+                            padding: '9px 13px',
                             borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                            backgroundColor: isUser ? '#0f766e' : '#141e33',
-                            color: isUser ? '#ffffff' : '#f1f5f9',
+                            backgroundColor: isUser ? '#0f766e' : '#ffffff',
+                            background: isUser
+                              ? 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)'
+                              : '#ffffff',
+                            color: isUser ? '#ffffff' : '#1e293b',
                             fontSize: '12px',
-                            lineHeight: '1.5',
+                            lineHeight: '1.55',
                             border: isUser
-                              ? '1px solid rgba(255, 255, 255, 0.15)'
-                              : '1px solid rgba(255, 255, 255, 0.08)',
-                            whiteSpace: 'pre-wrap',
+                              ? '1px solid #0f766e'
+                              : '1px solid #e2e8f0',
+                            whiteSpace: isUser ? 'pre-wrap' : 'normal',
                             wordBreak: 'break-word',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                            boxShadow: isUser
+                              ? '0 2px 6px rgba(15, 118, 110, 0.22)'
+                              : '0 2px 8px rgba(0,0,0,0.04)',
                           }}
                         >
                           {/* Tool Status Badge */}
@@ -810,23 +815,29 @@ export function AgentAiCopilot() {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '5px',
-                                padding: '3px 7px',
+                                padding: '3px 8px',
                                 borderRadius: '9999px',
                                 backgroundColor:
                                   msg.toolStatus.status === 'running'
-                                    ? 'rgba(245, 158, 11, 0.15)'
+                                    ? '#fffbeb'
                                     : msg.toolStatus.status === 'completed'
-                                    ? 'rgba(16, 185, 129, 0.15)'
-                                    : 'rgba(239, 68, 68, 0.15)',
+                                    ? '#ecfdf5'
+                                    : '#fef2f2',
+                                border:
+                                  msg.toolStatus.status === 'running'
+                                    ? '1px solid #fde68a'
+                                    : msg.toolStatus.status === 'completed'
+                                    ? '1px solid #a7f3d0'
+                                    : '1px solid #fecaca',
                                 color:
                                   msg.toolStatus.status === 'running'
-                                    ? '#fbbf24'
+                                    ? '#b45309'
                                     : msg.toolStatus.status === 'completed'
-                                    ? '#34d399'
-                                    : '#f87171',
+                                    ? '#047857'
+                                    : '#b91c1c',
                                 fontSize: '10.5px',
                                 fontWeight: 600,
-                                marginBottom: msg.text ? '6px' : '0',
+                                marginBottom: msg.text ? '8px' : '0',
                               }}
                             >
                               {msg.toolStatus.status === 'running' && (
@@ -839,25 +850,42 @@ export function AgentAiCopilot() {
                           )}
 
                           {msg.text ? (
-                            <div>{msg.text}</div>
-                          ) : (
-                            !msg.toolStatus && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#94a3b8' }}>
-                                <Loader2 size={13} className="animate-spin" />
-                                <span style={{ fontSize: '11.5px' }}>Thinking...</span>
-                              </div>
+                            isUser ? (
+                              <div style={{ color: '#ffffff', fontWeight: 500 }}>{msg.text}</div>
+                            ) : (
+                              <AiMessageRenderer
+                                content={msg.text}
+                                theme="agent"
+                                isStreaming={isLoading && isLastAssistantMessage}
+                              />
                             )
-                          )}
+                          ) : isLoading && isLastAssistantMessage ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0f766e', marginTop: msg.toolStatus ? '6px' : '0' }}>
+                              <Loader2 size={12} className="animate-spin text-teal-600" />
+                              <span style={{ fontSize: '11.5px', fontWeight: 600 }}>
+                                {msg.toolStatus ? 'Analyzing CRM results...' : 'Thinking'}
+                              </span>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                <span className="nct-stream-dot" style={{ backgroundColor: '#0d9488', animationDelay: '0s' }} />
+                                <span className="nct-stream-dot" style={{ backgroundColor: '#0d9488', animationDelay: '0.2s' }} />
+                                <span className="nct-stream-dot" style={{ backgroundColor: '#0d9488', animationDelay: '0.4s' }} />
+                              </span>
+                            </div>
+                          ) : !isLoading && !msg.text ? (
+                            <div style={{ color: '#64748b', fontSize: '11.5px', marginTop: msg.toolStatus ? '6px' : '0' }}>
+                              CRM action executed successfully.
+                            </div>
+                          ) : null}
                         </div>
                       </div>
 
                       <span
                         style={{
                           fontSize: '9.5px',
-                          color: '#64748b',
+                          color: '#94a3b8',
                           marginTop: '3px',
-                          marginRight: isUser ? '28px' : '0',
-                          marginLeft: isUser ? '0' : '28px',
+                          marginRight: isUser ? '30px' : '0',
+                          marginLeft: isUser ? '0' : '30px',
                         }}
                       >
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -872,9 +900,9 @@ export function AgentAiCopilot() {
               {/* Input Footer */}
               <div
                 style={{
-                  padding: '9px 12px',
-                  backgroundColor: '#0c1322',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.07)',
+                  padding: '10px 14px',
+                  backgroundColor: '#ffffff',
+                  borderTop: '1px solid #e2e8f0',
                 }}
               >
                 <form
@@ -882,7 +910,7 @@ export function AgentAiCopilot() {
                     e.preventDefault();
                     sendMessage();
                   }}
-                  style={{ display: 'flex', gap: '7px', alignItems: 'center' }}
+                  style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
                 >
                   <input
                     ref={inputRef}
@@ -894,26 +922,35 @@ export function AgentAiCopilot() {
                     style={{
                       flex: 1,
                       padding: '8px 12px',
-                      backgroundColor: '#162035',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: '#f8fafc',
+                      border: '1.5px solid #cbd5e1',
                       borderRadius: '8px',
-                      color: '#f8fafc',
+                      color: '#0f172a',
                       fontSize: '12px',
                       outline: 'none',
-                      transition: 'border-color 0.15s ease',
+                      transition: 'border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease',
                     }}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = '#0d9488')}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = '#0d9488';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13, 148, 136, 0.14)';
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = '#cbd5e1';
+                      e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.backgroundColor = '#f8fafc';
+                    }}
                   />
 
                   <button
                     type="submit"
                     disabled={isLoading || !input.trim()}
                     style={{
-                      width: '32px',
-                      height: '32px',
+                      width: '34px',
+                      height: '34px',
                       borderRadius: '8px',
-                      backgroundColor: '#0d9488',
+                      backgroundColor: '#0f766e',
+                      background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
                       color: '#ffffff',
                       border: 'none',
                       display: 'flex',
@@ -923,6 +960,7 @@ export function AgentAiCopilot() {
                       opacity: isLoading || !input.trim() ? 0.45 : 1,
                       transition: 'all 0.15s ease',
                       flexShrink: 0,
+                      boxShadow: '0 2px 6px rgba(15, 118, 110, 0.25)',
                     }}
                   >
                     {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={13} />}
@@ -933,14 +971,14 @@ export function AgentAiCopilot() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginTop: '5px',
+                    marginTop: '6px',
                     padding: '0 2px',
                   }}
                 >
                   <span style={{ fontSize: '9.5px', color: '#64748b' }}>
                     Agent Desk • Live Pricing Sync
                   </span>
-                  <span style={{ fontSize: '9.5px', color: '#2dd4bf', fontWeight: 600 }}>
+                  <span style={{ fontSize: '9.5px', color: '#0f766e', fontWeight: 700 }}>
                     RBAC Protected
                   </span>
                 </div>

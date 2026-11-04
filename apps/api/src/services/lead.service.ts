@@ -23,6 +23,7 @@ import { auditLogRepository } from '../repositories/auditLog.repository';
 import { getNextSequenceValue } from '../models/sequence.model';
 import { emailService } from './email.service';
 import { whatsappService } from './whatsapp.service';
+import { notificationService } from './notification.service';
 import { AppError } from '../utils/appError';
 
 export interface ActorContext {
@@ -141,6 +142,48 @@ export class LeadService {
       newState: created.toDto() as unknown as Record<string, unknown>,
     });
 
+    if (assignedAgentId && actor.role === 'ADMIN') {
+      userRepository.findById(assignedAgentId.toString()).then((assignedUser) => {
+        if (assignedUser) {
+          notificationService.createNotification({
+            recipientUserId: assignedUser._id.toString(),
+            recipientRole: 'AGENT',
+            type: 'LEAD_ASSIGNED',
+            title: `🎯 New Enquiry Assigned: ${created.leadNumber}`,
+            message: `Admin assigned new enquiry ${created.leadNumber} (${customer.fullName}) for ${destination.name} to you.`,
+            link: `/leads?openLead=${created._id.toString()}`,
+            entityType: 'LEAD',
+            entityId: created._id.toString(),
+            metadata: {
+              leadNumber: created.leadNumber,
+              customerName: customer.fullName,
+              customerMobile: customer.mobile,
+              destinationName: destination.name,
+              assignedBy: 'Admin Desk',
+            },
+          }).catch((err) => console.error('[LeadService] Notification error:', err));
+
+          if (assignedUser.mobile) {
+            whatsappService.sendLeadAssignmentAlert({
+              agentMobile: assignedUser.mobile,
+              agentName: assignedUser.fullName,
+              leadNumber: created.leadNumber,
+              customerName: customer.fullName,
+              customerMobile: customer.mobile,
+              customerEmail: customer.email,
+              destinationName: destination.name,
+              durationNights: created.durationNights,
+              numberOfAdults: created.numberOfAdults,
+              numberOfChildren: created.numberOfChildren,
+              travelDate: created.tentativeTravelDate ? new Date(created.tentativeTravelDate).toISOString().split('T')[0] : undefined,
+              specialRequirements: created.specialRequirements,
+              assignedByName: 'Admin Desk',
+            }).catch((err) => console.error('[LeadService] WhatsApp assignment error:', err));
+          }
+        }
+      }).catch((err) => console.error('[LeadService] User lookup error:', err));
+    }
+
     return created.toDto();
   }
 
@@ -257,6 +300,32 @@ export class LeadService {
         previousState: { status: previousState.status },
         newState: { status: updated.status, lostReason: updated.lostReason },
       });
+
+      if (updated.assignedAgentId) {
+        const agentId = (updated.assignedAgentId as any)._id?.toString() || updated.assignedAgentId.toString();
+        if (actor.role === 'ADMIN') {
+          notificationService.createNotification({
+            recipientUserId: agentId,
+            recipientRole: 'AGENT',
+            type: 'LEAD_STATUS_CHANGED',
+            title: `Stage Changed: ${updated.leadNumber}`,
+            message: `Admin updated enquiry ${updated.leadNumber} (${previousState.customerName || 'Customer'}) stage to ${updated.status}.`,
+            link: `/leads?openLead=${id}`,
+            entityType: 'LEAD',
+            entityId: id,
+          }).catch((err) => console.error('[LeadService] Notification error:', err));
+        } else {
+          notificationService.createNotification({
+            recipientRole: 'ADMIN',
+            type: 'LEAD_STATUS_CHANGED',
+            title: `Stage Changed: ${updated.leadNumber}`,
+            message: `${user?.fullName || 'Agent'} updated enquiry ${updated.leadNumber} (${previousState.customerName || 'Customer'}) stage to ${updated.status}.`,
+            link: `/leads?openLead=${id}`,
+            entityType: 'LEAD',
+            entityId: id,
+          }).catch((err) => console.error('[LeadService] Notification error:', err));
+        }
+      }
     }
 
     return updated.toDto();
@@ -322,6 +391,70 @@ export class LeadService {
         assignedBy: actor.userId,
       },
     });
+
+    const customerDoc = (lead.customerId as any);
+    const destinationDoc = (lead.destinationId as any);
+
+    // In-app notification for assigned Agent
+    notificationService
+      .createNotification({
+        recipientUserId: targetAgent._id.toString(),
+        recipientRole: 'AGENT',
+        type: 'LEAD_ASSIGNED',
+        title: `🎯 New Enquiry Assigned: ${lead.leadNumber}`,
+        message: `${adminUser?.fullName || 'Admin'} assigned enquiry ${lead.leadNumber} (${customerDoc?.fullName || 'Traveler'}) for ${destinationDoc?.name || 'Tour'} (${lead.durationNights || 1}N, ${lead.numberOfAdults}A) to you.`,
+        link: `/leads?openLead=${lead._id.toString()}`,
+        entityType: 'LEAD',
+        entityId: lead._id.toString(),
+        metadata: {
+          leadNumber: lead.leadNumber,
+          customerName: customerDoc?.fullName,
+          customerMobile: customerDoc?.mobile,
+          destinationName: destinationDoc?.name,
+          assignedBy: adminUser?.fullName || 'Admin',
+        },
+      })
+      .catch((err) => {
+        console.error('[LeadService] Failed to create in-app notification for agent:', err);
+      });
+
+    // In-app notification for Admin team
+    notificationService
+      .createNotification({
+        recipientRole: 'ADMIN',
+        type: 'LEAD_ASSIGNED',
+        title: `Enquiry Reassigned: ${lead.leadNumber}`,
+        message: `Enquiry ${lead.leadNumber} (${customerDoc?.fullName || 'Traveler'}) assigned to ${targetAgent.fullName} by ${adminUser?.fullName || 'Admin'}.`,
+        link: `/leads?openLead=${lead._id.toString()}`,
+        entityType: 'LEAD',
+        entityId: lead._id.toString(),
+      })
+      .catch((err) => {
+        console.error('[LeadService] Failed to create admin notification:', err);
+      });
+
+    // WhatsApp alert directly to target agent with full traveler specifications
+    if (targetAgent.mobile) {
+      whatsappService
+        .sendLeadAssignmentAlert({
+          agentMobile: targetAgent.mobile,
+          agentName: targetAgent.fullName,
+          leadNumber: lead.leadNumber,
+          customerName: customerDoc?.fullName || 'Traveler',
+          customerMobile: customerDoc?.mobile || 'N/A',
+          customerEmail: customerDoc?.email,
+          destinationName: destinationDoc?.name || 'Selected Holiday Circuit',
+          durationNights: lead.durationNights,
+          numberOfAdults: lead.numberOfAdults,
+          numberOfChildren: lead.numberOfChildren,
+          travelDate: lead.tentativeTravelDate ? new Date(lead.tentativeTravelDate).toISOString().split('T')[0] : undefined,
+          specialRequirements: lead.specialRequirements,
+          assignedByName: adminUser?.fullName || 'Admin',
+        })
+        .catch((err) => {
+          console.error('[LeadService] Failed to send WhatsApp alert to agent:', err);
+        });
+    }
 
     return updated.toDto();
   }
@@ -596,6 +729,28 @@ export class LeadService {
       )
       .catch((err) => {
         console.error('[LeadService] Failed to send WhatsApp admin alert:', err);
+      });
+
+    // 9. Fire In-App Notification for Admin Portal
+    notificationService
+      .createNotification({
+        recipientRole: 'ADMIN',
+        type: 'NEW_CUSTOMER_ENQUIRY',
+        title: `🔥 New Customer Enquiry: ${customer.fullName}`,
+        message: `${customer.fullName} submitted an online enquiry for ${destination.name} (${input.durationNights || 1}N, ${input.numberOfAdults || 2} Adults). Mobile: ${customer.mobile}`,
+        link: `/leads?openLead=${lead._id.toString()}`,
+        entityType: 'LEAD',
+        entityId: lead._id.toString(),
+        metadata: {
+          leadNumber: lead.leadNumber,
+          customerName: customer.fullName,
+          customerMobile: customer.mobile,
+          destinationName: destination.name,
+          durationNights: input.durationNights,
+        },
+      })
+      .catch((err) => {
+        console.error('[LeadService] Failed to create in-app notification for admin:', err);
       });
 
     return {

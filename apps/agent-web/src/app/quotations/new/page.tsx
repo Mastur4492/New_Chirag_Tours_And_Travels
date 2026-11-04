@@ -781,11 +781,14 @@ function QuotationBuilderContent() {
                         className="input"
                         style={{ width: '100%', fontSize: '0.85rem' }}
                       >
-                        {hotels.map((h) => (
-                          <option key={h.id} value={h.id}>
-                            {h.name} ({h.city})
-                          </option>
-                        ))}
+                        {hotels.map((h) => {
+                          const details = [h.city, h.starRating ? `${h.starRating}★` : null].filter(Boolean).join(' • ');
+                          return (
+                            <option key={h.id} value={h.id}>
+                              {h.name}{details ? ` (${details})` : ''}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
 

@@ -327,7 +327,7 @@ BookingSchema.methods.toDto = function (role?: UserRole): BookingDto {
     leadId: leadIdStr,
     customerId: customerIdStr,
     customerName: custObj?.fullName,
-    customerPhone: custObj?.phone,
+    customerPhone: custObj?.mobile || custObj?.phone,
     customerEmail: custObj?.email,
     assignedAgentId: assignedAgentIdStr,
     assignedAgentName: agentObj?.fullName,

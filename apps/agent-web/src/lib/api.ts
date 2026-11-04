@@ -469,3 +469,34 @@ export const inventoryApi = {
     return apiFetch<any[]>('/taxes');
   },
 };
+
+export const notificationsApi = {
+  async list(params: { limit?: number; skip?: number; unreadOnly?: boolean } = {}) {
+    const qs = new URLSearchParams();
+    if (params.limit) qs.append('limit', String(params.limit));
+    if (params.skip) qs.append('skip', String(params.skip));
+    if (params.unreadOnly) qs.append('unreadOnly', 'true');
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+    const res = await apiFetch<{ notifications: any[]; total: number; unreadCount: number }>(
+      `/notifications${query}`,
+      { skipCache: true }
+    );
+    return res.data;
+  },
+
+  async getUnreadCount() {
+    const res = await apiFetch<{ unreadCount: number }>('/notifications/unread-count', { skipCache: true });
+    return res.data;
+  },
+
+  async markRead(id: string) {
+    const res = await apiFetch<any>(`/notifications/${id}/read`, { method: 'PATCH' });
+    return res.data;
+  },
+
+  async markAllRead() {
+    const res = await apiFetch<{ success: boolean }>('/notifications/read-all', { method: 'PATCH' });
+    return res.data;
+  },
+};
+

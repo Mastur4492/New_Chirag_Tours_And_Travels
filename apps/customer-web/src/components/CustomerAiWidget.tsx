@@ -21,6 +21,7 @@ import {
   ChevronRight,
   ShieldCheck,
 } from 'lucide-react';
+import { AiMessageRenderer } from './AiMessageRenderer';
 
 interface ChatMessage {
   id: string;
@@ -573,6 +574,29 @@ export function CustomerAiWidget() {
                   backgroundColor: '#03140c',
                 }}
               >
+                <style
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                  @keyframes nctDotPulse {
+                    0%, 80%, 100% {
+                      transform: scale(0.65);
+                      opacity: 0.35;
+                    }
+                    40% {
+                      transform: scale(1.2);
+                      opacity: 1;
+                    }
+                  }
+                  .nct-stream-dot {
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                    display: inline-block;
+                    animation: nctDotPulse 1.1s infinite ease-in-out;
+                  }
+                `,
+                  }}
+                />
                 {/* Intro / Welcome Message if empty */}
                 {messages.length === 0 && (
                   <div
@@ -587,7 +611,7 @@ export function CustomerAiWidget() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '6px' }}>
                       <ShieldCheck size={15} color="#34d399" />
                       <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#f1f5f9' }}>
-                        Namaste! Welcome to New Chirag Tours
+                        Hello! Welcome to New Chirag Tours
                       </span>
                     </div>
                     <p style={{ margin: 0, fontSize: '11px', lineHeight: '1.45', color: '#a7f3d0', opacity: 0.85 }}>
@@ -662,8 +686,9 @@ export function CustomerAiWidget() {
                 )}
 
                 {/* Message stream */}
-                {messages.map((msg) => {
+                {messages.map((msg, idx) => {
                   const isUser = msg.role === 'user';
+                  const isLastAssistantMessage = !isUser && idx === messages.length - 1;
                   return (
                     <div
                       key={msg.id}
@@ -712,7 +737,7 @@ export function CustomerAiWidget() {
                             border: isUser
                               ? '1px solid rgba(255, 255, 255, 0.18)'
                               : '1px solid rgba(16, 185, 129, 0.2)',
-                            whiteSpace: 'pre-wrap',
+                            whiteSpace: isUser ? 'pre-wrap' : 'normal',
                             wordBreak: 'break-word',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
                           }}
@@ -753,12 +778,25 @@ export function CustomerAiWidget() {
                           )}
 
                           {msg.text ? (
-                            <div>{msg.text}</div>
+                            isUser ? (
+                              <div>{msg.text}</div>
+                            ) : (
+                              <AiMessageRenderer
+                                content={msg.text}
+                                theme="customer"
+                                isStreaming={isLoading && isLastAssistantMessage}
+                              />
+                            )
                           ) : (
                             !msg.toolStatus && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#a7f3d0' }}>
-                                <Loader2 size={13} className="animate-spin" />
-                                <span style={{ fontSize: '11.5px' }}>Consulting travel catalog...</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#a7f3d0' }}>
+                                <Loader2 size={12} className="animate-spin" />
+                                <span style={{ fontSize: '11.5px', fontWeight: 500 }}>Generating response</span>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                  <span className="nct-stream-dot" style={{ backgroundColor: '#34d399', animationDelay: '0s' }} />
+                                  <span className="nct-stream-dot" style={{ backgroundColor: '#34d399', animationDelay: '0.2s' }} />
+                                  <span className="nct-stream-dot" style={{ backgroundColor: '#34d399', animationDelay: '0.4s' }} />
+                                </span>
                               </div>
                             )
                           )}

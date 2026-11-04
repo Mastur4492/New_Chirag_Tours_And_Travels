@@ -184,34 +184,91 @@ export default function CustomerQuotationPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', padding: '32px 16px' }}>
-      <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
-        {/* Official Company Letterhead Header */}
+    <div className="quote-page-wrapper" style={{ padding: '32px 16px 80px', background: '#F8FAFC', minHeight: '100vh' }}>
+      <div className="quote-page-container container-narrow" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* On-screen Print / Download Quick Actions Banner */}
+        <div
+          className="no-print"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#FFFFFF',
+            padding: '12px 20px',
+            borderRadius: 12,
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 8, background: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>
+                Official Travel Proposal & Quotation
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
+                Directly issued by New Chirag Tours & Travels • Verified hotel allotments & dedicated transport
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '9px 18px',
+                borderRadius: 9999,
+                background: '#059669',
+                color: '#FFFFFF',
+                fontWeight: 800,
+                fontSize: '0.86rem',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(5, 150, 105, 0.25)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Printer size={16} />
+              <span>Download / Print Official PDF</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 1. Official Company Letterhead Header */}
         <header
           id="quote-letterhead"
+          className="quote-letterhead-card quote-print-card"
           style={{
-            background: 'linear-gradient(135deg, #082216 0%, #0d3824 50%, #124d32 100%)',
-            borderRadius: 20,
-            border: '2px solid #059669',
-            padding: '28px 32px',
-            boxShadow: '0 8px 24px rgba(8, 34, 22, 0.15)',
+            background: 'linear-gradient(135deg, #04140D 0%, #062317 55%, #0A3722 100%)',
+            borderRadius: 16,
+            border: '2px solid #10B981',
+            padding: '20px 24px',
+            boxShadow: '0 6px 20px rgba(8, 34, 22, 0.12)',
             color: '#FFFFFF',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: 20,
+            gap: 16,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div
               style={{
-                width: 68,
-                height: 68,
-                borderRadius: 16,
+                width: 58,
+                height: 58,
+                borderRadius: 12,
                 background: '#FFFFFF',
                 padding: 4,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                boxShadow: '0 3px 10px rgba(0,0,0,0.18)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -227,7 +284,7 @@ export default function CustomerQuotationPage() {
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.01em' }}>
+                <span style={{ fontSize: '1.35rem', fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.01em' }}>
                   {COMPANY_BRANDING.name}
                 </span>
                 <span
@@ -237,172 +294,207 @@ export default function CustomerQuotationPage() {
                     color: '#6EE7B7',
                     padding: '2px 8px',
                     borderRadius: 9999,
-                    fontSize: '0.7rem',
+                    fontSize: '0.68rem',
                     fontWeight: 800,
                     textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
                   }}
                 >
                   Official Proposal
                 </span>
               </div>
-              <p style={{ color: '#D1E2DA', fontSize: '0.84rem', marginTop: 3 }}>
-                Ahmedabad Travel Desk • Founder: {COMPANY_BRANDING.owner} • Tel: {COMPANY_BRANDING.phoneDisplay}
+              <p style={{ color: '#D1E2DA', fontSize: '0.8rem', marginTop: 3 }}>
+                Ahmedabad Travel Desk • Founder: <strong>{COMPANY_BRANDING.owner}</strong> • Tel: <strong>{COMPANY_BRANDING.phoneDisplay}</strong>
               </p>
-              <p style={{ color: '#94A3B8', fontSize: '0.78rem', marginTop: 2 }}>
+              <p style={{ color: '#94A3B8', fontSize: '0.74rem', marginTop: 2 }}>
                 {COMPANY_BRANDING.fullAddress}
               </p>
             </div>
           </div>
 
-          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-            <div style={{ fontSize: '0.76rem', color: '#D1E2DA', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+            <div style={{ fontSize: '0.72rem', color: '#D1E2DA', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
               Quotation Reference
             </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#FBBF24', fontFamily: 'monospace' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#FBBF24', fontFamily: 'monospace', letterSpacing: '0.03em' }}>
               {quote.quoteNumber}
             </div>
-            <div style={{ fontSize: '0.76rem', color: '#A7F3D0' }}>
+            <div style={{ fontSize: '0.74rem', color: '#A7F3D0' }}>
               Issued: {new Date((quote as any)?.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </div>
-            <div style={{ marginTop: 6 }}>
+            <div style={{ fontSize: '0.74rem', color: '#FDE68A', marginTop: 2 }}>
+              Valid Till: {new Date(quote.validUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </div>
+            <div className="no-print" style={{ marginTop: 6 }}>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="no-print"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
-                  padding: '8px 16px',
-                  borderRadius: 10,
-                  background: '#059669',
-                  border: '1px solid #34D399',
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
                   color: '#FFFFFF',
-                  fontWeight: 800,
-                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)',
                   transition: 'all 0.15s ease',
                 }}
               >
-                <Printer size={15} color="#FFFFFF" />
-                <span>Print / Save as PDF</span>
+                <Printer size={13} color="#FFFFFF" />
+                <span>Print PDF</span>
               </button>
             </div>
           </div>
         </header>
 
-        {/* Destination & Price Overview Banner */}
+        {/* 2. Destination & Price Overview Banner */}
         <div
+          className="quote-print-card pricing-summary-card"
           style={{
-            background: '#ffffff',
-            borderRadius: 16,
-            padding: '20px 24px',
-            border: '1px solid #e2e8f0',
+            background: '#FFFFFF',
+            borderRadius: 14,
+            padding: '16px 20px',
+            border: '1px solid #E2E8F0',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: 16,
+            gap: 14,
           }}
         >
           <div>
-            <div style={{ fontSize: '0.76rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 800 }}>
-              Travel Destination Circuit
+            <div style={{ fontSize: '0.72rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
+              Proposed Travel Destination Circuit
             </div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: '2px 0 0 0' }}>
+            <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0F172A', margin: '2px 0 0 0' }}>
               {quote.destinationName}
             </h2>
-            <div style={{ fontSize: '0.84rem', color: '#475569', marginTop: 4 }}>
-              Prepared for <strong>{sanitizeDisplayName(quote.customerName)}</strong>
+            <div style={{ fontSize: '0.82rem', color: '#475569', marginTop: 3 }}>
+              Prepared exclusively for: <strong style={{ color: '#0F172A' }}>{sanitizeDisplayName(quote.customerName)}</strong>
             </div>
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.76rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 800 }}>
-              Total Package Price
+            <div style={{ fontSize: '0.72rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 800 }}>
+              Total All-Inclusive Package Price
             </div>
-            <div style={{ fontSize: '1.9rem', fontWeight: 900, color: '#059669' }}>
+            <div className="quote-price-lg" style={{ fontSize: '1.8rem', fontWeight: 900, color: '#059669', lineHeight: 1.1 }}>
               {formatCurrency(quote.pricingSummary.finalSellingPrice)}
             </div>
-            <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
-              Inclusive of 5% GST & all quoted services
+            <div style={{ fontSize: '0.74rem', color: '#64748B', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, marginTop: 2 }}>
+              <span>Inclusive of 5% GST (Tour SAC 998555) & all quoted services</span>
+              {Boolean(quote.pricingSummary.discountAmount && quote.pricingSummary.discountAmount > 0) && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#ECFDF5', color: '#065F46', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: '0.72rem', border: '1px solid #A7F3D0' }}>
+                  <Sparkles size={12} color="#059669" />
+                  <span>Special Discount Applied: -{formatCurrency(quote.pricingSummary.discountAmount)}
+                  {quote.pricingSummary.discountType === 'PERCENT' && quote.pricingSummary.discountPercent ? ` (${quote.pricingSummary.discountPercent}%)` : ''}</span>
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         {/* Feedback Alert */}
         {feedback && (
-          <div style={{ padding: '16px 20px', borderRadius: 12, background: feedback.type === 'success' ? '#ecfdf5' : '#eff6ff', border: `1px solid ${feedback.type === 'success' ? '#a7f3d0' : '#bfdbfe'}`, color: feedback.type === 'success' ? '#065f46' : '#1e40af' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
-              <CheckCircle size={18} />
+          <div
+            className="no-print"
+            style={{
+              padding: '16px 20px',
+              borderRadius: 12,
+              background: feedback.type === 'success' ? '#ECFDF5' : '#EFF6FF',
+              border: `1.5px solid ${feedback.type === 'success' ? '#A7F3D0' : '#BFDBFE'}`,
+              color: feedback.type === 'success' ? '#065F46' : '#1E40AF',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, fontSize: '1rem' }}>
+              <CheckCircle size={20} />
               <span>{feedback.title}</span>
             </div>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.88rem' }}>{feedback.message}</p>
+            <p style={{ margin: '6px 0 0 0', fontSize: '0.88rem', lineHeight: 1.5 }}>
+              {feedback.message}
+            </p>
           </div>
         )}
 
-        {/* Itinerary Specs Bar */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
-          <div style={{ background: '#ffffff', padding: '16px 18px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#64748b', fontSize: '0.78rem', marginBottom: 4 }}>
-              <Clock size={15} color="#0f766e" />
+        {/* 3. Itinerary Specs Strip */}
+        <div className="quote-print-card specs-bar" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, background: '#FFFFFF', padding: '12px 16px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748B', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+              <Clock size={13} color="#059669" />
               <span>Duration</span>
             </div>
-            <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
-              {quote.durationNights} Nights / {quote.durationDays} Days
+            <div style={{ fontWeight: 800, fontSize: '0.96rem', color: '#0F172A', marginTop: 2 }}>
+              {quote.durationNights}N / {quote.durationDays}D
             </div>
           </div>
 
-          <div style={{ background: '#ffffff', padding: '16px 18px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#64748b', fontSize: '0.78rem', marginBottom: 4 }}>
-              <Calendar size={15} color="#0f766e" />
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748B', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+              <Calendar size={13} color="#059669" />
               <span>Travel Dates</span>
             </div>
-            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0F172A', marginTop: 2 }}>
               {new Date(quote.travelStartDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – {new Date(quote.travelEndDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </div>
           </div>
 
-          <div style={{ background: '#ffffff', padding: '16px 18px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#64748b', fontSize: '0.78rem', marginBottom: 4 }}>
-              <Users size={15} color="#0f766e" />
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748B', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+              <Users size={13} color="#059669" />
               <span>Travelers</span>
             </div>
-            <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>
-              {quote.numberOfAdults} Adults {quote.numberOfChildren ? `, ${quote.numberOfChildren} Children` : ''}
+            <div style={{ fontWeight: 800, fontSize: '0.96rem', color: '#0F172A', marginTop: 2 }}>
+              {quote.numberOfAdults} Adults {quote.numberOfChildren ? `, ${quote.numberOfChildren} Kids` : ''}
             </div>
           </div>
 
-          <div style={{ background: '#ffffff', padding: '16px 18px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#64748b', fontSize: '0.78rem', marginBottom: 4 }}>
-              <ShieldCheck size={15} color="#0f766e" />
-              <span>Proposal Validity</span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748B', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+              <ShieldCheck size={13} color="#059669" />
+              <span>Rate Lock</span>
             </div>
-            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: isExpired ? '#be123c' : '#059669' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: isExpired ? '#BE123C' : '#059669', marginTop: 2 }}>
               {isExpired ? 'Proposal Expired' : `Valid till ${new Date(quote.validUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
             </div>
           </div>
         </div>
 
-        {/* Accommodations */}
+        {/* 4. Accommodations */}
         {quote.hotels && quote.hotels.length > 0 && (
-          <div style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Building2 size={20} color="#0f766e" />
+          <div className="quote-print-card hotel-card" style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E2E8F0', padding: '16px 20px', breakInside: 'avoid' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Building2 size={18} color="#059669" />
               <span>Accommodations & Hotel Stays</span>
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {quote.hotels.map((h, idx) => (
-                <div key={idx} style={{ padding: 16, borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <div
+                  key={idx}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    border: '1px solid #E2E8F0',
+                    borderLeft: '4px solid #059669',
+                    background: '#F8FAFC',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                  }}
+                >
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>{h.hotelName}</div>
-                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: 3 }}>
-                      Category: <strong>{h.roomCategoryName}</strong> · {h.numberOfRooms} Room(s) · {h.numberOfNights} Night(s)
+                    <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#0F172A' }}>{h.hotelName}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>
+                      Category: <strong style={{ color: '#334155' }}>{h.roomCategoryName}</strong> · {h.numberOfRooms} Room(s) · {h.numberOfNights} Night(s)
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ display: 'inline-block', padding: '4px 10px', background: '#f0fdf4', color: '#0f766e', borderRadius: 6, fontSize: '0.8rem', fontWeight: 700 }}>
+                    <span style={{ display: 'inline-block', padding: '3px 10px', background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0', borderRadius: 6, fontSize: '0.78rem', fontWeight: 800 }}>
                       {getMealPlanText(h.mealPlan)}
                     </span>
                   </div>
@@ -412,52 +504,78 @@ export default function CustomerQuotationPage() {
           </div>
         )}
 
-        {/* Transport */}
+        {/* 5. Transport */}
         {quote.transports && quote.transports.length > 0 && (
-          <div style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Car size={20} color="#0f766e" />
-              <span>Sightseeing & Transport Vehicle</span>
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="quote-print-card transport-card" style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E2E8F0', padding: '16px 20px', breakInside: 'avoid' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Car size={18} color="#059669" />
+              <span>Sightseeing & Dedicated Private Transport</span>
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {quote.transports.map((t, idx) => (
-                <div key={idx} style={{ padding: 16, borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                  <div style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>{t.vehicleName}</div>
-                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: 4 }}>
-                    {t.pricingBasis === 'PER_DAY' ? `${t.numberOfDays || 1} Days dedicated service` : t.pricingBasis}
+                <div
+                  key={idx}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    border: '1px solid #E2E8F0',
+                    borderLeft: '4px solid #0D9488',
+                    background: '#F8FAFC',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#0F172A' }}>
+                      {t.vehicleName || 'Dedicated Private AC Vehicle'}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>
+                      {t.pricingBasis === 'PER_DAY' ? `${t.numberOfDays || 1} Days dedicated chauffeur service` : t.pricingBasis}
+                      {' • '}
+                      <span>Private AC vehicle for all airport transfers & local sightseeing. Includes tolls, parking & driver allowance.</span>
+                    </div>
+                    {t.notes && <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: 4, fontStyle: 'italic' }}>{t.notes}</div>}
                   </div>
-                  {t.notes && <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: 6, fontStyle: 'italic' }}>{t.notes}</div>}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Inclusions & Terms */}
-        <div style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FileText size={20} color="#0f766e" />
-            <span>Tour Inclusions & Important Terms</span>
-          </h2>
+        {/* 6. Inclusions & Exclusions */}
+        <div className="quote-print-card inclusions-card" style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E2E8F0', padding: '16px 20px', breakInside: 'avoid' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <FileText size={18} color="#059669" />
+            <span>Tour Inclusions & Exclusions</span>
+          </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
             {quote.inclusions?.length > 0 && (
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#047857', marginBottom: 8 }}>Inclusions:</div>
-                <ul style={{ margin: 0, paddingLeft: 20, fontSize: '0.85rem', color: '#334155', lineHeight: 1.7 }}>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#047857', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <CheckCircle size={14} color="#059669" />
+                  <span>Inclusions (Covered in Price)</span>
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 16, fontSize: '0.78rem', color: '#334155', lineHeight: 1.55 }}>
                   {quote.inclusions.map((item, idx) => (
-                    <li key={idx}>{item}</li>
+                    <li key={idx} style={{ marginBottom: 2 }}>{item}</li>
                   ))}
                 </ul>
               </div>
             )}
 
             {quote.exclusions?.length > 0 && (
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#be123c', marginBottom: 8 }}>Exclusions:</div>
-                <ul style={{ margin: 0, paddingLeft: 20, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.7 }}>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#BE123C', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <AlertTriangle size={14} color="#BE123C" />
+                  <span>Exclusions (Not Included)</span>
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 16, fontSize: '0.78rem', color: '#64748B', lineHeight: 1.55 }}>
                   {quote.exclusions.map((item, idx) => (
-                    <li key={idx}>{item}</li>
+                    <li key={idx} style={{ marginBottom: 2 }}>{item}</li>
                   ))}
                 </ul>
               </div>
@@ -465,70 +583,117 @@ export default function CustomerQuotationPage() {
           </div>
         </div>
 
-        {/* Bank Payment & Allotment Confirmation Details */}
+        {/* 7. Bank Payment Details & Allotment Lock Guarantee */}
         <div
-          className="print-avoid-break bank-details-card"
+          className="quote-print-card bank-details-card"
           style={{
-            background: '#ffffff',
-            borderRadius: 16,
-            border: '1px solid #e2e8f0',
-            padding: '26px 28px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+            background: '#FFFFFF',
+            borderRadius: 14,
+            border: '1px solid #E2E8F0',
+            padding: '16px 20px',
+            breakInside: 'avoid',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <ShieldCheck size={20} color="#059669" />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+            <ShieldCheck size={18} color="#059669" />
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
               Payment Details & Allotment Lock Guarantee
             </h3>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
             {/* Bank NEFT/RTGS Info */}
-            <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.86rem' }}>
-              <div style={{ fontWeight: 800, color: '#0f172a', marginBottom: 8, textTransform: 'uppercase', fontSize: '0.78rem' }}>
+            <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 10, border: '1px solid #E2E8F0', fontSize: '0.8rem' }}>
+              <div style={{ fontWeight: 800, color: '#0F172A', marginBottom: 6, textTransform: 'uppercase', fontSize: '0.74rem', letterSpacing: '0.03em' }}>
                 Bank Transfer (NEFT / RTGS / IMPS)
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, color: '#334155' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: '#334155' }}>
                 <div><strong>Account Name:</strong> New Chirag Tours & Travels</div>
                 <div><strong>Bank Name:</strong> HDFC Bank Ltd</div>
                 <div><strong>Branch:</strong> Danilimda Branch, Ahmedabad</div>
-                <div><strong>Account No:</strong> 50200084920194 (Current Account)</div>
-                <div><strong>IFSC Code:</strong> HDFC0001842</div>
+                <div><strong>Account No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>50200084920194</span> (Current)</div>
+                <div><strong>IFSC Code:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>HDFC0001842</span></div>
               </div>
             </div>
 
             {/* UPI & Instant Payment */}
-            <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.86rem' }}>
-              <div style={{ fontWeight: 800, color: '#0f172a', marginBottom: 8, textTransform: 'uppercase', fontSize: '0.78rem' }}>
-                UPI / Instant QR Payment
+            <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 10, border: '1px solid #E2E8F0', fontSize: '0.8rem' }}>
+              <div style={{ fontWeight: 800, color: '#0F172A', marginBottom: 6, textTransform: 'uppercase', fontSize: '0.74rem', letterSpacing: '0.03em' }}>
+                UPI & Payment Schedule
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, color: '#334155' }}>
-                <div><strong>UPI ID:</strong> 9978655529@upi</div>
-                <div><strong>Google Pay / PhonePe:</strong> +91 99786 55529</div>
-                <div><strong>Payment Schedule:</strong> 25% Advance to Lock Allotments</div>
-                <div><strong>Balance Payment:</strong> 75% on Arrival / Prior to Hotel Check-in</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: '#334155' }}>
+                <div><strong>UPI ID:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#059669' }}>9978655529@upi</span></div>
+                <div><strong>GPay / PhonePe:</strong> <span style={{ fontWeight: 800 }}>+91 99786 55529</span></div>
+                <div><strong>25% Advance:</strong> Locks hotel allotments & vehicle confirmation</div>
+                <div><strong>75% Balance:</strong> Payable upon arrival / prior to hotel check-in</div>
               </div>
             </div>
           </div>
 
           {/* Terms & Conditions & Signatory */}
-          <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 20 }}>
-            <div style={{ fontSize: '0.8rem', color: '#64748b', maxWidth: 490, lineHeight: 1.55 }}>
-              <strong>Official Terms:</strong> Rates quoted include specified hotel allotments, daily breakfast & dinner (where specified in meal plan), private dedicated AC vehicle, driver allowance, tolls, and 5% GST. Room allotments are locked upon initial deposit receipt. 24/7 on-tour helpline managed directly by {COMPANY_BRANDING.owner}.
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+            <div style={{ fontSize: '0.74rem', color: '#64748B', maxWidth: 460, lineHeight: 1.45 }}>
+              <strong>Official Terms:</strong> Rates include specified hotel room categories, meal plan, private dedicated AC vehicle, driver allowance, tolls, and 5% GST. Room allotments are confirmed upon initial deposit. 24/7 on-tour customer support managed directly by {COMPANY_BRANDING.owner}.
             </div>
 
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.76rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700 }}>
-                For New Chirag Tours & Travels
+            <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 12 }}>
+              {/* Official Seal / Stamp SVG */}
+              <div
+                style={{
+                  width: 58,
+                  height: 58,
+                  borderRadius: '50%',
+                  border: '2px dashed #059669',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: 'rotate(-6deg)',
+                  background: '#ECFDF5',
+                  color: '#065F46',
+                  fontSize: '0.48rem',
+                  fontWeight: 900,
+                  textTransform: 'uppercase',
+                  lineHeight: 1.1,
+                  textAlign: 'center',
+                  padding: 2,
+                  boxShadow: '0 2px 6px rgba(5, 150, 105, 0.15)',
+                }}
+              >
+                <span>VERIFIED</span>
+                <span style={{ fontSize: '0.52rem', color: '#047857' }}>ALLOTMENT</span>
+                <span>AHMEDABAD</span>
               </div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#059669', marginTop: 12 }}>
-                {COMPANY_BRANDING.owner}
-              </div>
-              <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                Managing Director & Operations Head
+
+              <div>
+                <div style={{ fontSize: '0.7rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 700 }}>
+                  For New Chirag Tours & Travels
+                </div>
+                <div style={{ fontSize: '1rem', fontWeight: 900, color: '#059669', marginTop: 2 }}>
+                  {COMPANY_BRANDING.owner}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                  Managing Director & Operations Head
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* Official Print Footer inside card */}
+          <div
+            className="print-only"
+            style={{
+              display: 'none',
+              fontSize: '0.68rem',
+              color: '#94A3B8',
+              textAlign: 'center',
+              marginTop: 10,
+              paddingTop: 8,
+              borderTop: '1px solid #E2E8F0',
+              lineHeight: 1.3,
+            }}
+          >
+            {COMPANY_BRANDING.name} • {COMPANY_BRANDING.fullAddress} • Helpline: {COMPANY_BRANDING.phoneDisplay} • Official Computer Generated Proposal
           </div>
         </div>
 

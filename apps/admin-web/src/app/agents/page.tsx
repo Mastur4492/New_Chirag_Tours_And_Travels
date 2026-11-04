@@ -446,7 +446,7 @@ export default function AgentsPage() {
 
     return `*New Chirag Tours & Travels — B2B Partner Portal Notification* ✈️
 ━━━━━━━━━━━━━━━━━━━━
-Namaste *${info.name}* ji (${info.agencyName || 'Partner'}),
+Hello *${info.name}* ji (${info.agencyName || 'Partner'}),
 
 ${actionHeadline}
 

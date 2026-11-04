@@ -1718,7 +1718,7 @@ table.data-table tr:hover td, table tr:hover td {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 10mm 12mm 10mm;
+    margin: 6mm 8mm 6mm 8mm;
   }
 
   .no-print,
@@ -1728,24 +1728,47 @@ table.data-table tr:hover td, table tr:hover td {
   button:not(.print-show),
   nav,
   aside,
-  [data-print-hide] {
+  [data-print-hide],
+  div[style*="position: fixed"] {
     display: none !important;
+  }
+
+  .print-show,
+  .print-only {
+    display: block !important;
   }
 
   body {
     background: #ffffff !important;
     color: #0f172a !important;
-    font-size: 11pt !important;
+    font-size: 9pt !important;
+    line-height: 1.35 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  .shadow-sm,
-  .shadow-md,
-  .shadow-lg,
-  .shadow-xl,
-  .shadow-2xl {
-    box-shadow: none !important;
+  main {
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .quote-page-wrapper {
+    padding: 0 !important;
+    background: #ffffff !important;
+    min-height: auto !important;
+  }
+
+  .quote-page-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 5px !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   .container,
@@ -1757,15 +1780,121 @@ table.data-table tr:hover td, table tr:hover td {
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
+    background: #ffffff !important;
   }
 
+  /* Card Print Rules & Zero Splits */
+  .quote-print-card,
   .print-avoid-break,
   .hotel-card,
+  .transport-card,
+  .inclusions-card,
   .itinerary-day-card,
   .pricing-summary-card,
-  .bank-details-card {
+  .bank-details-card,
+  .specs-bar {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    background: #ffffff !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Compact Letterhead for Print */
+  .quote-letterhead-card {
+    padding: 6px 10px !important;
+    border-radius: 6px !important;
+    border: 1.5px solid #065f46 !important;
+    background: linear-gradient(135deg, #04140d 0%, #064e3b 100%) !important;
+    color: #ffffff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  .quote-letterhead-card img {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .quote-letterhead-card span {
+    font-size: 1.08rem !important;
+  }
+
+  .quote-letterhead-card p {
+    font-size: 0.68rem !important;
+    margin-top: 1px !important;
+    line-height: 1.2 !important;
+  }
+
+  .pricing-summary-card {
+    padding: 6px 10px !important;
+  }
+
+  .pricing-summary-card h2 {
+    font-size: 1.15rem !important;
+    margin: 0 !important;
+  }
+
+  .quote-price-lg {
+    font-size: 1.35rem !important;
+    line-height: 1 !important;
+  }
+
+  .specs-bar {
+    padding: 4px 8px !important;
+  }
+
+  .specs-bar > div > div:last-child {
+    font-size: 0.82rem !important;
+  }
+
+  .hotel-card,
+  .transport-card {
+    padding: 6px 10px !important;
+  }
+
+  .hotel-card h3,
+  .transport-card h3,
+  .inclusions-card h3,
+  .bank-details-card h3 {
+    font-size: 0.86rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  .hotel-card > div > div,
+  .transport-card > div > div {
+    padding: 4px 8px !important;
+  }
+
+  .bank-details-card > div:first-child {
+    margin-bottom: 4px !important;
+  }
+
+  .bank-details-card > div:nth-child(2) > div,
+  .inclusions-card > div > div {
+    padding: 5px 8px !important;
+  }
+
+  .bank-details-card ul,
+  .inclusions-card ul {
+    line-height: 1.25 !important;
+    font-size: 7pt !important;
+  }
+
+  .inclusions-card > div {
+    gap: 8px !important;
+  }
+
+  .bank-details-card {
+    font-size: 7.2pt !important;
   }
 
   * {
