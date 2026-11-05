@@ -20,10 +20,13 @@ import { uploadRouter } from './upload.routes';
 import { webhookRouter } from './webhook.routes';
 import { aiRouter } from './ai.routes';
 import { notificationRoutes } from './notification.routes';
+import { agencySettingsRouter } from './agencySettings.routes';
+import { realtimeRouter } from './realtime.routes';
 
 const router = Router();
 
 router.use('/health', healthRouter);
+router.use('/realtime', realtimeRouter);
 router.use('/auth', authRouter);
 router.use('/users', userRouter);
 router.use('/destinations', destinationRouter);
@@ -45,6 +48,7 @@ router.use('/upload', uploadRouter);
 router.use('/uploads', uploadRouter);
 router.use('/webhooks', webhookRouter);
 router.use('/ai', aiRouter);
+router.use('/settings/agency', agencySettingsRouter);
 
 export const apiRouter = router;
 

@@ -27,6 +27,7 @@ export interface IQuotationDocument extends Document {
   numberOfInfants: number;
   currentVersion: number;
   status: QuotationStatus;
+  shareableToken?: string;
   shareableTokenHash?: string;
   supersededTokenHashes?: string[];
   validUntil: Date;
@@ -248,6 +249,11 @@ const QuotationSchema = new Schema<IQuotationDocument>(
       default: 'DRAFT',
       index: true,
     },
+    shareableToken: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
     shareableTokenHash: {
       type: String,
       unique: true,
@@ -347,9 +353,9 @@ QuotationSchema.methods.toDto = function (role?: UserRole): QuotationDto {
   const assignedAgent = this.populated('assignedAgentId') ? (this.assignedAgentId as any) : undefined;
 
   const hotels: QuotationHotelRoomItemDto[] = (this.hotels || []).map((h: any) => ({
-    hotelId: h.hotelId ? h.hotelId.toString() : '',
+    hotelId: h.hotelId ? (h.hotelId._id || h.hotelId).toString() : '',
     hotelName: h.hotelId && h.hotelId.name ? h.hotelId.name : undefined,
-    roomCategoryId: h.roomCategoryId ? h.roomCategoryId.toString() : '',
+    roomCategoryId: h.roomCategoryId ? (h.roomCategoryId._id || h.roomCategoryId).toString() : '',
     roomCategoryName: h.roomCategoryId && h.roomCategoryId.name ? h.roomCategoryId.name : undefined,
     checkInDate: (h.checkInDate instanceof Date ? h.checkInDate : new Date(h.checkInDate)).toISOString().split('T')[0],
     checkOutDate: (h.checkOutDate instanceof Date ? h.checkOutDate : new Date(h.checkOutDate)).toISOString().split('T')[0],
@@ -364,9 +370,9 @@ QuotationSchema.methods.toDto = function (role?: UserRole): QuotationDto {
   }));
 
   const transports: QuotationTransportItemDto[] = (this.transports || []).map((t: any) => ({
-    vehicleId: t.vehicleId ? t.vehicleId.toString() : undefined,
+    vehicleId: t.vehicleId ? (t.vehicleId._id || t.vehicleId).toString() : undefined,
     vehicleName: t.vehicleId && t.vehicleId.model ? t.vehicleId.model : undefined,
-    tariffId: t.tariffId ? t.tariffId.toString() : undefined,
+    tariffId: t.tariffId ? (t.tariffId._id || t.tariffId).toString() : undefined,
     pricingBasis: t.pricingBasis,
     numberOfDays: t.numberOfDays,
     estimatedKm: t.estimatedKm,
@@ -407,6 +413,7 @@ QuotationSchema.methods.toDto = function (role?: UserRole): QuotationDto {
     numberOfInfants: this.numberOfInfants || 0,
     currentVersion: this.currentVersion || 1,
     status: this.status || 'DRAFT',
+    shareableToken: this.shareableToken || undefined,
     validUntil: this.validUntil
       ? (this.validUntil instanceof Date ? this.validUntil : new Date(this.validUntil)).toISOString()
       : new Date().toISOString(),
@@ -496,6 +503,9 @@ QuotationSchema.methods.toPublicDto = function (): QuotationPublicDto {
   return {
     quoteNumber: this.quoteNumber,
     customerName: customer ? customer.fullName : undefined,
+    customerMobile: customer ? customer.mobile : undefined,
+    customerEmail: customer ? customer.email : undefined,
+    customerCity: customer ? customer.city : undefined,
     destinationName: destination ? destination.name : undefined,
     travelStartDate: this.travelStartDate
       ? (this.travelStartDate instanceof Date ? this.travelStartDate : new Date(this.travelStartDate)).toISOString().split('T')[0]!

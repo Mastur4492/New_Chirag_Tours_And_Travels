@@ -347,7 +347,7 @@ export default function AgentsPage() {
       setConfirmStatusModal(null);
       loadAgents();
     } catch (err: any) {
-      alert(`Error updating agent status: ${err.message}`);
+      setToastMessage(`Error updating agent status: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }

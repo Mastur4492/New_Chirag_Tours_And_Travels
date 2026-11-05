@@ -129,6 +129,7 @@ export function AgentLayout({ children }: AgentLayoutProps) {
     { href: '/bookings', label: 'My Bookings', icon: CalendarCheck },
     { href: '/customers', label: 'Customer Directory', icon: Users },
     { href: '/performance', label: 'Performance & Sales', icon: BarChart3 },
+    { href: '/profile', label: 'My Profile & Settings', icon: ShieldCheck },
   ];
 
   const agentProfile = currentUser?.agentProfile || {};
@@ -188,32 +189,6 @@ export function AgentLayout({ children }: AgentLayoutProps) {
               </div>
             </div>
           </div>
-
-          {/* Quick Action: New Quote */}
-          <Link
-            href="/quotations/new"
-            prefetch={false}
-            style={{
-              marginTop: 18,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              width: '100%',
-              padding: '10px 14px',
-              borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-              color: '#ffffff',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              textDecoration: 'none',
-              boxShadow: '0 4px 12px rgba(15, 118, 110, 0.3)',
-              transition: 'var(--transition-fast)',
-            }}
-          >
-            <PlusCircle size={16} />
-            <span>+ Fast Quote Builder</span>
-          </Link>
         </div>
 
         {/* Navigation Menu */}
@@ -283,14 +258,18 @@ export function AgentLayout({ children }: AgentLayoutProps) {
         {/* User Profile Card & Sign Out */}
         <div style={{ padding: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', background: '#09111e' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <div style={{ overflow: 'hidden' }}>
+            <Link
+              href="/profile"
+              title="Click to view and edit agent profile"
+              style={{ overflow: 'hidden', textDecoration: 'none', flex: 1 }}
+            >
               <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                 {currentUser?.fullName || 'Travel Agent'}
               </div>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                 {agentProfile.agencyName ? agentProfile.agencyName : currentUser?.mobile}
               </div>
-            </div>
+            </Link>
             <button
               onClick={handleLogout}
               title="Sign Out"
@@ -304,6 +283,7 @@ export function AgentLayout({ children }: AgentLayoutProps) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               <LogOut size={16} />
@@ -387,6 +367,15 @@ export function AgentLayout({ children }: AgentLayoutProps) {
             </button>
 
             <PwaManager />
+            <Link
+              href="/profile"
+              className="btn btn-secondary btn-sm"
+              title="My Profile & Settings"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', fontSize: '0.8rem', textDecoration: 'none' }}
+            >
+              <UserCheck size={14} style={{ color: 'var(--primary)' }} />
+              <span className="hidden sm:inline">Profile</span>
+            </Link>
             <NotificationBell />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--accent-emerald-light)', borderRadius: 'var(--radius-full)', border: '1px solid var(--accent-emerald-border)' }}>

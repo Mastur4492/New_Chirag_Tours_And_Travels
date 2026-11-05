@@ -15,9 +15,11 @@ import {
   calculateTransportPricing,
   validateRoomOccupancy,
 } from '@chirag/pricing';
+import { normalizePhoneNumber } from '@chirag/validation';
 import { quotationRepository, FindQuotationsFilter } from '../repositories/quotation.repository';
 import { quotationVersionRepository } from '../repositories/quotationVersion.repository';
 import { leadRepository } from '../repositories/lead.repository';
+import { customerRepository } from '../repositories/customer.repository';
 import { destinationRepository } from '../repositories/destination.repository';
 import { hotelRepository } from '../repositories/hotel.repository';
 import { roomCategoryRepository } from '../repositories/roomCategory.repository';
@@ -32,6 +34,8 @@ import { bookingRepository } from '../repositories/booking.repository';
 import { IBookingDocument } from '../models/booking.model';
 import { IQuotationDocument } from '../models/quotation.model';
 import { getNextSequenceValue } from '../models/sequence.model';
+import { notificationService } from './notification.service';
+import { realtimeService } from './realtime.service';
 import { AppError } from '../utils/appError';
 import { logger } from '../utils/logger';
 
@@ -348,6 +352,9 @@ export class QuotationService {
 
     const validUntil = new Date(Date.now() + (input.validityDays || 7) * 24 * 60 * 60 * 1000);
 
+    const previewToken = crypto.randomBytes(32).toString('hex');
+    const previewTokenHash = crypto.createHash('sha256').update(previewToken).digest('hex');
+
     const created = await quotationRepository.create({
       quoteNumber,
       leadId: input.leadId as any,
@@ -368,6 +375,8 @@ export class QuotationService {
       numberOfInfants: input.numberOfInfants || 0,
       currentVersion: 1,
       status: initialStatus,
+      shareableToken: previewToken,
+      shareableTokenHash: previewTokenHash,
       validUntil,
       notes: input.notes?.trim(),
       inclusions: input.inclusions || [],
@@ -396,7 +405,14 @@ export class QuotationService {
       newState: created.toDto('ADMIN') as unknown as Record<string, unknown>,
     });
 
-    return created.toDto(actor.role);
+    const createdDto = created.toDto(actor.role);
+    realtimeService.broadcast({
+      type: 'QUOTATION_UPDATE',
+      title: 'New Quotation Proposal Created',
+      message: `Quotation ${created.quoteNumber} created by ${actor.role}`,
+      data: { action: 'CREATED', quoteNumber: created.quoteNumber, id: created._id.toString() },
+    });
+    return createdDto;
   }
 
   async reviseQuotation(
@@ -525,7 +541,14 @@ export class QuotationService {
       notes: `Revised to version ${newVersionNumber}. Reason: ${input.changeReason}`,
     });
 
-    return updated.toDto(actor.role);
+    const revisedDto = updated.toDto(actor.role);
+    realtimeService.broadcast({
+      type: 'QUOTATION_UPDATE',
+      title: 'Quotation Proposal Revised',
+      message: `Quotation ${updated.quoteNumber} revised to v${updated.currentVersion}`,
+      data: { action: 'REVISED', quoteNumber: updated.quoteNumber, id: updated._id.toString(), currentVersion: updated.currentVersion },
+    });
+    return revisedDto;
   }
 
   async approveQuotation(
@@ -571,7 +594,14 @@ export class QuotationService {
       notes: input.notes,
     });
 
-    return updated.toDto(actor.role);
+    const revisedDto = updated.toDto(actor.role);
+    realtimeService.broadcast({
+      type: 'QUOTATION_UPDATE',
+      title: 'Quotation Proposal Revised',
+      message: `Quotation ${updated.quoteNumber} revised to v${updated.currentVersion}`,
+      data: { action: 'REVISED', quoteNumber: updated.quoteNumber, id: updated._id.toString(), currentVersion: updated.currentVersion },
+    });
+    return revisedDto;
   }
 
   async issueQuotation(
@@ -633,6 +663,7 @@ export class QuotationService {
 
     const updated = await quotationRepository.update(id, {
       status: 'ISSUED',
+      shareableToken: rawToken,
       shareableTokenHash: tokenHash,
     });
 
@@ -654,6 +685,13 @@ export class QuotationService {
     const dto = updated.toDto(actor.role);
     dto.shareableToken = rawToken;
 
+    realtimeService.broadcast({
+      type: 'QUOTATION_UPDATE',
+      title: 'Quotation Proposal Issued',
+      message: `Quotation ${updated.quoteNumber} issued and live for customer`,
+      data: { action: 'ISSUED', quoteNumber: updated.quoteNumber, id: updated._id.toString() },
+    });
+
     return { quotation: dto, shareableToken: rawToken };
   }
 
@@ -673,6 +711,59 @@ export class QuotationService {
     }
 
     return quotation.toPublicDto();
+  }
+
+  async updateTravelerPublicQuotation(
+    rawToken: string,
+    input: {
+      fullName: string;
+      mobile: string;
+      email?: string | null;
+      city?: string | null;
+    }
+  ): Promise<QuotationPublicDto> {
+    const tokenHash = crypto.createHash('sha256').update(rawToken.trim()).digest('hex');
+    const quotation = await quotationRepository.findByShareableTokenHash(tokenHash);
+    if (!quotation) {
+      throw AppError.notFound('Quotation link is invalid or has expired');
+    }
+
+    if (quotation.customerId) {
+      const custObj = quotation.customerId as any;
+      const customerId = (custObj._id ? custObj._id : custObj).toString();
+      const normalizedMobile = normalizePhoneNumber(input.mobile);
+
+      // Check conflict if changing mobile
+      const existingCustomer = await customerRepository.findByMobile(normalizedMobile);
+      if (existingCustomer && existingCustomer._id.toString() !== customerId) {
+        throw AppError.conflict(`Another customer with mobile ${normalizedMobile} is already registered.`);
+      }
+
+      const updateData: Record<string, any> = {
+        fullName: input.fullName.trim(),
+        mobile: normalizedMobile,
+      };
+      if (input.email !== undefined) {
+        updateData.email = input.email ? input.email.trim().toLowerCase() : undefined;
+      }
+      if (input.city !== undefined) {
+        updateData.city = input.city ? input.city.trim() : undefined;
+      }
+
+      await customerRepository.update(customerId, updateData);
+
+      await auditLogRepository.record({
+        actorId: customerId,
+        actorRole: 'CUSTOMER',
+        action: 'CUSTOMER_UPDATED',
+        entityType: 'CUSTOMER',
+        entityId: customerId,
+        notes: `Traveler updated their details on proposal #${quotation.quoteNumber}`,
+      });
+    }
+
+    const refreshed = await quotationRepository.findByShareableTokenHash(tokenHash);
+    return refreshed ? refreshed.toPublicDto() : quotation.toPublicDto();
   }
 
   async acceptPublicQuotation(
@@ -963,6 +1054,80 @@ export class QuotationService {
           },
         });
       }
+
+      // 4. In-App Notifications for Admin and Assigned Agent
+      let clientName = 'Client';
+      if (quotation.customerId) {
+        const cust = await customerRepository.findById(quotation.customerId.toString());
+        if (cust?.fullName) clientName = cust.fullName;
+      }
+
+      notificationService
+        .createNotification({
+          recipientRole: 'ADMIN',
+          type: 'QUOTATION_ACCEPTED',
+          title: `Proposal Accepted! (${booking.bookingNumber})`,
+          message: `${clientName} accepted Proposal ${quotation.quoteNumber}. New Booking ${booking.bookingNumber} is generated and ready for processing.`,
+          link: `/bookings/${booking._id.toString()}`,
+          entityType: 'BOOKING',
+          entityId: booking._id.toString(),
+          metadata: {
+            quoteNumber: quotation.quoteNumber,
+            bookingNumber: booking.bookingNumber,
+            customerName: clientName,
+          },
+        })
+        .catch((err) => logger.error('[QuotationService] Failed to notify admin of acceptance:', err));
+
+      const assignedAgentId =
+        (booking.assignedAgentId as any)?._id?.toString() || booking.assignedAgentId?.toString();
+      if (assignedAgentId) {
+        notificationService
+          .createNotification({
+            recipientUserId: assignedAgentId,
+            recipientRole: 'AGENT',
+            type: 'QUOTATION_ACCEPTED',
+            title: `Your Proposal Was Accepted! (${booking.bookingNumber})`,
+            message: `${clientName} accepted Proposal ${quotation.quoteNumber}. New Booking ${booking.bookingNumber} is generated.`,
+            link: `/bookings/${booking._id.toString()}`,
+            entityType: 'BOOKING',
+            entityId: booking._id.toString(),
+            metadata: {
+              quoteNumber: quotation.quoteNumber,
+              bookingNumber: booking.bookingNumber,
+              customerName: clientName,
+            },
+          })
+          .catch((err) => logger.error('[QuotationService] Failed to notify agent of acceptance:', err));
+      }
+
+      // Live real-time broadcast across all 3 portals
+      realtimeService.broadcast({
+        type: 'QUOTATION_UPDATE',
+        scopeId: quotation.shareableToken,
+        title: `Proposal Accepted!`,
+        message: `${clientName} accepted Proposal ${quotation.quoteNumber}.`,
+        data: {
+          action: 'ACCEPTED',
+          quotationId: quotation._id.toString(),
+          quoteNumber: quotation.quoteNumber,
+          bookingId: booking._id.toString(),
+          bookingNumber: booking.bookingNumber,
+          customerName: clientName,
+        },
+      });
+
+      realtimeService.broadcast({
+        type: 'BOOKING_UPDATE',
+        title: `New Booking Generated (${booking.bookingNumber})`,
+        message: `Booking request generated for ${clientName}`,
+        data: {
+          action: 'CREATED',
+          bookingId: booking._id.toString(),
+          bookingNumber: booking.bookingNumber,
+          customerName: clientName,
+        },
+      });
     } catch (sideEffectError) {
       logger.error('Error reconciling acceptance side effects:', sideEffectError, {
         quotationId: quotation._id.toString(),

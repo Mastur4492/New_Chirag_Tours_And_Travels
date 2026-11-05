@@ -237,6 +237,25 @@ export const authApi = {
     return res.data;
   },
 
+  async updateProfile(data: { fullName?: string; email?: string | null; mobile?: string; agencyName?: string; city?: string }) {
+    const res = await apiFetch<any>('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    if (res.data && typeof window !== 'undefined') {
+      localStorage.setItem(AGENT_USER_KEY, JSON.stringify(res.data));
+    }
+    return res.data;
+  },
+
+  async changePassword(data: { currentPassword: string; newPassword: string; confirmPassword: string }) {
+    const res = await apiFetch<{ message: string }>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.data;
+  },
+
   async logout() {
     try {
       await apiFetch('/auth/logout', { method: 'POST' });

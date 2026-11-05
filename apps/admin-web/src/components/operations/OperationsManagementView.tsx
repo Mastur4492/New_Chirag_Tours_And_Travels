@@ -43,6 +43,7 @@ import {
   DriverDto,
 } from '@chirag/types';
 import { apiRequest, getUserRole } from '@/lib/api';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import {
   HOTEL_RESERVATION_STATUS_CONFIG,
   TRANSPORT_ASSIGNMENT_STATUS_CONFIG,
@@ -542,10 +543,15 @@ export function OperationsManagementView({
   };
 
   // 6. Complete Transport Leg Handler
-  const handleCompleteTransportLeg = async (assign: TransportAssignmentDto) => {
-    if (!confirm(`Mark transport leg #${assign.transportItemIndex + 1} as COMPLETED? This will safely release schedule locks.`)) {
-      return;
-    }
+  const [completeLegToConfirm, setCompleteLegToConfirm] = useState<TransportAssignmentDto | null>(null);
+
+  const handleCompleteTransportLeg = (assign: TransportAssignmentDto) => {
+    setCompleteLegToConfirm(assign);
+  };
+
+  const executeCompleteTransportLeg = async () => {
+    if (!completeLegToConfirm) return;
+    const assign = completeLegToConfirm;
     setCompletingAssignmentId(assign.id);
 
     try {
@@ -553,6 +559,7 @@ export function OperationsManagementView({
         method: 'PATCH',
       });
       showToast('Transport leg completed successfully. Schedule locks released.');
+      setCompleteLegToConfirm(null);
       await loadOperations(true);
       onRefreshParent?.();
     } catch (err: any) {
@@ -685,30 +692,41 @@ export function OperationsManagementView({
       )}
 
       {/* Operational Readiness Dashboard Card */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-xl relative overflow-hidden border border-slate-700">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+          color: '#ffffff',
+          padding: '22px 24px',
+          borderRadius: '16px',
+          border: '1px solid #334155',
+          boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.25)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '16px', position: 'relative', zIndex: 10 }}>
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                 OPERATIONS CONTROL DESK
               </span>
-              <span className="text-xs text-slate-400 font-mono">
+              <span style={{ fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace', fontWeight: 600 }}>
                 {summary.bookingNumber}
               </span>
             </div>
-            <h3 className="text-lg font-extrabold text-white">
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff', margin: 0 }}>
               Tour Readiness & Supplier Execution Status
             </h3>
-            <p className="text-xs text-slate-300 mt-0.5">
-              Guest: <strong>{summary.customerName}</strong> ({summary.customerPhone}) • Tour Window: {formatDate(summary.travelStartDate)} to {formatDate(summary.travelEndDate)}
+            <p style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '4px', marginBottom: 0 }}>
+              Guest: <strong style={{ color: '#ffffff' }}>{summary.customerName}</strong> ({summary.customerPhone}) • Tour Window: {formatDate(summary.travelStartDate)} to {formatDate(summary.travelEndDate)}
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Readiness Gauge */}
-            <div className="text-right">
-              <div className="text-xs text-slate-400 font-medium">Readiness Score</div>
-              <div className="text-2xl font-black text-emerald-400">
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Readiness Score</div>
+              <div style={{ fontSize: '26px', fontWeight: 900, color: '#34d399', lineHeight: 1.1 }}>
                 {summary.operationalReadinessPercent}%
               </div>
             </div>
@@ -716,7 +734,18 @@ export function OperationsManagementView({
             <button
               onClick={() => loadOperations(true)}
               disabled={refreshing}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+              style={{
+                padding: '10px 12px',
+                borderRadius: '10px',
+                background: '#1e293b',
+                border: '1px solid #475569',
+                color: '#e2e8f0',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+              }}
               title="Refresh operational records"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -725,28 +754,31 @@ export function OperationsManagementView({
         </div>
 
         {/* Readiness Progress Bar */}
-        <div className="mt-4 pt-4 border-t border-slate-800 relative z-10">
-          <div className="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden border border-slate-700/80">
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', position: 'relative', zIndex: 10 }}>
+          <div style={{ width: '100%', height: '10px', borderRadius: '9999px', background: '#334155', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <div
-              className={`h-full transition-all duration-700 rounded-full ${
-                summary.operationalReadinessPercent === 100
-                  ? 'bg-emerald-500'
+              style={{
+                height: '100%',
+                borderRadius: '9999px',
+                transition: 'all 0.7s ease',
+                width: `${Math.max(5, summary.operationalReadinessPercent)}%`,
+                background: summary.operationalReadinessPercent === 100
+                  ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
                   : summary.operationalReadinessPercent >= 50
-                  ? 'bg-blue-500'
-                  : 'bg-amber-500'
-              }`}
-              style={{ width: `${Math.max(5, summary.operationalReadinessPercent)}%` }}
+                  ? 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)'
+                  : 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)',
+              }}
             />
           </div>
 
-          <div className="mt-2.5 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${summary.allHotelVouchersIssued ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-              <span>Hotel Vouchers: <strong>{summary.allHotelVouchersIssued ? 'All Generated' : 'Pending Confirmation'}</strong></span>
+          <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: summary.allHotelVouchersIssued ? '#34d399' : '#fbbf24', display: 'inline-block' }} />
+              <span style={{ color: '#cbd5e1' }}>Hotel Vouchers: <strong style={{ color: '#ffffff' }}>{summary.allHotelVouchersIssued ? 'All Generated' : 'Pending Confirmation'}</strong></span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${summary.allDriverDutySlipsIssued ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-              <span>Driver Duty Slips: <strong>{summary.allDriverDutySlipsIssued ? 'All Generated' : 'Pending Fleet Assignment'}</strong></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: summary.allDriverDutySlipsIssued ? '#34d399' : '#fbbf24', display: 'inline-block' }} />
+              <span style={{ color: '#cbd5e1' }}>Driver Duty Slips: <strong style={{ color: '#ffffff' }}>{summary.allDriverDutySlipsIssued ? 'All Generated' : 'Pending Fleet Assignment'}</strong></span>
             </div>
           </div>
         </div>
@@ -1672,6 +1704,32 @@ export function OperationsManagementView({
           bookingNumber={summary.bookingNumber}
         />
       )}
+
+      {/* Modern Complete Leg Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(completeLegToConfirm)}
+        title="Complete Transport Leg"
+        variant="primary"
+        confirmLabel="Mark as Completed"
+        cancelLabel="Cancel"
+        isLoading={Boolean(completingAssignmentId)}
+        onCancel={() => {
+          if (!completingAssignmentId) setCompleteLegToConfirm(null);
+        }}
+        onConfirm={executeCompleteTransportLeg}
+        message={
+          completeLegToConfirm && (
+            <div className="space-y-2">
+              <p className="text-sm text-slate-700">
+                Mark transport leg <strong>#{completeLegToConfirm.transportItemIndex + 1}</strong> as <strong>COMPLETED</strong>?
+              </p>
+              <p className="text-xs text-slate-500">
+                This will safely mark the duty as fulfilled and release vehicle and driver schedule locks.
+              </p>
+            </div>
+          )
+        }
+      />
     </div>
   );
 }

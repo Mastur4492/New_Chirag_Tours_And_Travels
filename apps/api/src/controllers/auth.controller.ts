@@ -117,6 +117,55 @@ export class AuthController {
       next(error);
     }
   }
+
+  async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const ipAddress = req.ip;
+      const userAgent = req.headers['user-agent'];
+
+      const updated = await userService.updateOwnProfile(userId, req.body, ipAddress, userAgent);
+
+      const response: ApiResponse<UserDto> = {
+        success: true,
+        data: updated,
+        error: null,
+        meta: {
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const { currentPassword, newPassword } = req.body;
+      const ipAddress = req.ip;
+      const userAgent = req.headers['user-agent'];
+
+      await authService.changePassword(userId, currentPassword, newPassword, ipAddress, userAgent);
+
+      const response: ApiResponse<{ message: string }> = {
+        success: true,
+        data: {
+          message: 'Password changed successfully',
+        },
+        error: null,
+        meta: {
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const authController = new AuthController();

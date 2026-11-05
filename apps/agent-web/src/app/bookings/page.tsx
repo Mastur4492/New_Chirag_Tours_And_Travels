@@ -33,6 +33,7 @@ import {
   formatPaiseToRupees,
   sanitizeDisplayName,
 } from '@/lib/labels';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 interface BookingMetrics {
   total: number;
@@ -103,9 +104,9 @@ function BookingsListContent() {
     }
   };
 
-  // Fetch bookings with server-side pagination & filtering
-  const fetchBookings = async () => {
-    setLoading(true);
+  // Fetch bookings with server-side pagination & filtering (supports silent background revalidation)
+  const fetchBookings = async (background = false) => {
+    if (!background) setLoading(true);
     setError(null);
     try {
       const res = await bookingsApi.list({
@@ -118,9 +119,9 @@ function BookingsListContent() {
       setBookings(res.data || []);
       setTotalRecords(res.meta?.total || (res.data ? res.data.length : 0));
     } catch (err: any) {
-      setError(err?.message || 'Failed to load bookings from travel desk.');
+      if (!background) setError(err?.message || 'Failed to load bookings from travel desk.');
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 
@@ -131,6 +132,15 @@ function BookingsListContent() {
   useEffect(() => {
     fetchBookings();
   }, [currentPage, pageSize, statusFilter, debouncedSearch]);
+
+  // Real-time synchronization via Server-Sent Events (SSE)
+  useRealtimeSync({
+    eventTypes: ['BOOKING_UPDATE', 'PAYMENT_UPDATE'],
+    onRefresh: () => {
+      fetchBookings(true);
+      fetchMetrics();
+    },
+  });
 
   const handleRefresh = () => {
     fetchMetrics();

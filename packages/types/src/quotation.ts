@@ -115,6 +115,9 @@ export interface QuotationPublicDto {
   bookingId?: string;
   bookingNumber?: string;
   customerName?: string;
+  customerMobile?: string;
+  customerEmail?: string;
+  customerCity?: string;
   destinationName?: string;
   travelStartDate: string;
   travelEndDate: string;

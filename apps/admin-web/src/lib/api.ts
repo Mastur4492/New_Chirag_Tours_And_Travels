@@ -1,4 +1,4 @@
-import { ApiResponse, PaginationMeta } from '@chirag/types';
+import { ApiResponse, PaginationMeta, AgencySettingsDto } from '@chirag/types';
 
 const API_BASE_URL =
   typeof window !== 'undefined'
@@ -307,6 +307,37 @@ export const notificationsApi = {
     return apiRequest<{ success: boolean }>('notifications/read-all', { method: 'PATCH' });
   },
 };
+
+export const authApi = {
+  getMe: async () => {
+    return apiRequest<any>('auth/me', { skipCache: true });
+  },
+  updateProfile: async (data: { fullName?: string; email?: string | null; mobile?: string; agencyName?: string; city?: string }) => {
+    return apiRequest<any>('auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+  changePassword: async (data: { currentPassword: string; newPassword: string; confirmPassword: string }) => {
+    return apiRequest<{ message: string }>('auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+export const agencySettingsApi = {
+  get: async () => {
+    return apiRequest<AgencySettingsDto>('settings/agency', { skipCache: true });
+  },
+  update: async (data: Partial<AgencySettingsDto>) => {
+    return apiRequest<AgencySettingsDto>('settings/agency', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
 
 
 

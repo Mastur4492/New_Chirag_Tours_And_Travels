@@ -32,3 +32,17 @@ export interface LoginResponse {
 export interface RefreshTokenResponse {
   accessToken: string;
 }
+
+export interface UpdateOwnProfileInput {
+  fullName?: string;
+  email?: string;
+  mobile?: string;
+  agencyName?: string;
+  city?: string;
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}

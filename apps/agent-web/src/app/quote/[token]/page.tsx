@@ -26,7 +26,7 @@ import {
   Printer,
   Check,
 } from 'lucide-react';
-import { QuotationPublicDto, MEAL_PLAN_LABELS, MealPlan } from '@chirag/types';
+import { QuotationPublicDto, MEAL_PLAN_LABELS, MealPlan, AgencySettingsDto } from '@chirag/types';
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { sanitizeDisplayName } from '@/lib/labels';
 
@@ -37,6 +37,7 @@ export default function CustomerQuotationPage() {
   const [quote, setQuote] = useState<QuotationPublicDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [agencySettings, setAgencySettings] = useState<AgencySettingsDto | null>(null);
 
   // Acceptance Modal & State
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
@@ -73,6 +74,12 @@ export default function CustomerQuotationPage() {
 
   useEffect(() => {
     fetchPublicQuote();
+    fetch('/api/proxy/settings/agency')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data) setAgencySettings(json.data);
+      })
+      .catch((err) => console.warn('Could not load agency settings in agent quote preview', err));
   }, [token]);
 
   const handleAcceptQuote = async () => {
@@ -608,11 +615,11 @@ export default function CustomerQuotationPage() {
                 Bank Transfer (NEFT / RTGS / IMPS)
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: '#334155' }}>
-                <div><strong>Account Name:</strong> New Chirag Tours & Travels</div>
-                <div><strong>Bank Name:</strong> HDFC Bank Ltd</div>
-                <div><strong>Branch:</strong> Danilimda Branch, Ahmedabad</div>
-                <div><strong>Account No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>50200084920194</span> (Current)</div>
-                <div><strong>IFSC Code:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>HDFC0001842</span></div>
+                <div><strong>Account Name:</strong> {agencySettings?.accountHolderName || 'NEW CHIRAG TOURS AND TRAVELS'}</div>
+                <div><strong>Bank Name:</strong> {agencySettings?.bankName || 'HDFC Bank Ltd'}</div>
+                <div><strong>Branch:</strong> {agencySettings?.branchName || 'Danilimda Branch, Ahmedabad'}</div>
+                <div><strong>Account No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{agencySettings?.accountNumber || '50200084920194'}</span> ({agencySettings?.accountType || 'Current'})</div>
+                <div><strong>IFSC Code:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{agencySettings?.ifscCode || 'HDFC0001842'}</span></div>
               </div>
             </div>
 
@@ -622,10 +629,10 @@ export default function CustomerQuotationPage() {
                 UPI & Payment Schedule
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: '#334155' }}>
-                <div><strong>UPI ID:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#059669' }}>9978655529@upi</span></div>
-                <div><strong>GPay / PhonePe:</strong> <span style={{ fontWeight: 800 }}>+91 99786 55529</span></div>
-                <div><strong>25% Advance:</strong> Locks hotel allotments & vehicle confirmation</div>
-                <div><strong>75% Balance:</strong> Payable upon arrival / prior to hotel check-in</div>
+                <div><strong>UPI ID:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#059669' }}>{agencySettings?.upiId || '9978655529@upi'}</span></div>
+                <div><strong>GPay / PhonePe:</strong> <span style={{ fontWeight: 800 }}>{agencySettings?.upiNumber || '+91 99786 55529'}</span></div>
+                <div><strong>{agencySettings?.advancePercentage ?? 25}% Advance:</strong> Locks hotel allotments & vehicle confirmation</div>
+                <div><strong>Payment Policy:</strong> {agencySettings?.paymentTerms || 'Balance payable upon arrival / prior to hotel check-in'}</div>
               </div>
             </div>
           </div>

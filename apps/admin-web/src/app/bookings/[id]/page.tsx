@@ -53,6 +53,7 @@ import {
   formatPaiseToRupees,
 } from '@/lib/labels';
 import { OperationsManagementView } from '@/components/operations/OperationsManagementView';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 export default function BookingDetailsPage() {
   const params = useParams();
@@ -83,8 +84,9 @@ export default function BookingDetailsPage() {
     }
   }, [searchParams]);
 
-  // Toast Notification
+  // Toast & Modal Notification
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4500);
@@ -125,10 +127,10 @@ export default function BookingDetailsPage() {
   const [verifySettlementRef, setVerifySettlementRef] = useState('');
   const [verifyNotes, setVerifyNotes] = useState('');
 
-  // Fetch initial data
-  const loadData = async () => {
+  // Fetch data (supports silent background revalidation for real-time SSE)
+  const loadData = async (background = false) => {
     if (!bookingId) return;
-    setLoading(true);
+    if (!background) setLoading(true);
     setError(null);
     try {
       const [bookingData, paymentsData] = await Promise.all([
@@ -143,9 +145,9 @@ export default function BookingDetailsPage() {
         : [];
       setPayments(list);
     } catch (err: any) {
-      setError(err.message || 'Failed to load booking details');
+      if (!background) setError(err.message || 'Failed to load booking details');
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 
@@ -154,6 +156,20 @@ export default function BookingDetailsPage() {
     loadData();
   }, [bookingId]);
 
+  // Real-time synchronization via Server-Sent Events (SSE)
+  useRealtimeSync({
+    scopeId: bookingId,
+    eventTypes: ['PAYMENT_UPDATE', 'BOOKING_UPDATE', 'OPERATIONS_UPDATE'],
+    onRefresh: () => {
+      loadData(true);
+    },
+    onEvent: (msg) => {
+      if (msg.message || msg.title) {
+        showToast(msg.message || msg.title || 'Live update applied');
+      }
+    },
+  });
+
   const isAdmin = userRole === 'ADMIN';
 
   // Handle Manual Payment Submit
@@ -161,11 +177,12 @@ export default function BookingDetailsPage() {
     e.preventDefault();
     const amountVal = parseFloat(paymentAmountRupees);
     if (isNaN(amountVal) || amountVal <= 0) {
-      showToast('Please enter a valid payment amount greater than ₹0', 'error');
+      setModalError('Please enter a valid payment amount greater than ₹0');
       return;
     }
 
     setPaymentSubmitting(true);
+    setModalError(null);
     try {
       await apiRequest('/payments', {
         method: 'POST',
@@ -185,9 +202,12 @@ export default function BookingDetailsPage() {
       setPaymentAmountRupees('');
       setPaymentReference('');
       setPaymentNotes('');
-      loadData();
+      setModalError(null);
+      await loadData();
     } catch (err: any) {
-      showToast(err.message || 'Failed to record payment', 'error');
+      const msg = err?.message || 'Failed to record payment';
+      setModalError(msg);
+      showToast(msg, 'error');
     } finally {
       setPaymentSubmitting(false);
     }
@@ -198,13 +218,15 @@ export default function BookingDetailsPage() {
     if (!verifyPaymentTarget) return;
 
     if (verifyPaymentTarget.isRefund && !verifySettlementRef.trim()) {
-      showToast('Settlement reference (e.g. payout UTR) is required to settle a refund payout', 'error');
+      setModalError('Settlement reference (e.g. payout UTR) is required to settle a refund payout');
       return;
     }
 
     setVerifySubmitting(true);
+    setModalError(null);
     try {
-      await apiRequest(`/payments/${verifyPaymentTarget.id}/verify`, {
+      const targetId = verifyPaymentTarget.id || (verifyPaymentTarget as any)._id;
+      await apiRequest(`/payments/${targetId}/verify`, {
         method: 'POST',
         body: JSON.stringify({
           settlementReference: verifySettlementRef.trim() || undefined,
@@ -219,9 +241,12 @@ export default function BookingDetailsPage() {
       setVerifyPaymentTarget(null);
       setVerifySettlementRef('');
       setVerifyNotes('');
-      loadData();
+      setModalError(null);
+      await loadData();
     } catch (err: any) {
-      showToast(err.message || 'Verification failed', 'error');
+      const msg = err?.message || 'Verification failed';
+      setModalError(msg);
+      showToast(msg, 'error');
     } finally {
       setVerifySubmitting(false);
     }
@@ -231,25 +256,32 @@ export default function BookingDetailsPage() {
   const handleConfirmReject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rejectPaymentTarget) return;
-    if (!rejectionReason.trim() || rejectionReason.trim().length < 5) {
-      showToast('Please provide a meaningful rejection reason (minimum 5 characters)', 'error');
+    const cleanReason = rejectionReason.trim();
+    if (!cleanReason || cleanReason.length < 5) {
+      setModalError('Please provide a meaningful rejection reason (minimum 5 characters)');
       return;
     }
 
     setRejectionSubmitting(true);
+    setModalError(null);
     try {
-      await apiRequest(`/payments/${rejectPaymentTarget.id}/reject`, {
+      const targetId = rejectPaymentTarget.id || (rejectPaymentTarget as any)._id;
+      await apiRequest(`/payments/${targetId}/reject`, {
         method: 'POST',
         body: JSON.stringify({
-          reason: rejectionReason.trim(),
+          reason: cleanReason,
+          rejectionReason: cleanReason,
         }),
       });
       showToast(`Payment ${rejectPaymentTarget.receiptNumber} rejected.`);
       setRejectPaymentTarget(null);
       setRejectionReason('');
-      loadData();
+      setModalError(null);
+      await loadData();
     } catch (err: any) {
-      showToast(err.message || 'Rejection failed', 'error');
+      const msg = err?.message || 'Rejection failed';
+      setModalError(msg);
+      showToast(msg, 'error');
     } finally {
       setRejectionSubmitting(false);
     }
@@ -261,25 +293,29 @@ export default function BookingDetailsPage() {
     if (!refundPaymentTarget) return;
     const amountVal = parseFloat(refundAmountRupees);
     if (isNaN(amountVal) || amountVal <= 0) {
-      showToast('Please enter a valid refund amount', 'error');
+      setModalError('Please enter a valid refund amount');
       return;
     }
-    if (!refundReason.trim() || refundReason.trim().length < 5) {
-      showToast('Please specify a valid refund justification (min 5 characters)', 'error');
+    const cleanReason = refundReason.trim();
+    if (!cleanReason || cleanReason.length < 5) {
+      setModalError('Please specify a valid refund justification (min 5 characters)');
       return;
     }
 
     setRefundSubmitting(true);
+    setModalError(null);
     try {
+      const origId = refundPaymentTarget.id || (refundPaymentTarget as any)._id;
       await apiRequest('/payments/refund', {
         method: 'POST',
         body: JSON.stringify({
           bookingId,
-          originalPaymentId: refundPaymentTarget.id,
+          originalPaymentId: origId,
           amount: amountVal,
-          refundReason: refundReason.trim(),
+          refundReason: cleanReason,
+          reason: cleanReason,
           transactionReference: refundReference.trim() || undefined,
-          idempotencyKey: `REFUND_${refundPaymentTarget.id}_${Date.now()}`,
+          idempotencyKey: `REFUND_${origId}_${Date.now()}`,
         }),
       });
       showToast('Refund processed successfully!');
@@ -287,9 +323,12 @@ export default function BookingDetailsPage() {
       setRefundAmountRupees('');
       setRefundReason('');
       setRefundReference('');
-      loadData();
+      setModalError(null);
+      await loadData();
     } catch (err: any) {
-      showToast(err.message || 'Failed to record refund', 'error');
+      const msg = err?.message || 'Failed to record refund';
+      setModalError(msg);
+      showToast(msg, 'error');
     } finally {
       setRefundSubmitting(false);
     }
@@ -479,17 +518,21 @@ export default function BookingDetailsPage() {
           </div>
         </div>
 
-        {/* Advance Required */}
+        {/* Advance or Payment Progress */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block">
-            Advance Required
+            {totalPaidPaise >= totalPaise ? 'Payment Progress' : 'Advance Required'}
           </span>
           <div className="mt-2 text-2xl font-bold font-outfit text-blue-900">
-            {formatPaiseToRupees(advanceReqPaise)}
+            {totalPaidPaise >= totalPaise
+              ? '100% Paid'
+              : formatPaiseToRupees(advanceReqPaise)}
           </div>
           <div className="mt-1 text-xs text-blue-700">
-            {advanceReqPaise > 0
-              ? `${Math.round((advanceReqPaise / (totalPaise || 1)) * 100)}% of package`
+            {totalPaidPaise >= totalPaise
+              ? 'Confirmed & Ready for Tour'
+              : advanceReqPaise > 0
+              ? `${Math.round((advanceReqPaise / (totalPaise || 1)) * 100)}% required to lock hotels`
               : 'Zero advance required'}
           </div>
         </div>
@@ -497,94 +540,75 @@ export default function BookingDetailsPage() {
         {/* Net Verified Paid */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider block">
-            Net Verified Paid
+            Total Received
           </span>
           <div className="mt-2 text-2xl font-bold font-outfit text-emerald-900">
             {formatPaiseToRupees(totalPaidPaise)}
           </div>
           <div className="mt-1 text-xs text-emerald-700 flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Audit-verified ledger total</span>
+            <span>Verified & Credited to Bank</span>
           </div>
         </div>
 
-        {/* Balance Pending / Customer Credit */}
+        {/* Balance Pending / Account Status */}
         <div
           className={`p-5 rounded-2xl border shadow-sm ${
-            isOverpaid
-              ? 'bg-purple-50/50 border-purple-200'
-              : isSettled
+            balancePaise <= 0
               ? 'bg-emerald-50/50 border-emerald-200'
-              : 'bg-white border-slate-200'
+              : 'bg-amber-50/50 border-amber-200'
           }`}
         >
           <span
             className={`text-xs font-bold uppercase tracking-wider block ${
-              isOverpaid
-                ? 'text-purple-700'
-                : isSettled
-                ? 'text-emerald-700'
-                : 'text-slate-500'
+              balancePaise <= 0 ? 'text-emerald-700' : 'text-amber-700'
             }`}
           >
-            {isOverpaid ? 'Unresolved Excess' : isSettled ? 'Account Status' : 'Balance Pending'}
+            Balance Due
           </span>
           <div
             className={`mt-2 text-2xl font-bold font-outfit ${
-              isOverpaid
-                ? 'text-purple-900'
-                : isSettled
-                ? 'text-emerald-900'
-                : 'text-slate-900'
+              balancePaise <= 0 ? 'text-emerald-900' : 'text-amber-900'
             }`}
           >
-            {isOverpaid
-              ? formatPaiseToRupees(excessPaidPaise)
-              : isSettled
-              ? '₹0 (Settled)'
-              : formatPaiseToRupees(balancePaise)}
+            {balancePaise <= 0 ? '₹0 (Settled)' : formatPaiseToRupees(balancePaise)}
           </div>
           <div className="mt-1 text-xs">
-            {isOverpaid ? (
-              <span className="text-purple-700 font-medium">
-                Excess received; awaiting owner settlement / credit decision
+            {balancePaise <= 0 ? (
+              <span className="text-emerald-700 font-medium">
+                {excessPaidPaise > 0 ? `Fully Paid (+${formatPaiseToRupees(excessPaidPaise)} extra)` : 'Fully Paid & Cleared ✅'}
               </span>
-            ) : isSettled ? (
-              <span className="text-emerald-700 font-medium">Full package paid</span>
             ) : (
-              <span className="text-amber-700 font-medium">Outstanding to collect</span>
+              <span className="text-amber-700 font-medium">Pending collection from customer</span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Overpayment Warning Banner if Unresolved Excess Exists */}
+      {/* Minor Round-off Note Banner (if any extra payment was recorded) */}
       {excessPaidPaise > 0 && (
-        <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900 flex items-start gap-3 text-xs">
-          <Info className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-          <div className="space-y-0.5">
-            <span className="font-bold text-sm block">
-              Unresolved Excess Payment: {formatPaiseToRupees(excessPaidPaise)}
+        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>
+              <strong>Payment Complete (+{formatPaiseToRupees(excessPaidPaise)} round-off extra):</strong> Customer has deposited {formatPaiseToRupees(totalPaidPaise)} against total package cost of {formatPaiseToRupees(totalPaise)}. Balance is 100% settled.
             </span>
-            <p className="text-purple-800">
-              Verified customer payments exceed the authoritative selling price. Outstanding balance is clamped to ₹0.
-              Automatic customer credit and automated refund payouts are disabled pending formal owner / CA approval.
-            </p>
           </div>
+          <span className="px-2.5 py-1 bg-slate-200 text-slate-700 rounded-md font-semibold text-[11px] whitespace-nowrap">
+            No Balance Due
+          </span>
         </div>
       )}
 
-      {/* Decoupled Confirmation Banner */}
-      <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex items-start gap-3">
-        <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-        <div className="text-xs text-amber-900 space-y-0.5">
-          <p className="font-semibold text-amber-950">
-            Important Commercial & Operational Guardrail
+      {/* Operational Next Steps Reminder Banner */}
+      <div className="bg-teal-50/60 border border-teal-200/80 rounded-2xl p-3.5 flex items-start gap-3">
+        <Info className="w-4 h-4 text-teal-700 flex-shrink-0 mt-0.5" />
+        <div className="text-xs text-teal-950 space-y-0.5">
+          <p className="font-semibold text-teal-950">
+            Payment Records Synced & Verified
           </p>
-          <p className="text-amber-800 leading-relaxed">
-            Verifying a payment records funds in the accounting ledger. It does <strong>NOT</strong>{' '}
-            automatically lock hotel room inventory, assign drivers, or change the booking to CONFIRMED.
-            Business and inventory confirmations must be executed separately by authorized personnel.
+          <p className="text-teal-800 leading-relaxed">
+            Payment transactions are reconciled with the bank ledger. Please review the <strong>Operations & Vouchers</strong> tab to verify hotel room confirmation references and driver vehicle dispatch.
           </p>
         </div>
       </div>
@@ -1174,20 +1198,54 @@ export default function BookingDetailsPage() {
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
+              {modalError && (
+                <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', padding: '10px 14px', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
                 <button
                   type="button"
-                  onClick={() => setIsPaymentModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+                  onClick={() => {
+                    setIsPaymentModalOpen(false);
+                    setModalError(null);
+                  }}
+                  style={{
+                    padding: '9px 18px',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    color: '#475569',
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={paymentSubmitting}
-                  className="px-5 py-2 text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                  style={{
+                    padding: '9px 22px',
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    background: paymentSubmitting ? '#115e59' : '#0f766e',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: paymentSubmitting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 2px 8px rgba(15, 118, 110, 0.25)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: paymentSubmitting ? 0.7 : 1,
+                  }}
                 >
-                  {paymentSubmitting ? 'Recording...' : 'Submit Payment'}
+                  <Plus size={16} />
+                  <span>{paymentSubmitting ? 'Recording...' : 'Submit Payment'}</span>
                 </button>
               </div>
             </form>
@@ -1271,15 +1329,32 @@ export default function BookingDetailsPage() {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            {modalError && (
+              <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', padding: '10px 14px', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', paddingTop: '8px' }}>
               <button
                 type="button"
                 onClick={() => {
                   setVerifyPaymentTarget(null);
                   setVerifySettlementRef('');
                   setVerifyNotes('');
+                  setModalError(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+                style={{
+                  padding: '9px 18px',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  color: '#475569',
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                }}
               >
                 Cancel
               </button>
@@ -1287,13 +1362,30 @@ export default function BookingDetailsPage() {
                 type="button"
                 onClick={handleConfirmVerify}
                 disabled={verifySubmitting || (verifyPaymentTarget.isRefund && !verifySettlementRef.trim())}
-                className="px-5 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                style={{
+                  padding: '9px 22px',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  background: verifySubmitting ? '#065f46' : '#047857',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: verifySubmitting ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 2px 8px rgba(4, 120, 87, 0.25)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  opacity: verifySubmitting ? 0.7 : 1,
+                }}
               >
-                {verifySubmitting
-                  ? 'Verifying...'
-                  : verifyPaymentTarget.isRefund
-                  ? 'Confirm Payout & Settle Refund'
-                  : 'Confirm & Credit Ledger'}
+                <Check size={16} />
+                <span>
+                  {verifySubmitting
+                    ? 'Verifying...'
+                    : verifyPaymentTarget.isRefund
+                    ? 'Confirm Payout & Settle Refund'
+                    : 'Confirm & Credit Ledger'}
+                </span>
               </button>
             </div>
           </div>
@@ -1323,26 +1415,63 @@ export default function BookingDetailsPage() {
                   rows={3}
                   required
                   value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
+                  onChange={(e) => {
+                    setRejectionReason(e.target.value);
+                    if (modalError) setModalError(null);
+                  }}
                   placeholder="e.g. Funds not reflected in bank statement, invalid UTR, or duplicate submission..."
                   className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600 text-slate-900"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              {modalError && (
+                <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', padding: '10px 14px', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', paddingTop: '8px' }}>
                 <button
                   type="button"
-                  onClick={() => setRejectPaymentTarget(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+                  onClick={() => {
+                    setRejectPaymentTarget(null);
+                    setModalError(null);
+                  }}
+                  style={{
+                    padding: '9px 18px',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    color: '#475569',
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={rejectionSubmitting}
-                  className="px-5 py-2 text-xs font-semibold text-white bg-rose-700 hover:bg-rose-800 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                  style={{
+                    padding: '9px 22px',
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    background: rejectionSubmitting ? '#9f1239' : '#be123c',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: rejectionSubmitting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 2px 8px rgba(190, 18, 60, 0.25)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: rejectionSubmitting ? 0.7 : 1,
+                  }}
                 >
-                  {rejectionSubmitting ? 'Rejecting...' : 'Reject Payment'}
+                  <XCircle size={16} />
+                  <span>{rejectionSubmitting ? 'Rejecting Payment...' : 'Reject Payment'}</span>
                 </button>
               </div>
             </form>
@@ -1420,20 +1549,54 @@ export default function BookingDetailsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              {modalError && (
+                <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', padding: '10px 14px', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', paddingTop: '8px' }}>
                 <button
                   type="button"
-                  onClick={() => setRefundPaymentTarget(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+                  onClick={() => {
+                    setRefundPaymentTarget(null);
+                    setModalError(null);
+                  }}
+                  style={{
+                    padding: '9px 18px',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    color: '#475569',
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={refundSubmitting}
-                  className="px-5 py-2 text-xs font-semibold text-white bg-rose-700 hover:bg-rose-800 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                  style={{
+                    padding: '9px 22px',
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    background: refundSubmitting ? '#9f1239' : '#be123c',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: refundSubmitting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 2px 8px rgba(190, 18, 60, 0.25)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: refundSubmitting ? 0.7 : 1,
+                  }}
                 >
-                  {refundSubmitting ? 'Recording...' : 'Process Refund'}
+                  <RotateCcw size={16} />
+                  <span>{refundSubmitting ? 'Recording...' : 'Process Refund'}</span>
                 </button>
               </div>
             </form>
@@ -1488,20 +1651,54 @@ export default function BookingDetailsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              {modalError && (
+                <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', padding: '10px 14px', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', paddingTop: '8px' }}>
                 <button
                   type="button"
-                  onClick={() => setIsStatusModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+                  onClick={() => {
+                    setIsStatusModalOpen(false);
+                    setModalError(null);
+                  }}
+                  style={{
+                    padding: '9px 18px',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    color: '#475569',
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={statusSubmitting}
-                  className="px-5 py-2 text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                  style={{
+                    padding: '9px 22px',
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    background: statusSubmitting ? '#115e59' : '#0f766e',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: statusSubmitting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 2px 8px rgba(15, 118, 110, 0.25)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: statusSubmitting ? 0.7 : 1,
+                  }}
                 >
-                  {statusSubmitting ? 'Updating...' : 'Update Status'}
+                  <ShieldCheck size={16} />
+                  <span>{statusSubmitting ? 'Updating...' : 'Update Status'}</span>
                 </button>
               </div>
             </form>

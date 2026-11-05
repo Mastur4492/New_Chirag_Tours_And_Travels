@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { notificationsApi } from '@/lib/api';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 function formatRelativeTime(dateString: string): string {
   try {
@@ -38,59 +39,86 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [liveToast, setLiveToast] = useState<{
+    id: string;
+    title: string;
+    message: string;
+    link?: string;
+  } | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Poll for unread notifications every 12 seconds
-  useEffect(() => {
-    let isMounted = true;
+  const fetchCount = async () => {
+    try {
+      const res = await notificationsApi.getUnreadCount();
+      if (typeof res?.unreadCount === 'number') {
+        setUnreadCount(res.unreadCount);
+      }
+    } catch {
+      // Silently handle if unauthenticated or offline
+    }
+  };
 
-    const fetchCount = async () => {
-      try {
-        const res = await notificationsApi.getUnreadCount();
-        if (isMounted && typeof res?.unreadCount === 'number') {
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const res = await notificationsApi.list({ limit: 25 });
+      if (res) {
+        setNotifications(res.notifications || []);
+        if (typeof res.unreadCount === 'number') {
           setUnreadCount(res.unreadCount);
         }
-      } catch {
-        // Silently handle if unauthenticated or offline
       }
-    };
+    } catch (err) {
+      console.error('Failed to load notifications:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Initial count load & backup poll
+  useEffect(() => {
     fetchCount();
-    const interval = setInterval(fetchCount, 12000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    const interval = setInterval(fetchCount, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Fetch full list when popover opens
   useEffect(() => {
-    if (!isOpen) return;
-
-    let isMounted = true;
-    setLoading(true);
-
-    notificationsApi
-      .list({ limit: 25 })
-      .then((res) => {
-        if (isMounted && res) {
-          setNotifications(res.notifications || []);
-          if (typeof res.unreadCount === 'number') {
-            setUnreadCount(res.unreadCount);
-          }
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load notifications:', err);
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    if (isOpen) {
+      fetchNotifications();
+    }
   }, [isOpen]);
+
+  // Enterprise real-time sync: Updates bell badge & pops notification toast instantly
+  useRealtimeSync({
+    eventTypes: ['NOTIFICATION', 'QUOTATION_UPDATE', 'PAYMENT_UPDATE', 'BOOKING_UPDATE'],
+    onRefresh: () => {
+      fetchCount();
+      if (isOpen) {
+        fetchNotifications();
+      }
+    },
+    onEvent: (msg) => {
+      fetchCount();
+      if (msg.title || msg.message) {
+        setLiveToast({
+          id: String(Date.now()),
+          title: msg.title || 'Live Activity Update',
+          message: msg.message || '',
+          link: msg.data?.link,
+        });
+      }
+    },
+  });
+
+  // Auto-dismiss live toast after 5s
+  useEffect(() => {
+    if (!liveToast) return;
+    const timer = setTimeout(() => {
+      setLiveToast(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [liveToast]);
 
   // Close on click outside or Escape
   useEffect(() => {
@@ -506,6 +534,59 @@ export function NotificationBell() {
               ))
             )}
           </div>
+        </div>
+      )}
+
+      {/* Real-time floating popup toast */}
+      {liveToast && (
+        <div
+          role="alert"
+          onClick={() => {
+            if (liveToast.link) router.push(liveToast.link);
+            setLiveToast(null);
+          }}
+          style={{
+            position: 'fixed',
+            top: 20,
+            right: 20,
+            zIndex: 99999,
+            maxWidth: 380,
+            backgroundColor: '#0f172a',
+            color: '#f8fafc',
+            borderRadius: 12,
+            padding: '12px 16px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.35), 0 8px 10px -6px rgba(0,0,0,0.35)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 12,
+            borderLeft: '4px solid #0d9488',
+            cursor: liveToast.link ? 'pointer' : 'default',
+            animation: 'fadeIn 0.25s ease-out',
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#2dd4bf', marginBottom: 2 }}>
+              {liveToast.title}
+            </div>
+            <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.4 }}>
+              {liveToast.message}
+            </div>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setLiveToast(null);
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              padding: 2,
+            }}
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
     </div>

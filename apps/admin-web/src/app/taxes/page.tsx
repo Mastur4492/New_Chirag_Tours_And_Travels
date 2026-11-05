@@ -238,7 +238,7 @@ export default function TaxesPage() {
       setConfirmToggleModal(null);
       fetchTaxes();
     } catch (err: any) {
-      alert(`Error updating tax rule: ${err.message}`);
+      setToastMessage(`Error updating tax rule: ${err.message}`);
     } finally {
       setSubmitting(false);
     }

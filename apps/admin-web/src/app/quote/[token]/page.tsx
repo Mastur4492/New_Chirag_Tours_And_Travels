@@ -25,17 +25,27 @@ import {
   ArrowRight,
   Printer,
 } from 'lucide-react';
-import { QuotationPublicDto, MEAL_PLAN_LABELS, MealPlan } from '@chirag/types';
+import { QuotationPublicDto, MEAL_PLAN_LABELS, MealPlan, AgencySettingsDto } from '@chirag/types';
+import { agencySettingsApi } from '@/lib/api';
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { sanitizeDisplayName } from '@/lib/labels';
+import { resolvePublicQuoteUrl } from '@/lib/publicQuoteUrl';
 
 export default function CustomerQuotationPage() {
   const params = useParams();
   const token = params?.token as string;
 
+  useEffect(() => {
+    if (token) {
+      const urlInfo = resolvePublicQuoteUrl(token);
+      window.location.replace(urlInfo.url || `http://localhost:3000/quote/${token}`);
+    }
+  }, [token]);
+
   const [quote, setQuote] = useState<QuotationPublicDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [agencySettings, setAgencySettings] = useState<AgencySettingsDto | null>(null);
 
   // Acceptance Modal & State
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
@@ -72,6 +82,12 @@ export default function CustomerQuotationPage() {
 
   useEffect(() => {
     fetchPublicQuote();
+    agencySettingsApi
+      .get()
+      .then((settings) => {
+        if (settings) setAgencySettings(settings);
+      })
+      .catch((err) => console.warn('Could not load agency settings in admin quote preview', err));
   }, [token]);
 
   const handleAcceptQuote = async () => {
@@ -542,11 +558,11 @@ export default function CustomerQuotationPage() {
                   <div className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
                     Bank Transfer (NEFT / RTGS / IMPS)
                   </div>
-                  <div><strong>Account Name:</strong> New Chirag Tours & Travels</div>
-                  <div><strong>Bank Name:</strong> HDFC Bank Ltd</div>
-                  <div><strong>Branch:</strong> Danilimda Branch, Ahmedabad</div>
-                  <div><strong>Account No:</strong> 50200084920194 (Current Account)</div>
-                  <div><strong>IFSC Code:</strong> HDFC0001842</div>
+                  <div><strong>Account Name:</strong> {agencySettings?.accountHolderName || 'NEW CHIRAG TOURS AND TRAVELS'}</div>
+                  <div><strong>Bank Name:</strong> {agencySettings?.bankName || 'HDFC Bank Ltd'}</div>
+                  <div><strong>Branch:</strong> {agencySettings?.branchName || 'Danilimda Branch, Ahmedabad'}</div>
+                  <div><strong>Account No:</strong> {agencySettings?.accountNumber || '50200084920194'} ({agencySettings?.accountType || 'Current Account'})</div>
+                  <div><strong>IFSC Code:</strong> {agencySettings?.ifscCode || 'HDFC0001842'}</div>
                 </div>
 
                 {/* UPI & Instant QR */}
@@ -554,10 +570,10 @@ export default function CustomerQuotationPage() {
                   <div className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
                     UPI / Instant QR Payment
                   </div>
-                  <div><strong>UPI ID:</strong> 9978655529@upi</div>
-                  <div><strong>Google Pay / PhonePe:</strong> +91 99786 55529</div>
-                  <div><strong>Payment Schedule:</strong> 25% Advance to Lock Allotments</div>
-                  <div><strong>Balance Payment:</strong> 75% on Arrival / Prior to Hotel Check-in</div>
+                  <div><strong>UPI ID:</strong> {agencySettings?.upiId || '9978655529@upi'}</div>
+                  <div><strong>Google Pay / PhonePe:</strong> {agencySettings?.upiNumber || '+91 99786 55529'}</div>
+                  <div><strong>Payment Schedule:</strong> {agencySettings?.advancePercentage ?? 25}% Advance to Lock Allotments</div>
+                  <div><strong>Terms:</strong> {agencySettings?.paymentTerms || '75% on Arrival / Prior to Hotel Check-in'}</div>
                 </div>
               </div>
 

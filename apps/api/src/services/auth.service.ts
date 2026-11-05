@@ -136,6 +136,41 @@ export class AuthService {
       });
     }
   }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<void> {
+    const user = await userRepository.findById(userId, true);
+    if (!user) {
+      throw AppError.notFound('User not found');
+    }
+
+    const isMatch = await this.comparePassword(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      throw AppError.badRequest('Current password is incorrect');
+    }
+
+    const newHash = await this.hashPassword(newPassword);
+    await userRepository.update(userId, {
+      passwordHash: newHash,
+      refreshTokenHash: null,
+    } as any);
+
+    await auditLogRepository.record({
+      actorId: userId,
+      actorRole: user.role,
+      action: 'PASSWORD_CHANGED',
+      entityType: 'USER',
+      entityId: userId,
+      ipAddress,
+      userAgent,
+      notes: 'User successfully updated their account password',
+    });
+  }
 }
 
 export const authService = new AuthService();

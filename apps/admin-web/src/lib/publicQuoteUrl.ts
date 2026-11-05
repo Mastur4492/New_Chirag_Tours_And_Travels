@@ -31,9 +31,14 @@ export function resolvePublicQuoteUrl(token: string): PublicQuoteUrlResult {
   if (isConfiguredDomain) {
     baseUrl = cleanEnvBaseUrl;
   } else if (typeof window !== 'undefined' && window.location?.origin) {
-    baseUrl = window.location.origin.replace(/\/+$/, '');
+    const origin = window.location.origin.replace(/\/+$/, '');
+    if (origin.includes(':3001') || origin.includes(':3002')) {
+      baseUrl = origin.replace(/:300[12]/, ':3000');
+    } else {
+      baseUrl = origin;
+    }
   } else {
-    baseUrl = '';
+    baseUrl = 'http://localhost:3000';
   }
 
   // Detect whether the resolved base URL points to localhost, loopback, or private host

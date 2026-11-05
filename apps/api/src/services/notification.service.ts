@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { NotificationDto, ListNotificationsResponse, NotificationType } from '@chirag/types';
 import { notificationRepository } from '../repositories/notification.repository';
 import { AppError } from '../utils/appError';
+import { realtimeService } from './realtime.service';
 
 export interface ActorContext {
   userId: string;
@@ -38,7 +39,19 @@ export class NotificationService {
       metadata: input.metadata || {},
     });
 
-    return doc.toDto(input.recipientUserId);
+    const dto = doc.toDto(input.recipientUserId);
+
+    // Instant real-time broadcast via SSE
+    realtimeService.broadcast({
+      type: 'NOTIFICATION',
+      recipientRole: input.recipientRole || (input.recipientUserId ? undefined : 'ALL'),
+      recipientUserId: input.recipientUserId,
+      title: input.title,
+      message: input.message,
+      data: dto,
+    });
+
+    return dto;
   }
 
   async listNotifications(

@@ -11,6 +11,8 @@ import { auditLogRepository } from '../repositories/auditLog.repository';
 import { bookingRepository } from '../repositories/booking.repository';
 import { leadRepository } from '../repositories/lead.repository';
 import { paymentRecordRepository } from '../repositories/paymentRecord.repository';
+import { notificationService } from './notification.service';
+import { realtimeService } from './realtime.service';
 import { AppError } from '../utils/appError';
 import { logger } from '../utils/logger';
 
@@ -158,7 +160,41 @@ export class PaymentService {
 
     logger.info(`Payment recorded [${receiptNumber}]: ₹${input.amount} for booking ${booking.bookingNumber} in SUBMITTED status`);
 
-    return createdRecord.toDto();
+    // In-app notification for Admin Desk to audit and verify payment receipt
+    notificationService
+      .createNotification({
+        recipientRole: 'ADMIN',
+        type: 'GENERAL',
+        title: `Payment Verification Required: ₹${input.amount.toLocaleString('en-IN')}`,
+        message: `Payment of ₹${input.amount.toLocaleString('en-IN')} (${input.paymentMethod}) recorded for Booking ${booking.bookingNumber}. Awaiting admin verification.`,
+        link: `/bookings/${booking._id.toString()}`,
+        entityType: 'BOOKING',
+        entityId: booking._id.toString(),
+        metadata: {
+          receiptNumber,
+          bookingNumber: booking.bookingNumber,
+          amount: input.amount,
+          paymentMethod: input.paymentMethod,
+          transactionReference: input.transactionReference,
+        },
+      })
+      .catch((err) => logger.error('[PaymentService] Failed to create payment notification for admin:', err));
+
+    const dto = createdRecord.toDto();
+    realtimeService.broadcast({
+      type: 'PAYMENT_UPDATE',
+      scopeId: booking._id.toString(),
+      title: 'Payment Submitted',
+      message: `Payment of ₹${input.amount} submitted on Booking #${booking.bookingNumber}`,
+      data: {
+        action: 'SUBMITTED',
+        paymentId: createdRecord._id.toString(),
+        bookingId: booking._id.toString(),
+        receiptNumber,
+        amount: input.amount,
+      },
+    });
+    return dto;
   }
 
   /**
@@ -287,6 +323,28 @@ export class PaymentService {
           });
         }
       }
+
+      // Notify assigned agent that payment has been audited & credited to ledger
+      const assignedAgentId = (booking.assignedAgentId as any)?._id?.toString() || booking.assignedAgentId?.toString();
+      if (assignedAgentId) {
+        notificationService
+          .createNotification({
+            recipientUserId: assignedAgentId,
+            recipientRole: 'AGENT',
+            type: 'GENERAL',
+            title: `Payment Verified: Receipt ${verified.receiptNumber}`,
+            message: `₹${(verified.amountInPaise / 100).toLocaleString('en-IN')} has been verified by Admin and credited to Booking ${booking.bookingNumber}.`,
+            link: `/bookings/${booking._id.toString()}`,
+            entityType: 'BOOKING',
+            entityId: booking._id.toString(),
+            metadata: {
+              receiptNumber: verified.receiptNumber,
+              bookingNumber: booking.bookingNumber,
+              amount: verified.amountInPaise / 100,
+            },
+          })
+          .catch((err) => logger.error('[PaymentService] Failed to notify agent of verification:', err));
+      }
     }
 
     // Audit log (idempotent: avoid duplicate audit if already recorded)
@@ -318,7 +376,20 @@ export class PaymentService {
 
     logger.info(`Payment [${verified.receiptNumber}] verified by admin ${actor.userId}. Net paid: ₹${totals.netPaidPaise / 100}`);
 
-    return verified.toDto();
+    const verifiedDto = verified.toDto();
+    realtimeService.broadcast({
+      type: 'PAYMENT_UPDATE',
+      scopeId: verified.bookingId.toString(),
+      title: 'Payment Receipt Verified',
+      message: `Receipt ${verified.receiptNumber} verified and credited to ledger`,
+      data: {
+        action: 'VERIFIED',
+        paymentId: verified._id.toString(),
+        bookingId: verified.bookingId.toString(),
+        receiptNumber: verified.receiptNumber,
+      },
+    });
+    return verifiedDto;
   }
 
   /**
@@ -394,7 +465,21 @@ export class PaymentService {
 
     logger.info(`Payment [${rejected.receiptNumber}] rejected by admin ${actor.userId}: "${rejectionReason.trim()}"`);
 
-    return rejected.toDto();
+    const rejectedDto = rejected.toDto();
+    realtimeService.broadcast({
+      type: 'PAYMENT_UPDATE',
+      scopeId: rejected.bookingId.toString(),
+      title: 'Payment Rejected',
+      message: `Receipt ${rejected.receiptNumber} rejected`,
+      data: {
+        action: 'REJECTED',
+        paymentId: rejected._id.toString(),
+        bookingId: rejected.bookingId.toString(),
+        receiptNumber: rejected.receiptNumber,
+        rejectionReason: rejectionReason.trim(),
+      },
+    });
+    return rejectedDto;
   }
 
   /**
@@ -583,7 +668,21 @@ export class PaymentService {
 
     logger.info(`Refund requested [${receiptNumber}]: ₹${input.amount} against ${originalPayment.receiptNumber} in SUBMITTED status`);
 
-    return refundRecord.toDto();
+    const refundDto = refundRecord.toDto();
+    realtimeService.broadcast({
+      type: 'PAYMENT_UPDATE',
+      scopeId: booking._id.toString(),
+      title: 'Customer Refund Recorded',
+      message: `Refund of ₹${input.amount} requested against ${originalPayment.receiptNumber}`,
+      data: {
+        action: 'REFUND_RECORDED',
+        paymentId: refundRecord._id.toString(),
+        bookingId: booking._id.toString(),
+        receiptNumber,
+        amount: input.amount,
+      },
+    });
+    return refundDto;
   }
 
   /**

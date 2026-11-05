@@ -63,6 +63,7 @@ const inventoryNavItems: NavItem[] = [
 ];
 
 const settingsNavItems: NavItem[] = [
+  { name: 'My Profile & Security', href: '/profile', icon: UserCheck },
   { name: 'Customer Portal Settings', href: '/customer-settings', icon: Globe, badge: 'Live Web' },
   { name: 'Seasons & Pricing', href: '/seasons', icon: Calendar },
   { name: 'Tax & GST Settings', href: '/taxes', icon: Receipt },
@@ -207,7 +208,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  prefetch={true}
+                  prefetch={false}
                   className={`nav-link ${isActive ? 'active' : ''}`}
                   title={item.name}
                 >
@@ -237,7 +238,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  prefetch={true}
+                  prefetch={false}
                   className={`nav-link ${isActive ? 'active' : ''}`}
                   title={item.name}
                 >
@@ -259,7 +260,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      prefetch={true}
+                      prefetch={false}
                       className={`nav-link ${isActive ? 'active' : ''}`}
                       title={item.name}
                     >
@@ -274,7 +275,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </ul>
 
         {/* User Card */}
-        <div style={{ padding: '16px', borderTop: '1.5px solid var(--border-subtle)', background: '#fafbfc' }}>
+        <Link
+          href="/profile"
+          title="Click to view and edit executive profile"
+          style={{ textDecoration: 'none', display: 'block', padding: '16px', borderTop: '1.5px solid var(--border-subtle)', background: '#fafbfc', transition: 'background 0.15s ease' }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
@@ -344,7 +349,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               )}
             </span>
           </div>
-        </div>
+        </Link>
       </aside>
 
       {/* Main Content Area */}
@@ -431,7 +436,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {isAuthenticated ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Link
+                  href="/profile"
+                  className="btn btn-secondary btn-sm"
+                  title="My Executive Profile & Security"
+                  style={{ fontSize: '13px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                >
+                  <UserCheck size={14} style={{ color: 'var(--primary)' }} />
+                  <span className="hidden sm:inline">Profile</span>
+                </Link>
                 <NotificationBell />
                 <button
                   onClick={handleLogout}

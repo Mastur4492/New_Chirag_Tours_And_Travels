@@ -1076,7 +1076,7 @@ export default function LeadsPage() {
 
       {/* VIEW 2: KANBAN PIPELINE BOARD */}
       {viewMode === 'KANBAN' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 overflow-x-auto pb-6">
+        <div className="flex gap-4.5 overflow-x-auto pb-6 pt-1 px-0.5 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent min-w-full">
           {ALL_STATUSES.map((st) => {
             const cfg = LEAD_STATUS_CONFIG[st];
             const columnLeads = filteredLeads.filter((l) => l.status === st);
@@ -1084,42 +1084,46 @@ export default function LeadsPage() {
             return (
               <div
                 key={st}
-                className="bg-slate-50/70 border border-slate-200 rounded-xl p-3 flex flex-col min-w-[240px]"
+                className="w-[320px] min-w-[320px] max-w-[320px] flex-shrink-0 bg-slate-100/75 border border-slate-200/90 rounded-2xl p-3.5 flex flex-col shadow-xs"
               >
                 {/* Column Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${cfg.dotClass}`} />
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200/90 mb-3.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${cfg.dotClass}`} />
                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                       {cfg.label}
                     </span>
                   </div>
-                  <span className="text-xs font-bold px-2 py-0.5 bg-white border border-slate-200 rounded-full text-slate-700">
+                  <span className="text-xs font-bold px-2.5 py-0.5 bg-white border border-slate-200 rounded-full text-slate-700 shadow-2xs">
                     {columnLeads.length}
                   </span>
                 </div>
 
-                {/* Cards */}
-                <div className="flex-1 space-y-3 overflow-y-auto max-h-[650px] pr-1">
+                {/* Cards Container */}
+                <div className="flex-1 space-y-3 overflow-y-auto max-h-[700px] pr-1 scrollbar-thin">
                   {loading ? (
                     <>
                       {[1, 2].map((k) => (
-                        <div key={k} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
+                        <div key={k} className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div className="skeleton" style={{ width: '60px', height: '12px', borderRadius: '4px' }} />
-                            <div className="skeleton skeleton-pill" style={{ width: '55px', height: '16px' }} />
+                            <div className="skeleton" style={{ width: '80px', height: '14px', borderRadius: '4px' }} />
+                            <div className="skeleton skeleton-pill" style={{ width: '65px', height: '18px' }} />
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <div className="skeleton" style={{ width: '120px', height: '14px', borderRadius: '4px' }} />
-                            <div className="skeleton" style={{ width: '85px', height: '11px', borderRadius: '4px' }} />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div className="skeleton" style={{ width: '150px', height: '16px', borderRadius: '4px' }} />
+                            <div className="skeleton" style={{ width: '100px', height: '12px', borderRadius: '4px' }} />
                           </div>
-                          <div className="skeleton" style={{ width: '100%', height: '24px', borderRadius: '6px' }} />
+                          <div className="skeleton" style={{ width: '100%', height: '32px', borderRadius: '8px' }} />
                         </div>
                       ))}
                     </>
                   ) : columnLeads.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-slate-400 italic">
-                      No enquiries
+                    <div className="py-12 px-4 text-center rounded-xl border border-dashed border-slate-300/80 bg-white/60 flex flex-col items-center justify-center gap-2">
+                      <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                        <Kanban className="w-4.5 h-4.5" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-600">No enquiries in this stage</span>
+                      <span className="text-[11px] text-slate-400">Leads will appear here as they progress</span>
                     </div>
                   ) : (
                     columnLeads.map((lead) => {
@@ -1134,10 +1138,11 @@ export default function LeadsPage() {
                         <div
                           key={lead.id}
                           onClick={() => openLeadDrawer(lead)}
-                          className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs hover:shadow-md hover:border-teal-300 transition-all cursor-pointer space-y-2.5"
+                          className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-teal-400 transition-all cursor-pointer space-y-3 group"
                         >
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-xs font-mono font-bold text-teal-800 whitespace-nowrap">
+                          {/* Top Row: Lead Number & Source Badge */}
+                          <div className="flex justify-between items-center gap-2">
+                            <span className="text-xs font-mono font-bold text-teal-900 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/70 whitespace-nowrap">
                               {lead.leadNumber}
                             </span>
                             <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${sourceCfg.badgeClass}`}>
@@ -1145,22 +1150,41 @@ export default function LeadsPage() {
                             </span>
                           </div>
 
+                          {/* Customer Info */}
                           <div>
-                            <div className="font-bold text-sm text-slate-900 leading-snug">
+                            <div className="font-extrabold text-sm text-slate-900 group-hover:text-teal-950 transition-colors leading-snug">
                               {lead.customerName || 'Customer'}
                             </div>
-                            <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
-                              <Phone className="w-3 h-3 text-slate-400" />
-                              {lead.customerMobile || <span className="text-slate-400 italic">None on file</span>}
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <div className="text-xs text-slate-600 flex items-center gap-1 font-medium">
+                                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{lead.customerMobile || <span className="text-slate-400 italic">None</span>}</span>
+                              </div>
+                              {lead.customerMobile && (
+                                <a
+                                  href={`https://wa.me/91${lead.customerMobile}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200 font-semibold transition-colors"
+                                  title="Chat on WhatsApp"
+                                >
+                                  <span>WhatsApp</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              )}
                             </div>
                           </div>
 
-                          <div className="text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100 flex items-center justify-between">
-                            <div className="flex items-center gap-1 font-semibold text-slate-800">
-                              <MapPin className="w-3 h-3 text-teal-600 flex-shrink-0" />
-                              <span className="truncate max-w-[130px]">{sanitizeDisplayName(lead.destinationName) || 'Custom'}</span>
+                          {/* Destination & Travelers Box */}
+                          <div className="text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200/70 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 font-semibold text-slate-800 min-w-0 flex-1">
+                              <MapPin className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
+                              <span className="truncate" title={lead.destinationName}>
+                                {sanitizeDisplayName(lead.destinationName) || 'Custom Circuit'}
+                              </span>
                             </div>
-                            <span className="text-[11px] text-slate-500 font-medium">
+                            <span className="text-[11px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200 flex-shrink-0 whitespace-nowrap shadow-2xs">
                               {lead.numberOfAdults}A {lead.numberOfChildren > 0 ? `+ ${lead.numberOfChildren}C` : ''}
                             </span>
                           </div>
@@ -1168,7 +1192,7 @@ export default function LeadsPage() {
                           {/* Follow-up reminder indicator */}
                           {lead.nextFollowUpDate && (
                             <div
-                              className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border font-medium ${
+                              className={`flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg border font-semibold ${
                                 overdue
                                   ? 'bg-rose-50 border-rose-200 text-rose-800'
                                   : today
@@ -1178,15 +1202,29 @@ export default function LeadsPage() {
                             >
                               <Clock className={`w-3.5 h-3.5 ${overdue ? 'text-rose-600' : today ? 'text-amber-600' : 'text-slate-400'} flex-shrink-0`} />
                               <span className="truncate">{formatFollowUpDate(lead.nextFollowUpDate)}</span>
+                              {overdue && <span className="ml-auto text-[10px] uppercase font-bold text-rose-600">Overdue</span>}
+                              {today && <span className="ml-auto text-[10px] uppercase font-bold text-amber-600">Today</span>}
                             </div>
                           )}
 
-                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                            <span className={`truncate max-w-[120px] font-medium ${lead.assignedAgentName ? 'text-slate-600' : 'text-amber-700'}`}>
-                              {lead.assignedAgentName || '⚠️ Unassigned'}
-                            </span>
-                            <span className="text-teal-700 font-bold flex items-center gap-0.5">
-                              View <ChevronRight className="w-3 h-3" />
+                          {/* Footer: Consultant & Details Action */}
+                          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              {lead.assignedAgentName ? (
+                                <span className="inline-flex items-center gap-1 text-slate-700 font-medium truncate text-xs">
+                                  <UserCheck className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
+                                  <span className="truncate">{lead.assignedAgentName}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-amber-700 font-semibold text-xs">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                                  <span>Unassigned</span>
+                                </span>
+                              )}
+                            </div>
+
+                            <span className="text-teal-700 font-bold flex items-center gap-0.5 group-hover:text-teal-800 group-hover:translate-x-0.5 transition-all text-xs flex-shrink-0">
+                              Details <ChevronRight className="w-3.5 h-3.5" />
                             </span>
                           </div>
                         </div>

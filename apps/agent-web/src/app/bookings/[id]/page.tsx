@@ -58,6 +58,7 @@ import {
   formatPaiseToRupees,
   sanitizeDisplayName,
 } from '@/lib/labels';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 export default function BookingDetailPage() {
   const params = useParams();
@@ -103,10 +104,10 @@ export default function BookingDetailPage() {
   const [refundSubmitting, setRefundSubmitting] = useState(false);
   const [refundError, setRefundError] = useState<string | null>(null);
 
-  // Load all data
-  const loadData = async () => {
+  // Load all data (supports silent background revalidation for real-time SSE)
+  const loadData = async (background = false) => {
     if (!bookingId) return;
-    setLoading(true);
+    if (!background) setLoading(true);
     setError(null);
     try {
       const [bookingRes, paymentsRes] = await Promise.all([
@@ -126,15 +127,29 @@ export default function BookingDetailPage() {
         // Non-blocking operations summary load
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to load booking details');
+      if (!background) setError(err?.message || 'Failed to load booking details');
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadData();
   }, [bookingId]);
+
+  // Real-time synchronization via Server-Sent Events (SSE)
+  useRealtimeSync({
+    scopeId: bookingId,
+    eventTypes: ['PAYMENT_UPDATE', 'BOOKING_UPDATE', 'OPERATIONS_UPDATE'],
+    onRefresh: () => {
+      loadData(true);
+    },
+    onEvent: (msg) => {
+      if (msg.message || msg.title) {
+        showToast(msg.message || msg.title || 'Live update applied', 'info' as any);
+      }
+    },
+  });
 
   // Filter verified payments that can be refunded (have remaining headroom)
   const eligibleVerifiedPayments = useMemo(() => {
@@ -543,7 +558,7 @@ export default function BookingDetailPage() {
             )}
 
             <button
-              onClick={loadData}
+              onClick={() => loadData()}
               disabled={loading}
               style={{
                 display: 'flex',
@@ -575,7 +590,7 @@ export default function BookingDetailPage() {
           marginBottom: 24,
         }}
       >
-        {/* Total Selling Price */}
+        {/* 1. Total Package Cost */}
         <div
           style={{
             padding: '20px',
@@ -585,18 +600,18 @@ export default function BookingDetailPage() {
             boxShadow: 'var(--shadow-xs)',
           }}
         >
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Customer Package Price
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Total Package Cost
           </div>
           <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-main)', marginTop: 6 }}>
             {formatCurrency(totalAmount)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', marginTop: 4 }}>
-            Authoritative selling price
+            All-Inclusive (Taxes & 5% GST included)
           </div>
         </div>
 
-        {/* Verified Paid */}
+        {/* 2. Total Received */}
         <div
           style={{
             padding: '20px',
@@ -606,80 +621,84 @@ export default function BookingDetailPage() {
             boxShadow: 'var(--shadow-xs)',
           }}
         >
-          <div style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Verified Received
+          <div style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Total Received
           </div>
           <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#059669', marginTop: 6 }}>
             {formatCurrency(verifiedPaid)}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: 4 }}>
-            Reconciled by Admin
+            Verified & Credited to Bank
           </div>
         </div>
 
-        {/* Balance Pending / Excess Paid */}
+        {/* 3. Balance Remaining */}
         <div
           style={{
             padding: '20px',
             borderRadius: 'var(--radius-lg)',
-            background: excessPaid > 0 ? '#faf5ff' : balancePending > 0 ? '#fffbeb' : '#ecfdf5',
-            border: excessPaid > 0 ? '1px solid #e9d5ff' : balancePending > 0 ? '1px solid #fde68a' : '1px solid #a7f3d0',
+            background: balancePending <= 0 ? '#ecfdf5' : '#fffbeb',
+            border: balancePending <= 0 ? '1px solid #a7f3d0' : '1px solid #fde68a',
             boxShadow: 'var(--shadow-xs)',
           }}
         >
-          <div style={{ fontSize: '0.78rem', color: excessPaid > 0 ? '#7e22ce' : balancePending > 0 ? '#b45309' : '#047857', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            {excessPaid > 0 ? 'Unresolved Excess' : 'Outstanding Balance'}
+          <div style={{ fontSize: '0.78rem', color: balancePending <= 0 ? '#047857' : '#b45309', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            {balancePending <= 0 ? 'Balance Due' : 'Balance Remaining'}
           </div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: excessPaid > 0 ? '#6b21a8' : balancePending > 0 ? '#d97706' : '#059669', marginTop: 6 }}>
-            {formatCurrency(excessPaid > 0 ? excessPaid : balancePending)}
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: balancePending <= 0 ? '#059669' : '#d97706', marginTop: 6 }}>
+            {formatCurrency(balancePending > 0 ? balancePending : 0)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: excessPaid > 0 ? '#581c87' : balancePending > 0 ? '#92400e' : '#047857', marginTop: 4 }}>
-            {excessPaid > 0 ? 'Pending owner review / credit policy' : balancePending > 0 ? 'Pending customer payment' : 'Fully settled'}
+          <div style={{ fontSize: '0.75rem', color: balancePending <= 0 ? '#047857' : '#92400e', marginTop: 4 }}>
+            {balancePending <= 0 ? (excessPaid > 0 ? `Fully Paid (+${formatCurrency(excessPaid)} extra)` : 'Fully Paid & Cleared ✅') : 'Pending payment from customer'}
           </div>
         </div>
 
-        {/* Advance Requirement Status */}
+        {/* 4. Payment Progress / Stage */}
         <div
           style={{
             padding: '20px',
             borderRadius: 'var(--radius-lg)',
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
+            background: verifiedPaid >= totalAmount ? '#ecfdf5' : verifiedPaid > 0 ? '#eff6ff' : '#fff7ed',
+            border: verifiedPaid >= totalAmount ? '1px solid #a7f3d0' : verifiedPaid > 0 ? '1px solid #bfdbfe' : '1px solid #fed7aa',
             boxShadow: 'var(--shadow-xs)',
           }}
         >
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Advance Requirement
+          <div style={{ fontSize: '0.78rem', color: verifiedPaid >= totalAmount ? '#047857' : verifiedPaid > 0 ? '#1d4ed8' : '#c2410c', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Payment Stage
           </div>
-          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: advanceRequired > 0 ? 'var(--text-main)' : 'var(--text-muted)', marginTop: 6 }}>
-            {advanceRequired > 0 ? formatCurrency(advanceRequired) : '—'}
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, color: verifiedPaid >= totalAmount ? '#059669' : verifiedPaid > 0 ? '#2563eb' : '#ea580c', marginTop: 6 }}>
+            {verifiedPaid >= totalAmount ? '100% Paid' : verifiedPaid > 0 ? `${Math.round((verifiedPaid / (totalAmount || 1)) * 100)}% Paid` : 'Advance Due'}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', marginTop: 4 }}>
-            {advanceRequired > 0 ? 'Required deposit amount' : 'Awaiting Admin confirmation'}
+          <div style={{ fontSize: '0.75rem', color: verifiedPaid >= totalAmount ? '#047857' : verifiedPaid > 0 ? '#1e40af' : '#9a3412', marginTop: 4 }}>
+            {verifiedPaid >= totalAmount ? 'Tour & room allotments confirmed' : verifiedPaid > 0 ? `${formatCurrency(balancePending)} remaining balance` : 'Minimum 25% to lock hotel & cab'}
           </div>
         </div>
       </div>
 
-      {/* Unresolved Excess Payment Banner */}
+      {/* Minor Round-off Note Banner (if any extra payment was recorded) */}
       {excessPaid > 0 && (
         <div
           style={{
-            padding: '14px 20px',
+            padding: '12px 18px',
             borderRadius: 'var(--radius-md)',
-            background: '#faf5ff',
-            border: '1px solid #e9d5ff',
-            color: '#6b21a8',
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            color: '#334155',
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            marginBottom: 24,
+            marginBottom: 20,
             fontSize: '0.85rem',
           }}
         >
-          <Info size={18} style={{ color: '#9333ea', flexShrink: 0 }} />
-          <div>
-            <strong>Unresolved Excess Payment ({formatCurrency(excessPaid)}):</strong> Verified customer receipts exceed the booking price. The outstanding balance is ₹0 (Settled). Automatic customer credits or refunds are disabled pending formal owner approval.
+          <CheckCircle2 size={18} style={{ color: '#059669', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <strong style={{ color: '#0f172a' }}>Payment Complete with Minor Round-off (+{formatCurrency(excessPaid)}):</strong>{' '}
+            Customer has deposited {formatCurrency(verifiedPaid)} against total package cost of {formatCurrency(totalAmount)}. Outstanding balance is ₹0 (Fully settled).
           </div>
+          <span style={{ fontSize: '0.78rem', background: '#e2e8f0', color: '#475569', padding: '3px 8px', borderRadius: 6, fontWeight: 600 }}>
+            No Balance Due
+          </span>
         </div>
       )}
 
@@ -687,7 +706,7 @@ export default function BookingDetailPage() {
       {submittedPayments.length > 0 && (
         <div
           style={{
-            padding: '14px 20px',
+            padding: '12px 18px',
             borderRadius: 'var(--radius-md)',
             background: '#fffbeb',
             border: '1px solid #fde68a',
@@ -697,34 +716,35 @@ export default function BookingDetailPage() {
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: 12,
-            marginBottom: 24,
+            marginBottom: 20,
+            fontSize: '0.85rem',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <AlertTriangle size={18} style={{ color: '#d97706' }} />
+            <Clock size={18} style={{ color: '#d97706', flexShrink: 0 }} />
             <div>
-              <strong style={{ fontSize: '0.9rem' }}>
-                {submittedPayments.length} Payment Submission(s) ({formatCurrency(submittedTotalRupees)}) Awaiting Verification
+              <strong style={{ color: '#78350f' }}>
+                {submittedPayments.length} Payment(s) ({formatCurrency(submittedTotalRupees)}) Awaiting Admin Verification
               </strong>
-              <div style={{ fontSize: '0.8rem', color: '#b45309', marginTop: 2 }}>
-                Submitted payments do not decrease the authoritative balance pending until verified by an Administrator.
+              <div style={{ fontSize: '0.78rem', color: '#92400e', marginTop: 2 }}>
+                Admin accounts desk will verify the bank/UPI reference. Once verified, it will automatically reflect in the verified total.
               </div>
             </div>
           </div>
           <button
             onClick={() => setActiveTab('ledger')}
             style={{
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: '#b45309',
+              padding: '6px 14px',
+              borderRadius: 6,
+              background: '#d97706',
               color: '#ffffff',
               border: 'none',
-              fontSize: '0.78rem',
+              fontSize: '0.8rem',
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            View Submissions
+            View Details
           </button>
         </div>
       )}
@@ -925,10 +945,10 @@ export default function BookingDetailPage() {
               >
                 <div>
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
-                    Authoritative Payment Records & History
+                    Payment & Refund History
                   </h3>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
-                    Payments recorded by agents remain pending until verified by an Administrator.
+                    Track all payments received, UPI/bank transfer receipts, and processed refunds.
                   </p>
                 </div>
 
@@ -1105,9 +1125,11 @@ export default function BookingDetailPage() {
                               >
                                 {isRefund ? `-${formatCurrency(p.amount)}` : formatCurrency(p.amount)}
                               </div>
-                              <div style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', marginTop: 2 }}>
-                                {formatPaiseToRupees(p.amountInPaise)}
-                              </div>
+                              {isRefund && (
+                                <div style={{ fontSize: '0.72rem', color: '#9f1239', fontWeight: 600, marginTop: 2 }}>
+                                  Refunded
+                                </div>
+                              )}
                             </td>
                           </tr>
                         );

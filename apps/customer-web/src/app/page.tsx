@@ -293,6 +293,7 @@ export default function HomePage() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [transportTariffs, setTransportTariffs] = useState<any[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
+  const [dynamicBankDetails, setDynamicBankDetails] = useState(BANK_DETAILS);
 
   // Step 1: Filter & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -427,6 +428,23 @@ export default function HomePage() {
         if (tariffList && tariffList.length > 0) {
           setTransportTariffs(tariffList);
         }
+
+        // Fetch official dynamic agency settings
+        fetch('/api/proxy/settings/agency')
+          .then((res) => res.json())
+          .then((json) => {
+            if (json.success && json.data) {
+              setDynamicBankDetails({
+                bankName: json.data.bankName || 'HDFC Bank Ltd',
+                branch: json.data.branchName || 'Danilimda Branch, Ahmedabad',
+                accountName: json.data.accountHolderName || 'NEW CHIRAG TOURS AND TRAVELS',
+                accountNumber: json.data.accountNumber || '50200084920194',
+                ifsc: json.data.ifscCode || 'HDFC0001842',
+                upiId: json.data.upiId || '9978655529@upi',
+              });
+            }
+          })
+          .catch(() => {});
       } catch (err) {
         console.error('Failed to load dynamic catalog from database:', err);
       } finally {
@@ -1262,7 +1280,7 @@ Estimated Total: ${formatINR(calculation.finalTotal)}`;
             whatsappUrl={whatsappUrl}
             phoneRaw={COMPANY_BRANDING.phoneRaw}
             phoneDisplay={COMPANY_BRANDING.phoneDisplay}
-            bankDetails={BANK_DETAILS}
+            bankDetails={dynamicBankDetails}
             customerName={customerName}
             setCustomerName={setCustomerName}
             customerMobile={customerMobile}
@@ -1299,7 +1317,7 @@ Estimated Total: ${formatINR(calculation.finalTotal)}`;
           mealPlan={mealPlan}
           vehicleTier={vehicleTier}
           vehicleLabel={VEHICLE_TIER_RATES[vehicleTier]?.label || 'AC Cab'}
-          bankDetails={BANK_DETAILS}
+          bankDetails={dynamicBankDetails}
         />
       )}
     </div>

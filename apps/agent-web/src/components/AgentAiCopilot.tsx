@@ -157,7 +157,15 @@ export function AgentAiCopilot({
 
     const token = getAgentToken();
     if (!token) {
-      alert('Your agent session has expired. Please sign in again.');
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: 'err_' + Date.now(),
+          role: 'assistant',
+          text: '⚠️ Your agent session has expired. Please refresh the page or sign in again.',
+          timestamp: new Date(),
+        },
+      ]);
       return;
     }
 

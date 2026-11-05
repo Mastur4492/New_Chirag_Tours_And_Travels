@@ -34,6 +34,7 @@ import {
   formatPaiseToRupees,
   sanitizeDisplayName,
 } from '@/lib/labels';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 interface BookingMetrics {
   total: number;
@@ -103,9 +104,9 @@ function BookingsContent() {
     }
   };
 
-  // Fetch bookings list
-  const fetchBookings = async () => {
-    setLoading(true);
+  // Fetch bookings list (supports silent background revalidation for real-time SSE)
+  const fetchBookings = async (background = false) => {
+    if (!background) setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({
@@ -124,9 +125,9 @@ function BookingsContent() {
       setBookings(res.data || []);
       setTotalRecords(res.meta?.total || (res.data ? res.data.length : 0));
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch bookings list');
+      if (!background) setError(err.message || 'Failed to fetch bookings list');
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 
@@ -137,6 +138,15 @@ function BookingsContent() {
   useEffect(() => {
     fetchBookings();
   }, [statusFilter, debouncedSearch, currentPage, pageSize]);
+
+  // Real-time synchronization via Server-Sent Events (SSE)
+  useRealtimeSync({
+    eventTypes: ['BOOKING_UPDATE', 'PAYMENT_UPDATE'],
+    onRefresh: () => {
+      fetchBookings(true);
+      fetchMetrics();
+    },
+  });
 
   const handleStatusFilterChange = (status: BookingStatus | 'ALL' | string) => {
     setStatusFilter(status);
@@ -342,7 +352,7 @@ function BookingsContent() {
             <p className="text-xs text-rose-700 mt-0.5">{error}</p>
           </div>
           <button
-            onClick={fetchBookings}
+            onClick={() => fetchBookings()}
             className="px-3 py-1 text-xs font-medium bg-rose-100 text-rose-800 rounded-md hover:bg-rose-200 transition-colors"
           >
             Try Again

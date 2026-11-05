@@ -365,7 +365,7 @@ export default function PackagesPage() {
       setPackages((prev) =>
         prev.map((p) => (p.id === pkg.id ? { ...p, isPublished: !targetPublished } : p))
       );
-      alert(`Error toggling publish status: ${err.message}`);
+      setToastMessage(`Error toggling publish status: ${err.message}`);
     } finally {
       setSubmitting(false);
     }

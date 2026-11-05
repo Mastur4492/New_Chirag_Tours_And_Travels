@@ -1,12 +1,13 @@
-import { QuotationDto, QuotationPublicDto, MEAL_PLAN_LABELS, MealPlan } from '@chirag/types';
+import { QuotationDto, QuotationPublicDto, MEAL_PLAN_LABELS, MealPlan, AgencySettingsDto } from '@chirag/types';
 import { jobQueueService } from './jobQueue.service';
+import { agencySettingsService } from './agencySettings.service';
 
 export class PdfService {
   /**
    * Render a pixel-perfect, printer-ready luxury travel proposal / invoice HTML document.
    * Compatible with Puppeteer PDF export as well as direct browser print / PDF download.
    */
-  generateQuotationHtml(quote: QuotationDto | QuotationPublicDto): string {
+  generateQuotationHtml(quote: QuotationDto | QuotationPublicDto, settings?: AgencySettingsDto | null): string {
     const anyQuote = quote as any;
     const quoteNum = quote.quoteNumber || anyQuote.quotationNumber || 'PROPOSAL';
     const destination = quote.destinationName || 'India Tour';
@@ -396,14 +397,14 @@ export class PdfService {
     <table class="header-table">
       <tr>
         <td>
-          <div class="brand-title">New Chirag Tours & Travels</div>
-          <div class="brand-subtitle">Luxury Tailor-Made Holidays & Expeditions</div>
+          <div class="brand-title">${settings?.agencyName || 'New Chirag Tours & Travels'}</div>
+          <div class="brand-subtitle">${settings?.tagline || 'Luxury Tailor-Made Holidays & Expeditions'}</div>
         </td>
         <td class="company-meta">
-          <strong>Owner Desk:</strong> Faisal Bikanerwala<br>
-          <strong>Direct Line:</strong> +91 99786 55529<br>
-          <strong>Danilimda, Ahmedabad, Gujarat, India</strong><br>
-          <strong>Email:</strong> newchiragtoursandtravels@gmail.com
+          <strong>Owner Desk:</strong> ${settings?.founderName || 'Faisal Bikanerwala'}<br>
+          <strong>Direct Line:</strong> ${settings?.supportPhoneDisplay || '+91 99786 55529'}<br>
+          <strong>${settings?.city || 'Ahmedabad'}, ${settings?.state || 'Gujarat'}, India</strong><br>
+          <strong>Email:</strong> ${settings?.supportEmail || 'newchiragtoursandtravels@gmail.com'}
         </td>
       </tr>
     </table>
@@ -461,18 +462,20 @@ export class PdfService {
       </div>
 
       <div class="bank-box">
-        <strong>Bank Remittance Details:</strong><br>
-        A/C Name: <strong>New Chirag Tours and Travels</strong> • Bank: <strong>State Bank of India</strong><br>
-        Account Number: <strong>38891244567</strong> • IFSC: <strong>SBIN0002145</strong> (Danilimda Branch, Ahmedabad)<br>
-        UPI ID: <strong>9978655529@sbi</strong> / <strong>faisal.bikanerwala@okaxis</strong>
+        <strong>Official Bank Remittance & Instant UPI Details:</strong><br>
+        A/C Name: <strong>${settings?.accountHolderName || 'NEW CHIRAG TOURS AND TRAVELS'}</strong> • Bank: <strong>${settings?.bankName || 'HDFC Bank Ltd'}</strong><br>
+        Account Number: <strong>${settings?.accountNumber || '50200084920194'}</strong> (${settings?.accountType || 'Current Account'}) • IFSC: <strong>${settings?.ifscCode || 'HDFC0001842'}</strong> (${settings?.branchName || 'Danilimda Branch, Ahmedabad'})<br>
+        UPI ID: <strong>${settings?.upiId || '9978655529@upi'}</strong> • PhonePe/GPay: <strong>${settings?.upiNumber || '+91 99786 55529'}</strong><br>
+        <em>Policy: ${settings?.paymentTerms || '25% Advance to Lock Allotments • Balance 75% on Arrival / Prior to Hotel Check-in'}</em>
       </div>
     </div>
 
     <!-- Footer -->
     <div class="footer-note">
-      This is a computer-generated quotation proposal issued by New Chirag Tours & Travels.<br>
+      This is an official computer-generated quotation proposal issued by ${settings?.agencyName || 'New Chirag Tours & Travels'}.<br>
       Rates are subject to room & vehicle availability at the time of final confirmation and advance token deposit.<br>
-      © 2026 New Chirag Tours & Travels. All rights reserved.
+      Registered Office: ${settings?.headOfficeAddress || 'Shop No 3, Al-Rehman Plaza, nr. Nagori Complex, Danilimda, Ahmedabad, Gujarat 382405'}<br>
+      © ${new Date().getFullYear()} ${settings?.agencyName || 'New Chirag Tours & Travels'}. All rights reserved.
     </div>
   </div>
 
@@ -493,7 +496,8 @@ export const pdfService = new PdfService();
 
 // Register PDF worker handler with the asynchronous job queue
 jobQueueService.registerHandler('GENERATE_PDF_QUOTATION', async (payload: { quote: any }) => {
-  const html = pdfService.generateQuotationHtml(payload.quote);
+  const settings = await agencySettingsService.getSettings();
+  const html = pdfService.generateQuotationHtml(payload.quote, settings);
   return {
     quoteNumber: payload.quote?.quoteNumber || payload.quote?.quotationNumber,
     htmlBytes: Buffer.byteLength(html, 'utf8'),

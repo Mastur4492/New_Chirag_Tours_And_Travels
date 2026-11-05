@@ -290,6 +290,84 @@ export class UserService {
       totalPages,
     };
   }
+
+  async updateOwnProfile(
+    userId: string,
+    input: {
+      fullName?: string;
+      email?: string | null;
+      mobile?: string;
+      agencyName?: string;
+      city?: string;
+    },
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<UserDto> {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw AppError.notFound('User not found');
+    }
+
+    const previousProfile = user.toDto();
+    const updateData: Record<string, any> = {};
+
+    if (input.fullName && input.fullName.trim()) {
+      updateData.fullName = input.fullName.trim();
+    }
+
+    if (input.email !== undefined) {
+      const trimmedEmail = input.email ? input.email.trim().toLowerCase() : undefined;
+      if (trimmedEmail && trimmedEmail !== user.email?.toLowerCase()) {
+        const existingEmail = await userRepository.findByEmail(trimmedEmail);
+        if (existingEmail && existingEmail._id.toString() !== userId) {
+          throw AppError.conflict('A user with this email address already exists');
+        }
+      }
+      updateData.email = trimmedEmail;
+    }
+
+    if (input.mobile !== undefined && input.mobile.trim()) {
+      const trimmedMobile = input.mobile.trim();
+      if (trimmedMobile !== user.mobile) {
+        const existingMobile = await userRepository.findByMobile(trimmedMobile);
+        if (existingMobile && existingMobile._id.toString() !== userId) {
+          throw AppError.conflict('A user with this mobile number already exists');
+        }
+        updateData.mobile = trimmedMobile;
+      }
+    }
+
+    if (input.agencyName !== undefined || input.city !== undefined) {
+      updateData.agentProfile = {
+        ...(user.agentProfile || {}),
+        agencyName: input.agencyName !== undefined ? input.agencyName.trim() : user.agentProfile?.agencyName,
+        city: input.city !== undefined ? input.city.trim() : user.agentProfile?.city,
+        maxDiscountPercent: user.agentProfile?.maxDiscountPercent ?? 5,
+        maxMarkupPercent: user.agentProfile?.maxMarkupPercent ?? 20,
+        canApproveFinalPrice: user.agentProfile?.canApproveFinalPrice ?? false,
+      };
+    }
+
+    const updated = await userRepository.update(userId, updateData as any);
+    if (!updated) {
+      throw AppError.notFound('Failed to update user profile');
+    }
+
+    await auditLogRepository.record({
+      actorId: userId,
+      actorRole: user.role,
+      action: 'AGENT_PROFILE_UPDATED',
+      entityType: 'USER',
+      entityId: userId,
+      ipAddress,
+      userAgent,
+      previousState: previousProfile as unknown as Record<string, unknown>,
+      newState: updated.toDto() as unknown as Record<string, unknown>,
+      notes: `User ${updated.fullName} updated their account profile`,
+    });
+
+    return updated.toDto();
+  }
 }
 
 export const userService = new UserService();

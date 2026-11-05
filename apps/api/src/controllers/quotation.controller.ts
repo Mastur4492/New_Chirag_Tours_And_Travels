@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import { quotationService } from '../services/quotation.service';
 import { pdfService } from '../services/pdf.service';
 import { jobQueueService } from '../services/jobQueue.service';
+import { agencySettingsService } from '../services/agencySettings.service';
 
 export class QuotationController {
   async calculate(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -241,6 +242,26 @@ export class QuotationController {
     }
   }
 
+  async updateTravelerPublic(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await quotationService.updateTravelerPublicQuotation(
+        req.params.token as string,
+        req.body
+      );
+
+      const response: ApiResponse<QuotationPublicDto> = {
+        success: true,
+        data: result,
+        error: null,
+        meta: { timestamp: new Date().toISOString() },
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async acceptPublic(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await quotationService.acceptPublicQuotation(
@@ -287,7 +308,8 @@ export class QuotationController {
   async downloadPdfPublic(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const quote = await quotationService.getPublicQuotation(req.params.token as string);
-      const html = pdfService.generateQuotationHtml(quote);
+      const settings = await agencySettingsService.getSettings();
+      const html = pdfService.generateQuotationHtml(quote, settings);
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader(
@@ -313,7 +335,8 @@ export class QuotationController {
       };
 
       const quote = await quotationService.getQuotationById(req.params.id as string, actor);
-      const html = pdfService.generateQuotationHtml(quote);
+      const settings = await agencySettingsService.getSettings();
+      const html = pdfService.generateQuotationHtml(quote, settings);
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader(

@@ -2,6 +2,7 @@ import http from 'http';
 import { app } from './app';
 import { connectDB, disconnectDB } from './config/database';
 import { env } from './config/env';
+import { realtimeService } from './services/realtime.service';
 import { logger } from './utils/logger';
 
 async function startServer(): Promise<void> {
@@ -18,6 +19,7 @@ async function startServer(): Promise<void> {
 
     const shutdown = async (signal: string) => {
       logger.info(`Received ${signal}. Starting graceful shutdown...`);
+      realtimeService.destroy();
       server.close(async () => {
         logger.info('HTTP server closed.');
         await disconnectDB();

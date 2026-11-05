@@ -157,7 +157,15 @@ export function AdminAiCopilot({
 
     const token = getAdminToken();
     if (!token) {
-      alert('Your admin session has expired. Please sign in again.');
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: 'err_' + Date.now(),
+          role: 'assistant',
+          text: '⚠️ Your admin session has expired. Please refresh the page or sign in again.',
+          timestamp: new Date(),
+        },
+      ]);
       return;
     }
 

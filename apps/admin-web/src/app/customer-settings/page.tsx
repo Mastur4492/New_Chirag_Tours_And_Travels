@@ -21,14 +21,16 @@ import {
   X,
   RefreshCw,
   Sparkles,
+  AlertTriangle,
 } from 'lucide-react';
 import { TourPackageDto } from '@chirag/types';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, agencySettingsApi } from '@/lib/api';
 import { sanitizeDisplayName } from '@/lib/labels';
 
 export default function CustomerSettingsPage() {
   const [activeTab, setActiveTab] = useState<'format' | 'inclusions' | 'commercial' | 'banking'>('format');
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Live Package Inclusions & Exclusions Editor State
   const [packagesList, setPackagesList] = useState<TourPackageDto[]>([]);
@@ -79,6 +81,26 @@ export default function CustomerSettingsPage() {
     } catch {
       // Ignore
     }
+
+    // Load fresh from MongoDB AgencySettings
+    agencySettingsApi
+      .get()
+      .then((settings) => {
+        if (settings) {
+          setBankDetails({
+            bankName: settings.bankName || 'HDFC Bank Ltd',
+            branch: settings.branchName || 'Danilimda Branch, Ahmedabad',
+            accountName: settings.accountHolderName || 'NEW CHIRAG TOURS AND TRAVELS',
+            accountNumber: settings.accountNumber || '50200084920194',
+            ifsc: settings.ifscCode || 'HDFC0001842',
+            upiId: settings.upiId || '9978655529@upi',
+          });
+          if (settings.advancePercentage) {
+            setAdvancePercent(settings.advancePercentage);
+          }
+        }
+      })
+      .catch((err) => console.warn('Could not load agency settings from DB', err));
   }, []);
 
   const handleSaveFormat = (fmt: 'DAYS_FIRST' | 'NIGHTS_FIRST') => {
@@ -89,20 +111,35 @@ export default function CustomerSettingsPage() {
     triggerSuccess('Duration display format preference saved!');
   };
 
-  const handleSaveBank = () => {
+  const handleSaveBank = async () => {
     try {
       localStorage.setItem('nct_bank_details', JSON.stringify(bankDetails));
-    } catch {}
-    triggerSuccess('Official bank account details saved successfully!');
+      await agencySettingsApi.update({
+        bankName: bankDetails.bankName,
+        branchName: bankDetails.branch,
+        accountHolderName: bankDetails.accountName,
+        accountNumber: bankDetails.accountNumber,
+        ifscCode: bankDetails.ifsc,
+        upiId: bankDetails.upiId,
+      });
+    } catch (err) {
+      console.error('Failed to sync bank details to database:', err);
+    }
+    triggerSuccess('Official bank account details saved & synced to proposals!');
   };
 
-  const handleSavePolicies = () => {
+  const handleSavePolicies = async () => {
     try {
       localStorage.setItem(
         'nct_commercial_policy',
         JSON.stringify({ advancePercent, agencyMargin, gstPercent })
       );
-    } catch {}
+      await agencySettingsApi.update({
+        advancePercentage: advancePercent,
+      });
+    } catch (err) {
+      console.error('Failed to sync policies to database:', err);
+    }
     triggerSuccess('Advance & Commercial tax policies saved successfully!');
   };
 
@@ -193,7 +230,7 @@ export default function CustomerSettingsPage() {
 
       triggerSuccess('Package Inclusions & Exclusions saved to MongoDB successfully!');
     } catch (err: any) {
-      alert(err.message || 'Failed to save inclusions & exclusions');
+      triggerError(err.message || 'Failed to save inclusions & exclusions');
     } finally {
       setIsSavingInclusions(false);
     }
@@ -201,7 +238,14 @@ export default function CustomerSettingsPage() {
 
   const triggerSuccess = (msg: string) => {
     setSaveSuccess(msg);
+    setSaveError(null);
     setTimeout(() => setSaveSuccess(null), 3500);
+  };
+
+  const triggerError = (msg: string) => {
+    setSaveError(msg);
+    setSaveSuccess(null);
+    setTimeout(() => setSaveError(null), 4500);
   };
 
   return (
@@ -287,6 +331,27 @@ export default function CustomerSettingsPage() {
         >
           <CheckCircle2 size={18} color="#059669" />
           <span>{saveSuccess}</span>
+        </div>
+      )}
+
+      {saveError && (
+        <div
+          style={{
+            background: '#FFF1F2',
+            border: '1.5px solid #F43F5E',
+            color: '#9F1239',
+            padding: '12px 18px',
+            borderRadius: 12,
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontWeight: 700,
+            fontSize: '0.88rem',
+          }}
+        >
+          <AlertTriangle size={18} color="#E11D48" />
+          <span>{saveError}</span>
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { loginSchema } from '@chirag/validation';
+import { changePasswordSchema, loginSchema, updateProfileSchema } from '@chirag/validation';
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/authenticate';
@@ -29,6 +29,20 @@ router.get(
   '/me',
   authenticate,
   authController.getMe.bind(authController)
+);
+
+router.patch(
+  '/profile',
+  authenticate,
+  validateRequest({ body: updateProfileSchema }),
+  authController.updateProfile.bind(authController)
+);
+
+router.post(
+  '/change-password',
+  authenticate,
+  validateRequest({ body: changePasswordSchema }),
+  authController.changePassword.bind(authController)
 );
 
 export const authRouter = router;

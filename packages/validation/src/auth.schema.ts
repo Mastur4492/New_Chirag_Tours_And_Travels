@@ -26,10 +26,21 @@ export const changePasswordSchema = z
   });
 
 export const updateProfileSchema = z.object({
-  fullName: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
-  email: emailSchema.optional(),
+  fullName: z.string().trim().min(2, 'Name must be at least 2 characters').max(100).optional(),
+  email: emailSchema.optional().nullable(),
+  mobile: mobileSchema.optional(),
+  agencyName: z.string().trim().max(100).optional(),
+  city: z.string().trim().max(100).optional(),
+});
+
+export const updateTravelerPublicSchema = z.object({
+  fullName: z.string().trim().min(2, 'Full name must be at least 2 characters').max(100),
+  mobile: mobileSchema,
+  email: emailSchema.optional().nullable(),
+  city: z.string().trim().max(100).optional().nullable(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type UpdateTravelerPublicInput = z.infer<typeof updateTravelerPublicSchema>;

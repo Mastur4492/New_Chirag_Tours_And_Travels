@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   FileText,
   Plus,
@@ -28,6 +29,7 @@ import {
   Sparkles,
   RefreshCw,
   AlertCircle,
+  Printer,
   CheckCircle2,
 } from 'lucide-react';
 import {
@@ -36,6 +38,7 @@ import {
   QuotationDto,
   QuotationStatus,
   QuotationVersionDto,
+  MealPlan,
 } from '@chirag/types';
 import { quotationsApi, getAgentUser } from '@/lib/api';
 import {
@@ -47,6 +50,8 @@ import {
 } from '@/lib/labels';
 import { InfoBadge } from '@/components/InfoBadge';
 import { resolvePublicQuoteUrl } from '@/lib/publicQuoteUrl';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
+import { ConfirmModal } from '@/components/ConfirmModal';
 
 const STATUS_FILTERS: (QuotationStatus | 'ALL')[] = [
   'ALL',
@@ -61,6 +66,7 @@ const STATUS_FILTERS: (QuotationStatus | 'ALL')[] = [
 ];
 
 export default function QuotationsPage() {
+  const router = useRouter();
   const [quotations, setQuotations] = useState<QuotationDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +85,13 @@ export default function QuotationsPage() {
   // Selected for Revision Modal
   const [reviseQuote, setReviseQuote] = useState<QuotationDto | null>(null);
   const [reviseReason, setReviseReason] = useState('');
+  const [reviseStartDate, setReviseStartDate] = useState('');
+  const [reviseEndDate, setReviseEndDate] = useState('');
+  const [reviseAdults, setReviseAdults] = useState<number>(2);
+  const [reviseChildren, setReviseChildren] = useState<number>(0);
+  const [reviseRooms, setReviseRooms] = useState<number>(1);
+  const [reviseMealPlan, setReviseMealPlan] = useState<MealPlan>('CP');
+  const [reviseNotes, setReviseNotes] = useState('');
   const [reviseMarkupType, setReviseMarkupType] = useState<'PERCENT' | 'FLAT'>('PERCENT');
   const [reviseMarkup, setReviseMarkup] = useState<number>(10);
   const [reviseMarkupAmount, setReviseMarkupAmount] = useState<number>(0);
@@ -101,8 +114,8 @@ export default function QuotationsPage() {
   const agentUser = getAgentUser();
   const maxDiscountPercent = agentUser?.agentProfile?.maxDiscountPercent ?? 5;
 
-  const loadQuotations = async () => {
-    setLoading(true);
+  const loadQuotations = async (background = false) => {
+    if (!background) setLoading(true);
     setError(null);
     try {
       const res = await quotationsApi.list({
@@ -112,15 +125,29 @@ export default function QuotationsPage() {
       });
       setQuotations(res.data || []);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load quotations');
+      if (!background) setError(err?.message || 'Failed to load quotations');
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadQuotations();
   }, [statusFilter]);
+
+  // Real-time synchronization via Server-Sent Events (SSE)
+  useRealtimeSync({
+    eventTypes: ['QUOTATION_UPDATE', 'BOOKING_UPDATE'],
+    onRefresh: () => {
+      loadQuotations(true);
+    },
+    onEvent: (msg) => {
+      if (msg.message || msg.title) {
+        setActionSuccess(msg.message || msg.title || 'Quotation table updated live');
+        setTimeout(() => setActionSuccess(null), 4000);
+      }
+    },
+  });
 
   // Handle Search submit
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -170,6 +197,48 @@ export default function QuotationsPage() {
     }
   };
 
+  const [quoteToAccept, setQuoteToAccept] = useState<QuotationDto | null>(null);
+  const [acceptingQuoteId, setAcceptingQuoteId] = useState<string | null>(null);
+
+  const handleAcceptQuotation = (quote: QuotationDto) => {
+    if (!quote.shareableToken) {
+      setError('Quotation does not have an active shareable token. Please issue or refresh first.');
+      return;
+    }
+    setQuoteToAccept(quote);
+  };
+
+  const executeAcceptQuotation = async () => {
+    if (!quoteToAccept || !quoteToAccept.shareableToken) return;
+    const quote = quoteToAccept;
+    setAcceptingQuoteId(quote.id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/proxy/quotations/public/${encodeURIComponent(quote.shareableToken || '')}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agreedToTerms: true, notes: 'Client accepted proposal via Phone/WhatsApp confirmation' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error?.message || 'Failed to accept quotation');
+      }
+
+      setActionSuccess(`Proposal ${quote.quoteNumber} marked ACCEPTED! Official booking request generated.`);
+      setTimeout(() => setActionSuccess(null), 6000);
+      setQuoteToAccept(null);
+
+      loadQuotations();
+      if (selectedQuote?.id === quote.id) {
+        setSelectedQuote({ ...selectedQuote, status: 'ACCEPTED' });
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Error accepting proposal');
+    } finally {
+      setAcceptingQuoteId(null);
+    }
+  };
+
   // Open Share Modal
   const handleOpenShare = (quote: QuotationDto) => {
     setShareQuote(quote);
@@ -196,6 +265,13 @@ export default function QuotationsPage() {
   const handleOpenRevise = (quote: QuotationDto) => {
     setReviseQuote(quote);
     setReviseReason('');
+    setReviseStartDate(quote.travelStartDate ? quote.travelStartDate.split('T')[0] : '');
+    setReviseEndDate(quote.travelEndDate ? quote.travelEndDate.split('T')[0] : '');
+    setReviseAdults(quote.numberOfAdults || 2);
+    setReviseChildren(quote.numberOfChildren || 0);
+    setReviseRooms(quote.hotels?.[0]?.numberOfRooms || 1);
+    setReviseMealPlan((quote.hotels?.[0]?.mealPlan as MealPlan) || 'CP');
+    setReviseNotes(quote.notes || '');
     setReviseMarkupType(quote.pricingSummary?.markupType || 'PERCENT');
     setReviseMarkup(quote.pricingSummary?.markupPercent ?? 10);
     setReviseMarkupAmount(quote.pricingSummary?.totalMarkupAmount ?? 0);
@@ -218,34 +294,40 @@ export default function QuotationsPage() {
     setReviseError(null);
 
     try {
+      const start = new Date(reviseStartDate);
+      const end = new Date(reviseEndDate);
+      const nights = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      const days = nights + 1;
+
       const revisionPayload = {
         leadId: reviseQuote.leadId,
         destinationId: reviseQuote.destinationId,
         packageId: reviseQuote.packageId,
-        travelStartDate: reviseQuote.travelStartDate,
-        travelEndDate: reviseQuote.travelEndDate,
-        numberOfAdults: reviseQuote.numberOfAdults,
-        numberOfChildren: reviseQuote.numberOfChildren,
-        numberOfInfants: reviseQuote.numberOfInfants,
+        travelStartDate: reviseStartDate,
+        travelEndDate: reviseEndDate,
+        numberOfAdults: Number(reviseAdults) || 1,
+        numberOfChildren: Number(reviseChildren) || 0,
+        numberOfInfants: 0,
         hotels: (reviseQuote.hotels || []).map((h) => ({
           hotelId: h.hotelId,
           roomCategoryId: h.roomCategoryId,
-          checkInDate: h.checkInDate,
-          checkOutDate: h.checkOutDate,
-          numberOfRooms: h.numberOfRooms,
-          adultsCount: h.adultsCount,
-          childrenWithBedCount: h.childrenWithBedCount || 0,
-          childrenWithoutBedCount: h.childrenWithoutBedCount || 0,
-          mealPlan: h.mealPlan,
+          checkInDate: reviseStartDate,
+          checkOutDate: reviseEndDate,
+          numberOfNights: nights,
+          numberOfRooms: Number(reviseRooms) || h.numberOfRooms || 1,
+          adultsCount: Number(reviseAdults) || h.adultsCount || 1,
+          childrenWithBedCount: Number(reviseChildren) || 0,
+          childrenWithoutBedCount: 0,
+          mealPlan: reviseMealPlan || h.mealPlan,
         })),
         transports: (reviseQuote.transports || []).map((t) => ({
           vehicleId: t.vehicleId,
           tariffId: t.tariffId,
           pricingBasis: t.pricingBasis,
-          numberOfDays: t.numberOfDays,
+          numberOfDays: days,
           estimatedKm: t.estimatedKm,
-          driverAllowanceDays: t.driverAllowanceDays,
-          nightHaltDays: t.nightHaltDays,
+          driverAllowanceDays: days,
+          nightHaltDays: nights,
           tollsAndParking: t.tollsAndParking,
           notes: t.notes,
         })),
@@ -260,7 +342,7 @@ export default function QuotationsPage() {
         inclusions: reviseQuote.inclusions,
         exclusions: reviseQuote.exclusions,
         terms: reviseQuote.terms,
-        notes: reviseQuote.notes,
+        notes: reviseNotes,
       };
 
       const res = await quotationsApi.revise(reviseQuote.id, revisionPayload);
@@ -418,7 +500,7 @@ export default function QuotationsPage() {
             </form>
 
             <button
-              onClick={loadQuotations}
+              onClick={() => loadQuotations()}
               disabled={loading}
               className="btn btn-secondary"
               style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40 }}
@@ -625,6 +707,21 @@ export default function QuotationsPage() {
                             <span>View</span>
                           </button>
 
+                          {/* PDF Preview Button */}
+                          {q.shareableToken && (
+                            <a
+                              href={resolvePublicQuoteUrl(q.shareableToken).url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-secondary"
+                              style={{ padding: '4px 8px', height: 28, fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: 3, textDecoration: 'none', color: '#0f766e', borderColor: '#99f6e4' }}
+                              title="Open Public Proposal & Print PDF"
+                            >
+                              <Printer size={12} />
+                              <span>Preview PDF</span>
+                            </a>
+                          )}
+
                           {/* Share Modal (if issued or accepted) */}
                           {(isIssued || isAccepted) && (
                             <button
@@ -635,6 +732,20 @@ export default function QuotationsPage() {
                             >
                               <Share2 size={12} />
                               <span>Share</span>
+                            </button>
+                          )}
+
+                          {/* Mark as Accepted (if issued and not yet accepted) */}
+                          {isIssued && !isAccepted && q.shareableToken && (
+                            <button
+                              onClick={() => handleAcceptQuotation(q)}
+                              disabled={acceptingQuoteId === q.id}
+                              className="btn"
+                              style={{ padding: '4px 8px', height: 28, fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: 3, backgroundColor: '#ecfdf5', color: '#065f46', borderColor: '#a7f3d0' }}
+                              title="Mark proposal as Accepted (Client confirmed via Phone / WhatsApp)"
+                            >
+                              <CheckCircle2 size={12} />
+                              <span>{acceptingQuoteId === q.id ? 'Accepting...' : 'Mark Accepted'}</span>
                             </button>
                           )}
 
@@ -656,13 +767,13 @@ export default function QuotationsPage() {
                             </button>
                           )}
 
-                          {/* Revision Button */}
+                          {/* Revision Button: Navigates to full quote revision editor */}
                           {canRevise && (
                             <button
-                              onClick={() => handleOpenRevise(q)}
+                              onClick={() => router.push(`/quotations/new?reviseQuoteId=${q.id}`)}
                               className="btn btn-secondary"
                               style={{ padding: '4px 8px', height: 28, fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: 3 }}
-                              title="Revise Itinerary & Rates"
+                              title="Revise Entire Quotation & Itinerary"
                             >
                               <History size={12} />
                               <span>Revise</span>
@@ -966,6 +1077,19 @@ export default function QuotationsPage() {
                 Close
               </button>
 
+              {selectedQuote.shareableToken && (
+                <a
+                  href={resolvePublicQuoteUrl(selectedQuote.shareableToken).url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: '#0f766e', borderColor: '#99f6e4' }}
+                >
+                  <Printer size={16} />
+                  <span>Preview & PDF</span>
+                </a>
+              )}
+
               {(selectedQuote.status === 'ISSUED' || selectedQuote.status === 'SENT' || selectedQuote.status === 'ACCEPTED') && (
                 <button
                   onClick={() => {
@@ -977,6 +1101,18 @@ export default function QuotationsPage() {
                 >
                   <Share2 size={16} />
                   <span>Share Proposal</span>
+                </button>
+              )}
+
+              {(selectedQuote.status === 'ISSUED' || selectedQuote.status === 'SENT') && selectedQuote.shareableToken && (
+                <button
+                  onClick={() => handleAcceptQuotation(selectedQuote)}
+                  disabled={acceptingQuoteId === selectedQuote.id}
+                  className="btn"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: '#059669', color: '#ffffff', border: 'none' }}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>{acceptingQuoteId === selectedQuote.id ? 'Accepting...' : 'Mark Accepted (Client Agreed)'}</span>
                 </button>
               )}
 
@@ -997,23 +1133,42 @@ export default function QuotationsPage() {
       )}
 
       {/* =========================================================================
-          MODAL: REVISE QUOTATION
+          MODAL: REVISE QUOTATION (FULL EDIT & VERSIONING)
           ========================================================================= */}
       {reviseQuote && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.5)', padding: 16 }}>
-          <div className="card" style={{ maxWidth: 520, width: '100%', padding: 24, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.55)', padding: 16 }}>
+          <div className="card" style={{ maxWidth: 720, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: 24, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
-                  Revise Quotation {reviseQuote.quoteNumber}
-                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
+                    Revise Quotation {reviseQuote.quoteNumber}
+                  </h3>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd' }}>
+                    Creating v{(reviseQuote.currentVersion || 1) + 1}
+                  </span>
+                </div>
                 <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                  Creating revision <strong>v{(reviseQuote.currentVersion || 1) + 1}</strong>. Previous version will be archived.
+                  Edit travel dates, travelers, meal plan, pricing, or notes. Previous version v{reviseQuote.currentVersion || 1} will be archived safely.
                 </p>
               </div>
               <button onClick={() => setReviseQuote(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <X size={20} />
               </button>
+            </div>
+
+            {/* Quick Link to Full Builder */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, marginBottom: 16 }}>
+              <div style={{ fontSize: '0.82rem', color: '#166534' }}>
+                💡 <strong>Need advanced changes?</strong> Switch hotel properties, add multiple rooms or custom vehicle tariffs in the full builder.
+              </div>
+              <Link
+                href={`/quotations/new?reviseQuoteId=${reviseQuote.id}`}
+                className="btn btn-secondary"
+                style={{ fontSize: '0.78rem', padding: '6px 12px', height: 30, textDecoration: 'none', color: '#166534', borderColor: '#86efac', background: '#ffffff', whiteSpace: 'nowrap' }}
+              >
+                <span>Full Quote Builder ↗</span>
+              </Link>
             </div>
 
             {reviseError && (
@@ -1023,160 +1178,284 @@ export default function QuotationsPage() {
             )}
 
             <form onSubmit={handleSubmitRevision}>
+              {/* SECTION 1: Reason for Revision */}
               <div style={{ marginBottom: 16 }}>
                 <label className="label" style={{ fontWeight: 600, display: 'block', marginBottom: 6 }}>
                   Reason for Revision <span style={{ color: '#be123c' }}>*</span>
                 </label>
                 <textarea
                   required
-                  rows={3}
+                  rows={2}
                   value={reviseReason}
                   onChange={(e) => setReviseReason(e.target.value)}
-                  placeholder="e.g., Client requested upgraded room category, adjusted travel dates, or negotiated discount..."
+                  placeholder="e.g., Client requested updated travel dates, meal plan upgrade, or price discount..."
                   className="input"
                   style={{ width: '100%', resize: 'vertical' }}
                 />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   This reason will be recorded immutably in the quotation audit log.
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <label className="label" style={{ fontWeight: 600, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <span>Markup {reviseMarkupType === 'PERCENT' ? `(%)` : `(₹)`}</span>
-                      <InfoBadge text="Margin added above supplier base cost for this revision." />
-                    </label>
-                    <div style={{ display: 'inline-flex', background: 'var(--border-subtle)', borderRadius: 6, padding: 2, gap: 2 }}>
-                      <button
-                        type="button"
-                        onClick={() => setReviseMarkupType('PERCENT')}
-                        style={{
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          border: 'none',
-                          cursor: 'pointer',
-                          background: reviseMarkupType === 'PERCENT' ? 'var(--primary)' : 'transparent',
-                          color: reviseMarkupType === 'PERCENT' ? '#ffffff' : 'var(--text-muted)',
-                        }}
-                      >
-                        %
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReviseMarkupType('FLAT')}
-                        style={{
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          border: 'none',
-                          cursor: 'pointer',
-                          background: reviseMarkupType === 'FLAT' ? 'var(--primary)' : 'transparent',
-                          color: reviseMarkupType === 'FLAT' ? '#ffffff' : 'var(--text-muted)',
-                        }}
-                      >
-                        ₹
-                      </button>
-                    </div>
-                  </div>
-                  {reviseMarkupType === 'PERCENT' ? (
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={reviseMarkup === 0 ? '' : reviseMarkup}
-                      placeholder="0"
-                      onChange={(e) => setReviseMarkup(e.target.value === '' ? 0 : Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%' }}
-                    />
-                  ) : (
-                    <input
-                      type="number"
-                      min="0"
-                      value={reviseMarkupAmount === 0 ? '' : reviseMarkupAmount}
-                      placeholder="0"
-                      onChange={(e) => setReviseMarkupAmount(e.target.value === '' ? 0 : Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%' }}
-                    />
-                  )}
+              {/* SECTION 2: Travel Dates */}
+              <div style={{ padding: 14, background: '#f8fafc', border: '1px solid var(--border-subtle)', borderRadius: 8, marginBottom: 16 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 10 }}>
+                  1. Travel Dates & Duration
                 </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <label className="label" style={{ fontWeight: 600, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <span>Discount {reviseDiscountType === 'PERCENT' ? `(%)` : `(₹)`}</span>
-                      <InfoBadge text="Concession given to traveler for this quotation version." />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                      Travel Start Date
                     </label>
-                    <div style={{ display: 'inline-flex', background: 'var(--border-subtle)', borderRadius: 6, padding: 2, gap: 2 }}>
-                      <button
-                        type="button"
-                        onClick={() => setReviseDiscountType('PERCENT')}
-                        style={{
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          border: 'none',
-                          cursor: 'pointer',
-                          background: reviseDiscountType === 'PERCENT' ? 'var(--primary)' : 'transparent',
-                          color: reviseDiscountType === 'PERCENT' ? '#ffffff' : 'var(--text-muted)',
-                        }}
-                      >
-                        %
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReviseDiscountType('FLAT')}
-                        style={{
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          border: 'none',
-                          cursor: 'pointer',
-                          background: reviseDiscountType === 'FLAT' ? 'var(--primary)' : 'transparent',
-                          color: reviseDiscountType === 'FLAT' ? '#ffffff' : 'var(--text-muted)',
-                        }}
-                      >
-                        ₹
-                      </button>
-                    </div>
+                    <input
+                      type="date"
+                      required
+                      value={reviseStartDate}
+                      onChange={(e) => setReviseStartDate(e.target.value)}
+                      className="input"
+                      style={{ width: '100%' }}
+                    />
                   </div>
-                  {reviseDiscountType === 'PERCENT' ? (
+                  <div>
+                    <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                      Travel End Date
+                    </label>
                     <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={reviseDiscount === 0 ? '' : reviseDiscount}
-                      placeholder="0"
-                      onChange={(e) => setReviseDiscount(e.target.value === '' ? 0 : Number(e.target.value) || 0)}
+                      type="date"
+                      required
+                      value={reviseEndDate}
+                      onChange={(e) => setReviseEndDate(e.target.value)}
                       className="input"
                       style={{ width: '100%' }}
                     />
-                  ) : (
-                    <input
-                      type="number"
-                      min="0"
-                      value={reviseDiscountAmount === 0 ? '' : reviseDiscountAmount}
-                      placeholder="0"
-                      onChange={(e) => setReviseDiscountAmount(e.target.value === '' ? 0 : Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%' }}
-                    />
-                  )}
+                  </div>
                 </div>
               </div>
 
-              {reviseDiscountType === 'PERCENT' && reviseDiscount > maxDiscountPercent && (
-                <div style={{ padding: '10px 12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, color: '#b45309', fontSize: '0.8rem', marginBottom: 16 }}>
-                  ⚠️ <strong>Notice:</strong> Your discount of {reviseDiscount}% exceeds your contract cap of {maxDiscountPercent}%. This revision will be submitted as <strong>PENDING ADMIN APPROVAL</strong>.
+              {/* SECTION 3: Travelers, Rooms & Meal Plan */}
+              <div style={{ padding: 14, background: '#f8fafc', border: '1px solid var(--border-subtle)', borderRadius: 8, marginBottom: 16 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 10 }}>
+                  2. Travelers, Rooms & Meal Plan
                 </div>
-              )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr', gap: 12 }}>
+                  <div>
+                    <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                      Adults (12+ Yrs)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      required
+                      value={reviseAdults}
+                      onChange={(e) => setReviseAdults(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="input"
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                      Children (2-11 Yrs)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={reviseChildren}
+                      onChange={(e) => setReviseChildren(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="input"
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                      Rooms
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={reviseRooms}
+                      onChange={(e) => setReviseRooms(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="input"
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                      Meal Plan
+                    </label>
+                    <select
+                      value={reviseMealPlan}
+                      onChange={(e) => setReviseMealPlan(e.target.value as MealPlan)}
+                      className="input"
+                      style={{ width: '100%' }}
+                    >
+                      <option value="CP">CP (Continental - Breakfast)</option>
+                      <option value="MAP">MAP (Breakfast + Dinner)</option>
+                      <option value="AP">AP (All Meals - B, L, D)</option>
+                      <option value="EP">EP (Room Only - No Meals)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: Commercial Margin & Discount */}
+              <div style={{ padding: 14, background: '#f8fafc', border: '1px solid var(--border-subtle)', borderRadius: 8, marginBottom: 16 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 10 }}>
+                  3. Pricing & Discounts
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <label className="label" style={{ fontWeight: 600, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <span>Markup {reviseMarkupType === 'PERCENT' ? `(%)` : `(₹)`}</span>
+                        <InfoBadge text="Margin added above supplier base cost for this revision." />
+                      </label>
+                      <div style={{ display: 'inline-flex', background: 'var(--border-subtle)', borderRadius: 6, padding: 2, gap: 2 }}>
+                        <button
+                          type="button"
+                          onClick={() => setReviseMarkupType('PERCENT')}
+                          style={{
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: reviseMarkupType === 'PERCENT' ? 'var(--primary)' : 'transparent',
+                            color: reviseMarkupType === 'PERCENT' ? '#ffffff' : 'var(--text-muted)',
+                          }}
+                        >
+                          %
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReviseMarkupType('FLAT')}
+                          style={{
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: reviseMarkupType === 'FLAT' ? 'var(--primary)' : 'transparent',
+                            color: reviseMarkupType === 'FLAT' ? '#ffffff' : 'var(--text-muted)',
+                          }}
+                        >
+                          ₹
+                        </button>
+                      </div>
+                    </div>
+                    {reviseMarkupType === 'PERCENT' ? (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={reviseMarkup === 0 ? '' : reviseMarkup}
+                        placeholder="0"
+                        onChange={(e) => setReviseMarkup(e.target.value === '' ? 0 : Number(e.target.value) || 0)}
+                        className="input"
+                        style={{ width: '100%' }}
+                      />
+                    ) : (
+                      <input
+                        type="number"
+                        min="0"
+                        value={reviseMarkupAmount === 0 ? '' : reviseMarkupAmount}
+                        placeholder="0"
+                        onChange={(e) => setReviseMarkupAmount(e.target.value === '' ? 0 : Number(e.target.value) || 0)}
+                        className="input"
+                        style={{ width: '100%' }}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <label className="label" style={{ fontWeight: 600, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <span>Discount {reviseDiscountType === 'PERCENT' ? `(%)` : `(₹)`}</span>
+                        <InfoBadge text="Concession given to traveler for this quotation version." />
+                      </label>
+                      <div style={{ display: 'inline-flex', background: 'var(--border-subtle)', borderRadius: 6, padding: 2, gap: 2 }}>
+                        <button
+                          type="button"
+                          onClick={() => setReviseDiscountType('PERCENT')}
+                          style={{
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: reviseDiscountType === 'PERCENT' ? 'var(--primary)' : 'transparent',
+                            color: reviseDiscountType === 'PERCENT' ? '#ffffff' : 'var(--text-muted)',
+                          }}
+                        >
+                          %
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReviseDiscountType('FLAT')}
+                          style={{
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: reviseDiscountType === 'FLAT' ? 'var(--primary)' : 'transparent',
+                            color: reviseDiscountType === 'FLAT' ? '#ffffff' : 'var(--text-muted)',
+                          }}
+                        >
+                          ₹
+                        </button>
+                      </div>
+                    </div>
+                    {reviseDiscountType === 'PERCENT' ? (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={reviseDiscount === 0 ? '' : reviseDiscount}
+                        placeholder="0"
+                        onChange={(e) => setReviseDiscount(e.target.value === '' ? 0 : Number(e.target.value) || 0)}
+                        className="input"
+                        style={{ width: '100%' }}
+                      />
+                    ) : (
+                      <input
+                        type="number"
+                        min="0"
+                        value={reviseDiscountAmount === 0 ? '' : reviseDiscountAmount}
+                        placeholder="0"
+                        onChange={(e) => setReviseDiscountAmount(e.target.value === '' ? 0 : Number(e.target.value) || 0)}
+                        className="input"
+                        style={{ width: '100%' }}
+                      />
+                    )}
+                  </div>
+                </div>
+                {reviseDiscountType === 'PERCENT' && reviseDiscount > maxDiscountPercent && (
+                  <div style={{ padding: '8px 10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, color: '#b45309', fontSize: '0.78rem', marginTop: 10 }}>
+                    ⚠️ <strong>Notice:</strong> Your discount of {reviseDiscount}% exceeds your contract cap of {maxDiscountPercent}%. This revision will be submitted as <strong>PENDING ADMIN APPROVAL</strong>.
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION 5: Special Notes & Instructions */}
+              <div style={{ marginBottom: 16 }}>
+                <label className="label" style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                  Special Notes / Itinerary Remarks (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={reviseNotes}
+                  onChange={(e) => setReviseNotes(e.target.value)}
+                  placeholder="Add special notes for the client or hotel desk..."
+                  className="input"
+                  style={{ width: '100%', resize: 'vertical' }}
+                />
+              </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
                 <button type="button" onClick={() => setReviseQuote(null)} className="btn btn-secondary" disabled={revising}>
@@ -1264,18 +1543,16 @@ export default function QuotationsPage() {
               const urlInfo = resolvePublicQuoteUrl(shareToken || shareQuote.shareableToken || '');
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {urlInfo.isDevelopmentOrLocalhost && (
+                    <div style={{ padding: '8px 12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize: '0.78rem', color: '#b45309', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                      <span><strong>Development Link:</strong> Using localhost. External recipients on mobile cannot open localhost links.</span>
+                    </div>
+                  )}
                   <a
                     href={`https://wa.me/${shareQuote.customerMobile ? shareQuote.customerMobile.replace(/\D/g, '') : ''}?text=${encodeURIComponent(
                       `Hello ${sanitizeDisplayName(shareQuote.customerName)},\n\nHere is your customized holiday proposal for ${shareQuote.destinationName || 'your upcoming trip'} from New Chirag Tours & Travels (${shareQuote.durationNights} Nights / ${shareQuote.durationDays} Days):\n\nProposal Link: ${urlInfo.url}\nTotal Package Price: ${formatCurrency(shareQuote.pricingSummary?.finalSellingPrice)}\nValid Until: ${formatDate(shareQuote.validUntil)}\n\nPlease review your day-wise itinerary, accommodations, and terms. You can accept directly or let us know if any adjustments are desired!\n\nWarm regards,\nNew Chirag Tours & Travels`
                     )}`}
-                    onClick={(e) => {
-                      if (urlInfo.isDevelopmentOrLocalhost) {
-                        const proceed = window.confirm(
-                          `⚠️ Development Link Notice:\n\nThis proposal link (${urlInfo.url}) uses localhost/development because NEXT_PUBLIC_PUBLIC_QUOTE_BASE_URL is not configured with a public customer domain.\n\nExternal travelers cannot open localhost links on their mobile phones. Proceed anyway for local test dispatch?`
-                        );
-                        if (!proceed) e.preventDefault();
-                      }
-                    }}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-primary"
@@ -1297,16 +1574,39 @@ export default function QuotationsPage() {
                     <span>Share via WhatsApp to {shareQuote.customerMobile || 'Client'}</span>
                   </a>
 
-                  <a
-                    href={urlInfo.url || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-secondary"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 40, textDecoration: 'none' }}
-                  >
-                    <ExternalLink size={16} />
-                    <span>Open Public Traveler Preview</span>
-                  </a>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <a
+                      href={urlInfo.url || (shareQuote.shareableToken ? resolvePublicQuoteUrl(shareQuote.shareableToken).url : '#')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 42, textDecoration: 'none', fontWeight: 600 }}
+                    >
+                      <ExternalLink size={16} />
+                      <span>Open Proposal Preview</span>
+                    </a>
+
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/quotations/public/${shareToken || shareQuote.shareableToken}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-primary"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        height: 42,
+                        textDecoration: 'none',
+                        background: '#0f766e',
+                        color: '#ffffff',
+                        fontWeight: 600,
+                      }}
+                    >
+                      <Printer size={16} />
+                      <span>Print / PDF View</span>
+                    </a>
+                  </div>
                 </div>
               );
             })()}
@@ -1398,6 +1698,62 @@ export default function QuotationsPage() {
           </div>
         </div>
       )}
+
+      {/* Modern Acceptance Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(quoteToAccept)}
+        title="Confirm Proposal Acceptance"
+        variant="primary"
+        confirmLabel="Accept & Create Booking"
+        cancelLabel="Cancel"
+        isLoading={Boolean(acceptingQuoteId)}
+        onCancel={() => {
+          if (!acceptingQuoteId) setQuoteToAccept(null);
+        }}
+        onConfirm={executeAcceptQuotation}
+        message={
+          quoteToAccept && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ margin: 0 }}>
+                Accept proposal <strong>{quoteToAccept.quoteNumber}</strong> on behalf of{' '}
+                <strong style={{ color: '#0f766e' }}>{quoteToAccept.customerName || 'the traveler'}</strong>?
+              </p>
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  fontSize: '0.82rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Destination:</span>
+                  <span style={{ fontWeight: 600, color: '#1e293b' }}>{quoteToAccept.destinationName}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Duration:</span>
+                  <span style={{ fontWeight: 600, color: '#1e293b' }}>
+                    {quoteToAccept.durationNights}N / {quoteToAccept.durationDays}D
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Total Package Cost:</span>
+                  <span style={{ fontWeight: 700, color: '#0f766e' }}>
+                    {formatCurrency(quoteToAccept.pricingSummary?.finalSellingPrice)}
+                  </span>
+                </div>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
+                This will officially mark the proposal as <strong>ACCEPTED</strong> and automatically generate an official booking request in the accounting ledger.
+              </p>
+            </div>
+          )
+        }
+      />
     </div>
   );
 }

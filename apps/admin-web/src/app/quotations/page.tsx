@@ -26,6 +26,7 @@ import {
   Sparkles,
   ArrowRight,
   TrendingUp,
+  Printer,
 } from 'lucide-react';
 import {
   DestinationDto,
@@ -43,6 +44,8 @@ import { Pagination } from '@/components/Pagination';
 import { InfoBadge } from '@/components/InfoBadge';
 import { QUOTATION_STATUS_CONFIG, formatDate, formatCurrency, sanitizeDisplayName } from '@/lib/labels';
 import { resolvePublicQuoteUrl } from '@/lib/publicQuoteUrl';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
+import { ConfirmModal } from '@/components/ConfirmModal';
 
 const STATUS_FILTERS: (QuotationStatus | 'ALL')[] = [
   'ALL',
@@ -103,6 +106,13 @@ export default function QuotationsPage() {
 
   const [reviseQuote, setReviseQuote] = useState<QuotationDto | null>(null);
   const [reviseReason, setReviseReason] = useState('');
+  const [reviseStartDate, setReviseStartDate] = useState('');
+  const [reviseEndDate, setReviseEndDate] = useState('');
+  const [reviseAdults, setReviseAdults] = useState<number>(2);
+  const [reviseChildren, setReviseChildren] = useState<number>(0);
+  const [reviseRooms, setReviseRooms] = useState<number>(1);
+  const [reviseMealPlan, setReviseMealPlan] = useState<MealPlan>('CP');
+  const [reviseNotes, setReviseNotes] = useState('');
   const [reviseMarkupType, setReviseMarkupType] = useState<'PERCENT' | 'FLAT'>('PERCENT');
   const [reviseMarkup, setReviseMarkup] = useState<number>(10);
   const [reviseMarkupAmount, setReviseMarkupAmount] = useState<number>(0);
@@ -118,15 +128,15 @@ export default function QuotationsPage() {
   const [versionList, setVersionList] = useState<QuotationVersionDto[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(false);
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 5000);
   };
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (background = false) => {
+    if (!background) setLoading(true);
     setError(null);
     try {
       const [quotesRes, leadsRes, destsRes, hotelsRes] = await Promise.all([
@@ -141,15 +151,28 @@ export default function QuotationsPage() {
       setDestinations(Array.isArray(destsRes) ? destsRes : []);
       setHotels(Array.isArray(hotelsRes) ? hotelsRes : []);
     } catch (err: any) {
-      setError(err.message || 'Failed to load quotations');
+      if (!background) setError(err.message || 'Failed to load quotations');
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Real-time synchronization via Server-Sent Events (SSE)
+  useRealtimeSync({
+    eventTypes: ['QUOTATION_UPDATE', 'BOOKING_UPDATE'],
+    onRefresh: () => {
+      fetchData(true);
+    },
+    onEvent: (msg) => {
+      if (msg.message || msg.title) {
+        showToast(msg.message || msg.title || 'Quotation updated in real time');
+      }
+    },
+  });
 
   // When hotel changes, load room categories
   useEffect(() => {
@@ -355,7 +378,43 @@ export default function QuotationsPage() {
       });
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to issue quotation');
+      showToast(err.message || 'Failed to issue quotation', 'error');
+    }
+  };
+
+  const [quoteToAccept, setQuoteToAccept] = useState<QuotationDto | null>(null);
+  const [acceptingQuoteId, setAcceptingQuoteId] = useState<string | null>(null);
+
+  const handleAcceptQuotation = (quote: QuotationDto) => {
+    if (!quote.shareableToken) {
+      showToast('Quotation does not have an active public token. Please issue first.', 'error');
+      return;
+    }
+    setQuoteToAccept(quote);
+  };
+
+  const executeAcceptQuotation = async () => {
+    if (!quoteToAccept || !quoteToAccept.shareableToken) return;
+    const quote = quoteToAccept;
+    setAcceptingQuoteId(quote.id);
+    try {
+      const res = await fetch(`/api/proxy/quotations/public/${encodeURIComponent(quote.shareableToken || '')}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agreedToTerms: true, notes: 'Accepted by Admin on client confirmation' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error?.message || 'Failed to accept quotation');
+      }
+
+      showToast(`Quotation ${quote.quoteNumber} marked as ACCEPTED! Booking request created.`, 'success');
+      setQuoteToAccept(null);
+      fetchData();
+    } catch (err: any) {
+      showToast(err.message || 'Error accepting quotation', 'error');
+    } finally {
+      setAcceptingQuoteId(null);
     }
   };
 
@@ -373,7 +432,7 @@ export default function QuotationsPage() {
       setReviewNotes('');
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Action failed');
+      showToast(err.message || 'Action failed', 'error');
     } finally {
       setReviewSubmitting(false);
     }
@@ -385,30 +444,38 @@ export default function QuotationsPage() {
 
     setRevising(true);
     try {
+      const start = new Date(reviseStartDate);
+      const end = new Date(reviseEndDate);
+      const nights = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      const days = nights + 1;
+
       await apiRequest(`quotations/${reviseQuote.id}/revise`, {
         method: 'POST',
         body: JSON.stringify({
           leadId: reviseQuote.leadId,
           destinationId: reviseQuote.destinationId,
-          travelStartDate: reviseQuote.travelStartDate,
-          travelEndDate: reviseQuote.travelEndDate,
-          numberOfAdults: reviseQuote.numberOfAdults,
-          numberOfChildren: reviseQuote.numberOfChildren,
+          travelStartDate: reviseStartDate,
+          travelEndDate: reviseEndDate,
+          durationNights: nights,
+          durationDays: days,
+          numberOfAdults: Number(reviseAdults) || 1,
+          numberOfChildren: Number(reviseChildren) || 0,
           hotels: reviseQuote.hotels.map((h) => ({
             hotelId: h.hotelId,
             roomCategoryId: h.roomCategoryId,
-            checkInDate: h.checkInDate,
-            checkOutDate: h.checkOutDate,
-            numberOfRooms: h.numberOfRooms,
-            adultsCount: h.adultsCount,
-            childrenWithBedCount: h.childrenWithBedCount,
-            childrenWithoutBedCount: h.childrenWithoutBedCount,
-            mealPlan: h.mealPlan,
+            checkInDate: reviseStartDate,
+            checkOutDate: reviseEndDate,
+            numberOfNights: nights,
+            numberOfRooms: Number(reviseRooms) || h.numberOfRooms || 1,
+            adultsCount: Number(reviseAdults) || h.adultsCount || 1,
+            childrenWithBedCount: Number(reviseChildren) || 0,
+            childrenWithoutBedCount: 0,
+            mealPlan: reviseMealPlan || h.mealPlan,
           })),
           transports: reviseQuote.transports.map((t) => ({
             tariffId: t.tariffId,
             pricingBasis: t.pricingBasis,
-            numberOfDays: t.numberOfDays,
+            numberOfDays: days,
             estimatedKm: t.estimatedKm,
           })),
           markupType: reviseMarkupType,
@@ -417,6 +484,7 @@ export default function QuotationsPage() {
           discountType: reviseDiscountType,
           discountPercent: reviseDiscountType === 'PERCENT' ? Number(reviseDiscount) : undefined,
           discountAmount: reviseDiscountType === 'FLAT' ? Number(reviseDiscountAmount) : undefined,
+          notes: reviseNotes,
           changeReason: reviseReason.trim(),
         }),
       });
@@ -426,7 +494,7 @@ export default function QuotationsPage() {
       setReviseReason('');
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Revision failed');
+      showToast(err.message || 'Revision failed', 'error');
     } finally {
       setRevising(false);
     }
@@ -439,7 +507,7 @@ export default function QuotationsPage() {
       const versions = await apiRequest<QuotationVersionDto[]>(`quotations/${quote.id}/versions`);
       setVersionList(Array.isArray(versions) ? versions : []);
     } catch (err: any) {
-      alert(err.message || 'Failed to load versions');
+      showToast(err.message || 'Failed to load versions', 'error');
     } finally {
       setLoadingVersions(false);
     }
@@ -468,10 +536,20 @@ export default function QuotationsPage() {
   return (
     <div className="space-y-6">
       {/* Toast Alert */}
-      {toastMessage && (
-        <div className="flex items-center gap-2 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg shadow-sm">
-          <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-          <span>{toastMessage}</span>
+      {toast && (
+        <div
+          className={`flex items-center gap-2 p-4 rounded-lg shadow-sm border ${
+            toast.type === 'error'
+              ? 'bg-rose-50 border-rose-200 text-rose-800'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          }`}
+        >
+          {toast.type === 'error' ? (
+            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+          ) : (
+            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+          )}
+          <span>{toast.message}</span>
         </div>
       )}
 
@@ -682,15 +760,38 @@ export default function QuotationsPage() {
                       </td>
                       <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                         {quote.shareableToken && (
-                          <a
-                            href={`/quote/${quote.shareableToken}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs px-2.5 py-1 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg font-semibold border border-teal-200 transition-colors inline-flex items-center gap-1"
-                          >
-                            <LinkIcon className="w-3 h-3" />
-                            View Proposal
-                          </a>
+                          <>
+                            <a
+                              href={`http://localhost:3000/quote/${quote.shareableToken}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs px-2.5 py-1 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg font-semibold border border-teal-200 transition-colors inline-flex items-center gap-1"
+                            >
+                              <LinkIcon className="w-3 h-3" />
+                              View Proposal
+                            </a>
+                            <a
+                              href={`http://localhost:5000/api/v1/quotations/public/${quote.shareableToken}/pdf`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs px-2.5 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg font-semibold border border-emerald-200 transition-colors inline-flex items-center gap-1"
+                              title="Download / View Printable PDF"
+                            >
+                              <Printer className="w-3 h-3" />
+                              PDF
+                            </a>
+                            {quote.status === 'ISSUED' && (
+                              <button
+                                onClick={() => handleAcceptQuotation(quote)}
+                                disabled={acceptingQuoteId === quote.id}
+                                className="text-xs px-2.5 py-1 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg font-bold border border-emerald-300 transition-colors inline-flex items-center gap-1"
+                                title="Mark proposal as Accepted (Client agreed via Phone / WhatsApp)"
+                              >
+                                <Check className="w-3 h-3" />
+                                {acceptingQuoteId === quote.id ? 'Accepting...' : 'Mark Accepted'}
+                              </button>
+                            )}
+                          </>
                         )}
 
                         {quote.status === 'PENDING_ADMIN_APPROVAL' && (
@@ -715,12 +816,20 @@ export default function QuotationsPage() {
                         <button
                           onClick={() => {
                             setReviseQuote(quote);
+                            setReviseStartDate(quote.travelStartDate ? quote.travelStartDate.split('T')[0] : '');
+                            setReviseEndDate(quote.travelEndDate ? quote.travelEndDate.split('T')[0] : '');
+                            setReviseAdults(quote.numberOfAdults || 2);
+                            setReviseChildren(quote.numberOfChildren || 0);
+                            setReviseRooms(quote.hotels?.[0]?.numberOfRooms || 1);
+                            setReviseMealPlan((quote.hotels?.[0]?.mealPlan as MealPlan) || 'CP');
+                            setReviseNotes(quote.notes || '');
                             setReviseMarkupType(quote.pricingSummary.markupType || 'PERCENT');
                             setReviseMarkup(quote.pricingSummary.markupPercent ?? 10);
                             setReviseMarkupAmount(quote.pricingSummary.totalMarkupAmount ?? 0);
                             setReviseDiscountType(quote.pricingSummary.discountType || 'PERCENT');
                             setReviseDiscount(quote.pricingSummary.discountPercent ?? 0);
                             setReviseDiscountAmount(quote.pricingSummary.discountAmount ?? 0);
+                            setReviseReason('');
                           }}
                           className="text-xs px-2.5 py-1 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold transition-colors"
                         >
@@ -1718,39 +1827,44 @@ export default function QuotationsPage() {
               Official branded customer proposal is ready for quote <strong className="text-slate-700">{shareableModal.quoteNumber}</strong>. Share this link on WhatsApp or email.
             </p>
 
-            <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-left text-xs font-mono text-teal-800 break-all mb-4">
-              {typeof window !== 'undefined' ? `${window.location.origin}/quote/${shareableModal.token}` : `/quote/${shareableModal.token}`}
-            </div>
+            {(() => {
+              const urlInfo = resolvePublicQuoteUrl(shareableModal.token);
+              return (
+                <>
+                  <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-left text-xs font-mono text-teal-800 break-all mb-4">
+                    {urlInfo.url}
+                  </div>
 
-            <div className="flex flex-col sm:flex-row justify-center gap-2">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/quote/${shareableModal.token}`
-                  );
-                  setCopiedLink(true);
-                  setTimeout(() => setCopiedLink(false), 2000);
-                }}
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-colors"
-              >
-                {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copiedLink ? 'Copied Proposal Link!' : 'Copy Proposal Link'}
-              </button>
-              <a
-                href={`/quote/${shareableModal.token}`}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors"
-              >
-                Open Proposal
-              </a>
-              <button
-                onClick={() => setShareableModal(null)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-medium rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                Done
-              </button>
-            </div>
+                  <div className="flex flex-col sm:flex-row justify-center gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(urlInfo.url);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                      }}
+                      className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      {copiedLink ? 'Copied Proposal Link!' : 'Copy Proposal Link'}
+                    </button>
+                    <a
+                      href={urlInfo.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      Open Proposal
+                    </a>
+                    <button
+                      onClick={() => setShareableModal(null)}
+                      className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-medium rounded-lg hover:bg-slate-50 transition-colors"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -1817,135 +1931,253 @@ export default function QuotationsPage() {
         </div>
       )}
 
-      {/* Modal: Revise Quotation */}
+      {/* Modal: Revise Quotation (Comprehensive Edit) */}
       {reviseQuote && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
-            <h2 className="text-xl font-bold text-slate-900 mb-1">Revise Quotation</h2>
-            <p className="text-xs text-slate-500 mb-4">
-              Current version {reviseQuote.currentVersion} will be immutably snapshotted into version history.
-            </p>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-xl border border-slate-100">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-slate-900">Revise Quotation {reviseQuote.quoteNumber}</h2>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-teal-100 text-teal-800 border border-teal-200">
+                    Creating v{(reviseQuote.currentVersion || 1) + 1}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Adjust travel dates, travelers, meal plan, or pricing. Version v{reviseQuote.currentVersion} will be immutably snapshotted into version history.
+                </p>
+              </div>
+              <button onClick={() => setReviseQuote(null)} className="btn-icon text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             <form onSubmit={handleReviseQuotation} className="space-y-4">
+              {/* Section 1: Reason for Revision */}
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Change Reason *
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Change Reason (Audit Trail) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={reviseReason}
                   onChange={(e) => setReviseReason(e.target.value)}
-                  placeholder="e.g. Added 1 extra bed per traveler request"
+                  placeholder="e.g. Upgraded meal plan to MAP, extended 1 night per customer request"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-medium text-slate-700 inline-flex items-center gap-1">
-                      <span>Markup {reviseMarkupType === 'PERCENT' ? '(%)' : '(₹)'}</span>
-                      <InfoBadge text="Margin added above net supplier cost for this version." />
-                    </label>
-                    <div className="inline-flex bg-slate-200 rounded p-0.5 gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setReviseMarkupType('PERCENT')}
-                        className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${reviseMarkupType === 'PERCENT' ? 'bg-teal-700 text-white' : 'text-slate-600'}`}
-                      >
-                        %
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReviseMarkupType('FLAT')}
-                        className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${reviseMarkupType === 'FLAT' ? 'bg-teal-700 text-white' : 'text-slate-600'}`}
-                      >
-                        ₹
-                      </button>
-                    </div>
-                  </div>
-                  {reviseMarkupType === 'PERCENT' ? (
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={reviseMarkup === 0 ? '' : reviseMarkup}
-                      placeholder="0"
-                      onChange={(e) => setReviseMarkup(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
-                    />
-                  ) : (
-                    <input
-                      type="number"
-                      min={0}
-                      value={reviseMarkupAmount === 0 ? '' : reviseMarkupAmount}
-                      placeholder="0"
-                      onChange={(e) => setReviseMarkupAmount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
-                    />
-                  )}
+              {/* Section 2: Travel Dates */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                  1. Travel Dates & Duration
                 </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-medium text-slate-700 inline-flex items-center gap-1">
-                      <span>Discount {reviseDiscountType === 'PERCENT' ? '(%)' : '(₹)'}</span>
-                      <InfoBadge text="Special discount offered to traveler for this revision." />
-                    </label>
-                    <div className="inline-flex bg-slate-200 rounded p-0.5 gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setReviseDiscountType('PERCENT')}
-                        className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${reviseDiscountType === 'PERCENT' ? 'bg-teal-700 text-white' : 'text-slate-600'}`}
-                      >
-                        %
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReviseDiscountType('FLAT')}
-                        className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${reviseDiscountType === 'FLAT' ? 'bg-teal-700 text-white' : 'text-slate-600'}`}
-                      >
-                        ₹
-                      </button>
-                    </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Travel Start Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={reviseStartDate}
+                      onChange={(e) => setReviseStartDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                    />
                   </div>
-                  {reviseDiscountType === 'PERCENT' ? (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Travel End Date</label>
                     <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={reviseDiscount === 0 ? '' : reviseDiscount}
-                      placeholder="0"
-                      onChange={(e) => setReviseDiscount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                      type="date"
+                      required
+                      value={reviseEndDate}
+                      onChange={(e) => setReviseEndDate(e.target.value)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
                     />
-                  ) : (
-                    <input
-                      type="number"
-                      min={0}
-                      value={reviseDiscountAmount === 0 ? '' : reviseDiscountAmount}
-                      placeholder="0"
-                      onChange={(e) => setReviseDiscountAmount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
-                    />
-                  )}
+                  </div>
                 </div>
+              </div>
+
+              {/* Section 3: Travelers, Rooms & Meal Plan */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                  2. Travelers, Rooms & Meal Plan
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Adults (12+)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      required
+                      value={reviseAdults}
+                      onChange={(e) => setReviseAdults(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Children</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={50}
+                      value={reviseChildren}
+                      onChange={(e) => setReviseChildren(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Rooms</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={reviseRooms}
+                      onChange={(e) => setReviseRooms(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Meal Plan</label>
+                    <select
+                      value={reviseMealPlan}
+                      onChange={(e) => setReviseMealPlan(e.target.value as MealPlan)}
+                      className="w-full px-2 py-2 border border-slate-200 rounded-lg text-xs"
+                    >
+                      <option value="CP">CP (Breakfast)</option>
+                      <option value="MAP">MAP (Breakfast+Dinner)</option>
+                      <option value="AP">AP (All Meals)</option>
+                      <option value="EP">EP (Room Only)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Pricing & Margin */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                  3. Pricing & Discounts
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-slate-700 inline-flex items-center gap-1">
+                        <span>Markup {reviseMarkupType === 'PERCENT' ? '(%)' : '(₹)'}</span>
+                        <InfoBadge text="Margin added above net supplier cost for this version." />
+                      </label>
+                      <div className="inline-flex bg-slate-200 rounded p-0.5 gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setReviseMarkupType('PERCENT')}
+                          className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${reviseMarkupType === 'PERCENT' ? 'bg-teal-700 text-white' : 'text-slate-600'}`}
+                        >
+                          %
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReviseMarkupType('FLAT')}
+                          className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${reviseMarkupType === 'FLAT' ? 'bg-teal-700 text-white' : 'text-slate-600'}`}
+                        >
+                          ₹
+                        </button>
+                      </div>
+                    </div>
+                    {reviseMarkupType === 'PERCENT' ? (
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={reviseMarkup === 0 ? '' : reviseMarkup}
+                        placeholder="0"
+                        onChange={(e) => setReviseMarkup(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                      />
+                    ) : (
+                      <input
+                        type="number"
+                        min={0}
+                        value={reviseMarkupAmount === 0 ? '' : reviseMarkupAmount}
+                        placeholder="0"
+                        onChange={(e) => setReviseMarkupAmount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-slate-700 inline-flex items-center gap-1">
+                        <span>Discount {reviseDiscountType === 'PERCENT' ? '(%)' : '(₹)'}</span>
+                        <InfoBadge text="Special discount offered to traveler for this revision." />
+                      </label>
+                      <div className="inline-flex bg-slate-200 rounded p-0.5 gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setReviseDiscountType('PERCENT')}
+                          className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${reviseDiscountType === 'PERCENT' ? 'bg-teal-700 text-white' : 'text-slate-600'}`}
+                        >
+                          %
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReviseDiscountType('FLAT')}
+                          className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${reviseDiscountType === 'FLAT' ? 'bg-teal-700 text-white' : 'text-slate-600'}`}
+                        >
+                          ₹
+                        </button>
+                      </div>
+                    </div>
+                    {reviseDiscountType === 'PERCENT' ? (
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={reviseDiscount === 0 ? '' : reviseDiscount}
+                        placeholder="0"
+                        onChange={(e) => setReviseDiscount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                      />
+                    ) : (
+                      <input
+                        type="number"
+                        min={0}
+                        value={reviseDiscountAmount === 0 ? '' : reviseDiscountAmount}
+                        placeholder="0"
+                        onChange={(e) => setReviseDiscountAmount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 5: Notes */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Special Remarks / Notes (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={reviseNotes}
+                  onChange={(e) => setReviseNotes(e.target.value)}
+                  placeholder="Special instructions, dietary preferences, or room view notes..."
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs"
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setReviseQuote(null)}
-                  className="px-3 py-1.5 border border-slate-200 text-slate-600 text-xs rounded-lg"
+                  className="px-3 py-1.5 border border-slate-200 text-slate-600 text-xs rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={revising || !reviseReason.trim()}
-                  className="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-lg disabled:opacity-50"
+                  className="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
                 >
-                  {revising ? 'Saving...' : 'Save New Version'}
+                  {revising ? 'Saving Revision...' : `Save Revision v${(reviseQuote.currentVersion || 1) + 1}`}
                 </button>
               </div>
             </form>
@@ -2099,20 +2331,79 @@ export default function QuotationsPage() {
               {(() => {
                 const urlInfo = resolvePublicQuoteUrl(shareableModal.token);
                 return (
-                  <a
-                    href={urlInfo.url || `/quote/${shareableModal.token}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-primary"
-                  >
-                    Open Customer Portal Preview
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={urlInfo.url || `http://localhost:3000/quote/${shareableModal.token}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary"
+                    >
+                      Open Customer Portal
+                    </a>
+                    <a
+                      href={`http://localhost:5000/api/v1/quotations/public/${shareableModal.token}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-primary"
+                    >
+                      <Printer className="w-4 h-4 mr-1.5" />
+                      View / Download PDF
+                    </a>
+                  </div>
                 );
               })()}
             </div>
           </div>
         </div>
       )}
+
+      {/* Modern Acceptance Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(quoteToAccept)}
+        title="Confirm Proposal Acceptance"
+        variant="primary"
+        confirmLabel="Accept & Create Booking"
+        cancelLabel="Cancel"
+        isLoading={Boolean(acceptingQuoteId)}
+        onCancel={() => {
+          if (!acceptingQuoteId) setQuoteToAccept(null);
+        }}
+        onConfirm={executeAcceptQuotation}
+        message={
+          quoteToAccept && (
+            <div className="space-y-3">
+              <p className="text-slate-700 text-sm">
+                Mark proposal <strong>{quoteToAccept.quoteNumber}</strong> as <strong>ACCEPTED</strong> on traveler&apos;s behalf?
+              </p>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1.5 text-slate-600">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Customer:</span>
+                  <span className="font-semibold text-slate-800">{quoteToAccept.customerName || 'Traveler'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Destination:</span>
+                  <span className="font-semibold text-slate-800">{quoteToAccept.destinationName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Duration:</span>
+                  <span className="font-semibold text-slate-800">
+                    {quoteToAccept.durationNights}N / {quoteToAccept.durationDays}D
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-slate-200 pt-1.5">
+                  <span className="text-slate-500">Total Price:</span>
+                  <span className="font-bold text-teal-700">
+                    {formatCurrency(quoteToAccept.pricingSummary?.finalSellingPrice)}
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500">
+                This will automatically generate a new official booking in the Bookings &amp; Payment Ledger.
+              </p>
+            </div>
+          )
+        }
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   requestModificationSchema,
   reviseQuotationSchema,
   tokenParamSchema,
+  updateTravelerPublicSchema,
 } from '@chirag/validation';
 import { Router } from 'express';
 import { quotationController } from '../controllers/quotation.controller';
@@ -21,6 +22,12 @@ router.get(
   '/public/:token',
   validateRequest({ params: tokenParamSchema }),
   quotationController.getPublicByToken.bind(quotationController)
+);
+
+router.patch(
+  '/public/:token/traveler',
+  validateRequest({ params: tokenParamSchema, body: updateTravelerPublicSchema }),
+  quotationController.updateTravelerPublic.bind(quotationController)
 );
 
 router.post(

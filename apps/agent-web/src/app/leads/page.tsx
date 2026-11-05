@@ -23,6 +23,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { leadsApi, customersApi, inventoryApi } from '@/lib/api';
+import { ConfirmModal } from '@/components/ConfirmModal';
 
 export default function AgentLeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -67,6 +68,17 @@ export default function AgentLeadsPage() {
   const [followUpForm, setFollowUpForm] = useState({ nextFollowUpDate: '', followUpNotes: '' });
   const [submittingFollowUp, setSubmittingFollowUp] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Modern Toast & Lost Lead State
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 5000);
+  };
+
+  const [lostModalOpen, setLostModalOpen] = useState(false);
+  const [lostReasonSelected, setLostReasonSelected] = useState('Booked with competitor');
+  const [lostReasonCustom, setLostReasonCustom] = useState('');
 
   useEffect(() => {
     inventoryApi.getDestinations().then((res) => setDestinations(res.data || [])).catch(() => {});
@@ -123,7 +135,7 @@ export default function AgentLeadsPage() {
         followUpNotes: res.data.followUpNotes || '',
       });
     } catch (err: any) {
-      alert(err?.message || 'Failed to load lead details');
+      showToast(err?.message || 'Failed to load lead details', 'error');
       setDrawerOpen(false);
     } finally {
       setLoadingDrawer(false);
@@ -228,7 +240,7 @@ export default function AgentLeadsPage() {
       setActivityForm({ type: 'NOTE', title: '', content: '' });
       loadLeads();
     } catch (err: any) {
-      alert(err?.message || 'Failed to record activity');
+      showToast(err?.message || 'Failed to record activity', 'error');
     } finally {
       setSubmittingActivity(false);
     }
@@ -246,24 +258,16 @@ export default function AgentLeadsPage() {
       });
       setSelectedLead(res.data);
       loadLeads();
-      alert('Follow-up schedule updated successfully');
+      showToast('Follow-up schedule updated successfully', 'success');
     } catch (err: any) {
-      alert(err?.message || 'Failed to update follow-up schedule');
+      showToast(err?.message || 'Failed to update follow-up schedule', 'error');
     } finally {
       setSubmittingFollowUp(false);
     }
   };
 
-  const handleStatusChange = async (newStatus: string) => {
-    if (!selectedLead || newStatus === selectedLead.status) return;
-
-    let lostReason: string | undefined = undefined;
-    if (newStatus === 'LOST') {
-      const promptReason = prompt('Please specify the reason this lead was lost (e.g. Booked with competitor, Budget mismatch, Trip postponed):');
-      if (!promptReason) return;
-      lostReason = promptReason;
-    }
-
+  const executeStatusUpdate = async (newStatus: string, lostReason?: string) => {
+    if (!selectedLead) return;
     setUpdatingStatus(true);
     try {
       const res = await leadsApi.update(selectedLead.id, {
@@ -272,15 +276,57 @@ export default function AgentLeadsPage() {
       });
       setSelectedLead(res.data);
       loadLeads();
+      showToast(`Lead status updated to ${newStatus}`, 'success');
+      setLostModalOpen(false);
     } catch (err: any) {
-      alert(err?.message || 'Failed to update status');
+      showToast(err?.message || 'Failed to update status', 'error');
     } finally {
       setUpdatingStatus(false);
     }
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    if (!selectedLead || newStatus === selectedLead.status) return;
+
+    if (newStatus === 'LOST') {
+      setLostReasonSelected('Booked with competitor');
+      setLostReasonCustom('');
+      setLostModalOpen(true);
+      return;
+    }
+
+    await executeStatusUpdate(newStatus);
+  };
+
   return (
     <div>
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '12px 16px',
+            borderRadius: 10,
+            background: toast.type === 'error' ? '#fff1f2' : '#f0fdf4',
+            border: `1px solid ${toast.type === 'error' ? '#fecdd3' : '#bbf7d0'}`,
+            color: toast.type === 'error' ? '#9f1239' : '#166534',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontSize: '0.88rem',
+            fontWeight: 500,
+            animation: 'fadeIn 0.2s ease-out',
+          }}
+        >
+          {toast.type === 'error' ? (
+            <AlertCircle size={18} style={{ color: '#e11d48', flexShrink: 0 }} />
+          ) : (
+            <CheckCircle2 size={18} style={{ color: '#16a34a', flexShrink: 0 }} />
+          )}
+          <span>{toast.message}</span>
+        </div>
+      )}
+
       {/* Page Header */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
         <div>
@@ -1118,6 +1164,77 @@ export default function AgentLeadsPage() {
         </div>
       );
     })()}
+
+      {/* Modern Lost Lead Modal */}
+      <ConfirmModal
+        isOpen={lostModalOpen}
+        title="Mark Lead as Lost"
+        variant="warning"
+        confirmLabel="Confirm Lost Status"
+        cancelLabel="Cancel"
+        isLoading={updatingStatus}
+        onCancel={() => {
+          if (!updatingStatus) setLostModalOpen(false);
+        }}
+        onConfirm={() => {
+          const reason =
+            lostReasonSelected === 'Other'
+              ? lostReasonCustom.trim() || 'Other reason'
+              : lostReasonSelected;
+          executeStatusUpdate('LOST', reason);
+        }}
+        message="Please select or enter the primary reason why this lead could not be converted:"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              'Booked with competitor',
+              'Budget mismatch / Too expensive',
+              'Trip postponed / Cancelled by traveler',
+              'Unresponsive / Did not answer calls',
+              'Other',
+            ].map((reason) => (
+              <label
+                key={reason}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: `1px solid ${lostReasonSelected === reason ? '#0f766e' : '#e2e8f0'}`,
+                  background: lostReasonSelected === reason ? '#f0fdfa' : '#ffffff',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: lostReasonSelected === reason ? 600 : 400,
+                  color: lostReasonSelected === reason ? '#0f766e' : '#334155',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="lostReason"
+                  checked={lostReasonSelected === reason}
+                  onChange={() => setLostReasonSelected(reason)}
+                  style={{ accentColor: '#0f766e' }}
+                />
+                <span>{reason}</span>
+              </label>
+            ))}
+          </div>
+
+          {lostReasonSelected === 'Other' && (
+            <input
+              type="text"
+              placeholder="Specify custom reason..."
+              value={lostReasonCustom}
+              onChange={(e) => setLostReasonCustom(e.target.value)}
+              className="input"
+              style={{ width: '100%', fontSize: '0.85rem', padding: '8px 12px' }}
+              autoFocus
+            />
+          )}
+        </div>
+      </ConfirmModal>
     </div>
   );
 }

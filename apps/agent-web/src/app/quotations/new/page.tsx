@@ -79,6 +79,9 @@ function QuotationBuilderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedLeadId = searchParams?.get('leadId') || '';
+  const reviseQuoteId = searchParams?.get('reviseQuoteId') || '';
+  const [revisingQuoteData, setRevisingQuoteData] = useState<any | null>(null);
+  const [changeReason, setChangeReason] = useState<string>('Client requested updated itinerary and travel options');
 
   // Auth & Policy
   const agentUser = getAgentUser();
@@ -180,6 +183,95 @@ function QuotationBuilderContent() {
     init();
   }, [preselectedLeadId]);
 
+  // Load quote to revise if reviseQuoteId is present in query parameters
+  useEffect(() => {
+    if (!reviseQuoteId) return;
+    async function loadQuoteToRevise() {
+      try {
+        const res = await quotationsApi.getById(reviseQuoteId);
+        const q = res.data;
+        if (q) {
+          setRevisingQuoteData(q);
+          if (q.leadId) setSelectedLeadId(q.leadId);
+          if (q.destinationId) setSelectedDestinationId(q.destinationId);
+          if (q.packageId) setSelectedPackageId(q.packageId);
+          if (q.travelStartDate) setTravelStartDate(q.travelStartDate.split('T')[0]);
+          if (q.travelEndDate) setTravelEndDate(q.travelEndDate.split('T')[0]);
+          if (q.numberOfAdults) setNumberOfAdults(q.numberOfAdults);
+          if (q.numberOfChildren) setNumberOfChildren(q.numberOfChildren);
+          if (q.numberOfInfants) setNumberOfInfants(q.numberOfInfants);
+          if (q.notes) setAgentNotes(q.notes);
+          if (q.pricingSummary) {
+            setMarkupType(q.pricingSummary.markupType || 'PERCENT');
+            setMarkupPercent(q.pricingSummary.markupPercent ?? 10);
+            setMarkupAmount(q.pricingSummary.totalMarkupAmount ?? 0);
+            setDiscountType(q.pricingSummary.discountType || 'PERCENT');
+            setDiscountPercent(q.pricingSummary.discountPercent ?? 0);
+            setDiscountAmount(q.pricingSummary.discountAmount ?? 0);
+          }
+          const normalizeRefId = (raw: any): string => {
+            if (!raw) return '';
+            if (typeof raw === 'object') return String(raw._id || raw.id || '');
+            const s = String(raw).trim();
+            const objMatch = s.match(/ObjectId\('([a-f\d]{24})'\)/i);
+            if (objMatch) return objMatch[1];
+            return s;
+          };
+
+          if (q.hotels && q.hotels.length > 0) {
+            setHotelItems(
+              q.hotels.map((h: any, i: number) => {
+                const normHotelId = normalizeRefId(h.hotelId);
+                const normRoomId = normalizeRefId(h.roomCategoryId);
+                return {
+                  id: `h-rev-${i}`,
+                  hotelId: normHotelId,
+                  roomCategoryId: normRoomId,
+                  checkInDate: (h.checkInDate || q.travelStartDate).split('T')[0],
+                  checkOutDate: (h.checkOutDate || q.travelEndDate).split('T')[0],
+                  numberOfRooms: h.numberOfRooms || 1,
+                  adultsCount: h.adultsCount || q.numberOfAdults || 2,
+                  childrenWithBedCount: h.childrenWithBedCount || 0,
+                  childrenWithoutBedCount: h.childrenWithoutBedCount || 0,
+                  mealPlan: h.mealPlan || 'CP',
+                  availableRooms: [],
+                  loadingRooms: false,
+                };
+              })
+            );
+
+            // Fetch room categories for all existing hotel lines
+            q.hotels.forEach((h: any, i: number) => {
+              const normHotelId = normalizeRefId(h.hotelId);
+              if (normHotelId) {
+                fetchRoomCategories(`h-rev-${i}`, normHotelId);
+              }
+            });
+          }
+          if (q.transports && q.transports.length > 0) {
+            setTransportItems(
+              q.transports.map((t: any, i: number) => ({
+                id: `t-rev-${i}`,
+                vehicleId: normalizeRefId(t.vehicleId),
+                tariffId: normalizeRefId(t.tariffId),
+                pricingBasis: t.pricingBasis || 'PER_DAY',
+                numberOfDays: t.numberOfDays || 1,
+                estimatedKm: t.estimatedKm || 0,
+                driverAllowanceDays: t.driverAllowanceDays || 0,
+                nightHaltDays: t.nightHaltDays || 0,
+                tollsAndParking: t.tollsAndParking || 0,
+                notes: t.notes || '',
+              }))
+            );
+          }
+        }
+      } catch (err: any) {
+        console.error('Failed to load quotation for revision:', err);
+      }
+    }
+    loadQuoteToRevise();
+  }, [reviseQuoteId]);
+
   // When Destination Changes, load packages, hotels, and tariffs
   useEffect(() => {
     if (!selectedDestinationId) {
@@ -270,7 +362,10 @@ function QuotationBuilderContent() {
             ? {
                 ...item,
                 availableRooms: rooms,
-                roomCategoryId: rooms[0]?.id || '',
+                roomCategoryId:
+                  item.roomCategoryId && rooms.some((r) => r.id === item.roomCategoryId)
+                    ? item.roomCategoryId
+                    : rooms[0]?.id || '',
                 loadingRooms: false,
               }
             : item
@@ -278,7 +373,7 @@ function QuotationBuilderContent() {
       );
     } catch {
       setHotelItems((prev) =>
-        prev.map((item) => (item.id === itemId ? { ...item, loadingRooms: false } : item))
+        prev.map((item) => (item.id === itemId ? { ...item, loadingRooms: false, availableRooms: [] } : item))
       );
     }
   };
@@ -502,10 +597,19 @@ function QuotationBuilderContent() {
     };
 
     try {
+      if (reviseQuoteId) {
+        const revisePayload = {
+          ...payload,
+          changeReason: changeReason.trim() || 'Client requested itinerary update',
+        };
+        const res = await quotationsApi.revise(reviseQuoteId, revisePayload);
+        router.push(`/quotations?revised=${res.data.quoteNumber || 'true'}`);
+        return;
+      }
       const res = await quotationsApi.create(payload);
       router.push(`/quotations?created=${res.data.quoteNumber}`);
     } catch (err: any) {
-      setSubmitError(err?.message || 'Failed to create quotation proposal');
+      setSubmitError(err?.message || (reviseQuoteId ? 'Failed to revise quotation proposal' : 'Failed to create quotation proposal'));
     } finally {
       setSubmitting(false);
     }
@@ -528,10 +632,14 @@ function QuotationBuilderContent() {
         </Link>
         <div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-            Create Quotation Proposal
+            {revisingQuoteData
+              ? `Revise Quotation: ${revisingQuoteData.quoteNumber} (v${(revisingQuoteData.currentVersion || 1) + 1})`
+              : 'Create Quotation Proposal'}
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: '2px 0 0 0' }}>
-            Build a custom itinerary proposal, calculate rates with live server rules, and prepare traveler pricing.
+            {revisingQuoteData
+              ? `Editing full itinerary, hotel properties, vehicles, and terms for revision v${(revisingQuoteData.currentVersion || 1) + 1}. Previous version will be archived.`
+              : 'Build a custom itinerary proposal, calculate rates with live server rules, and prepare traveler pricing.'}
           </p>
         </div>
       </div>
@@ -805,14 +913,14 @@ function QuotationBuilderContent() {
                         }}
                         className="input"
                         style={{ width: '100%', fontSize: '0.85rem' }}
-                        disabled={item.loadingRooms || item.availableRooms.length === 0}
+                        disabled={item.loadingRooms || (item.availableRooms || []).length === 0}
                       >
                         {item.loadingRooms ? (
                           <option>Loading rooms...</option>
-                        ) : item.availableRooms.length === 0 ? (
+                        ) : (item.availableRooms || []).length === 0 ? (
                           <option>No room categories</option>
                         ) : (
-                          item.availableRooms.map((r) => (
+                          (item.availableRooms || []).map((r) => (
                             <option key={r.id} value={r.id}>
                               {r.name}
                             </option>
@@ -1394,6 +1502,23 @@ function QuotationBuilderContent() {
           </div>
         </div>
 
+        {reviseQuoteId && (
+          <div className="card" style={{ padding: 24, marginBottom: 24, border: '2px solid #0f766e', background: '#f0fdfa' }}>
+            <label className="label" style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f766e', display: 'block', marginBottom: 6 }}>
+              Reason for Revision (Audit Trail) <span style={{ color: '#be123c' }}>*</span>
+            </label>
+            <textarea
+              required
+              rows={2}
+              value={changeReason}
+              onChange={(e) => setChangeReason(e.target.value)}
+              placeholder="Explain why this quotation is being revised (e.g. client requested different hotels, dates, or negotiated rate)..."
+              className="input"
+              style={{ width: '100%', resize: 'vertical' }}
+            />
+          </div>
+        )}
+
         {/* Submit Actions */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 14 }}>
           <Link href="/quotations" className="btn btn-secondary">
@@ -1409,7 +1534,7 @@ function QuotationBuilderContent() {
             {submitting ? (
               <>
                 <RefreshCw size={18} className="animate-spin" />
-                <span>Creating Proposal...</span>
+                <span>{reviseQuoteId ? 'Saving Revision...' : 'Creating Proposal...'}</span>
               </>
             ) : isDiscountOverCap ? (
               <>
@@ -1419,7 +1544,7 @@ function QuotationBuilderContent() {
             ) : (
               <>
                 <CheckCircle2 size={18} />
-                <span>Create Quotation Proposal</span>
+                <span>{revisingQuoteData ? `Save Revision v${(revisingQuoteData.currentVersion || 1) + 1}` : 'Create Quotation Proposal'}</span>
               </>
             )}
           </button>

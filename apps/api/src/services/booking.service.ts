@@ -6,6 +6,7 @@ import { AppError } from '../utils/appError';
 import { ErrorCodes } from '../constants/errorCodes';
 import { logger } from '../utils/logger';
 import { operationsService } from './operations.service';
+import { realtimeService } from './realtime.service';
 
 export interface BookingActorContext {
   userId: string;
@@ -196,7 +197,20 @@ export class BookingService {
       `Booking [${booking.bookingNumber}] status updated: ${previousStatus} -> ${input.status} by ${actor.userId}`
     );
 
-    return updated.toDto(actor.role);
+    const dto = updated.toDto(actor.role);
+    realtimeService.broadcast({
+      type: 'BOOKING_UPDATE',
+      scopeId: bookingId,
+      title: 'Booking Status Updated',
+      message: `Booking #${booking.bookingNumber} updated to ${input.status}`,
+      data: {
+        action: 'STATUS_UPDATED',
+        bookingId,
+        bookingNumber: booking.bookingNumber,
+        status: input.status,
+      },
+    });
+    return dto;
   }
 }
 

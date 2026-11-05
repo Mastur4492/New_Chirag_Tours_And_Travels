@@ -54,10 +54,7 @@ export function PwaManager() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      alert('To install on Desktop, click the Install App icon (🖥️ or ➕) in your browser address bar at the top right.');
-      return;
-    }
+    if (!deferredPrompt) return;
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
