@@ -75,7 +75,10 @@ async function main() {
     console.log('\n--- 1. Authentication & Agent Setup ---');
     const adminLogin = await request('/auth/login', {
       method: 'POST',
-      body: { mobile: '9876543210', password: 'ChiragAdmin@2026!' },
+      body: {
+        mobile: env.BOOTSTRAP_ADMIN_MOBILE || '9999999999',
+        password: env.BOOTSTRAP_ADMIN_PASSWORD || 'TestAdmin@12345!',
+      },
     });
     assert(adminLogin.status === 200, 'Admin login succeeded', `HTTP ${adminLogin.status}`);
     const adminToken = adminLogin.body?.data?.accessToken;
@@ -85,7 +88,7 @@ async function main() {
     const agentMobile = '9876543299';
     let agent = await UserModel.findOne({ mobile: agentMobile });
     if (!agent) {
-      const passwordHash = await bcrypt.hash('ChiragAgent@2026!', 10);
+      const passwordHash = await bcrypt.hash(process.env.TEST_AGENT_PASSWORD || 'TestAgentPass@123!', 10);
       agent = await UserModel.create({
         fullName: 'Phase 3 Verification Agent',
         mobile: agentMobile,
@@ -103,7 +106,7 @@ async function main() {
 
     const agentLogin = await request('/auth/login', {
       method: 'POST',
-      body: { mobile: agentMobile, password: 'ChiragAgent@2026!' },
+      body: { mobile: agentMobile, password: process.env.TEST_AGENT_PASSWORD || 'TestAgentPass@123!' },
     });
     assert(agentLogin.status === 200, 'Agent login succeeded', `HTTP ${agentLogin.status}`);
     const agentToken = agentLogin.body?.data?.accessToken;

@@ -25,8 +25,8 @@ async function verifyAllRecords() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      mobile: env.BOOTSTRAP_ADMIN_MOBILE || '9876543210',
-      password: env.BOOTSTRAP_ADMIN_PASSWORD || 'ChiragAdmin@2026!',
+      mobile: env.BOOTSTRAP_ADMIN_MOBILE || '9999999999',
+      password: env.BOOTSTRAP_ADMIN_PASSWORD || 'TestAdmin@12345!',
     }),
   });
   const loginData: any = await loginRes.json();

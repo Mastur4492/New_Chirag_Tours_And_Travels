@@ -72,7 +72,8 @@ export async function runLiveVerification() {
   let agentUser = await UserModel.findOne({ mobile: agentMobile });
   if (!agentUser) {
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash('DemoAgent@2026!', salt);
+    const testAgentPass = process.env.TEST_AGENT_PASSWORD || 'TestAgentPass@123!';
+    const passwordHash = await bcrypt.hash(testAgentPass, salt);
     agentUser = await UserModel.create({
       fullName: 'Verification Test Agent',
       mobile: agentMobile,
@@ -92,8 +93,8 @@ export async function runLiveVerification() {
   const adminLogin = await request('/auth/login', {
     method: 'POST',
     body: {
-      mobile: env.BOOTSTRAP_ADMIN_MOBILE || '9876543210',
-      password: env.BOOTSTRAP_ADMIN_PASSWORD || 'ChiragAdmin@2026!',
+      mobile: env.BOOTSTRAP_ADMIN_MOBILE || '9999999999',
+      password: env.BOOTSTRAP_ADMIN_PASSWORD || 'TestAdmin@12345!',
     },
   });
   assert(
@@ -108,7 +109,7 @@ export async function runLiveVerification() {
     method: 'POST',
     body: {
       mobile: agentMobile,
-      password: 'DemoAgent@2026!',
+      password: process.env.TEST_AGENT_PASSWORD || 'TestAgentPass@123!',
     },
   });
   assert(

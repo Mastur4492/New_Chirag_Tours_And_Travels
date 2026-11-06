@@ -47,3 +47,11 @@ apps/api/uploads/
 # Package source build artifact clutter
 packages/*/src/*.js
 packages/*/src/*.js.map
+
+# Developer scratchpad scripts & verification artifacts
+scratch/
+newchirag_credentials_card.png
+*credentials*.png
+*.key
+*.pem
+

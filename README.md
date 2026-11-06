@@ -278,10 +278,10 @@ npm run test
 
 ### Step 4: Run Initial Admin Bootstrap
 ```bash
-BOOTSTRAP_ADMIN_NAME="Faisal Bikanerwala" \
-BOOTSTRAP_ADMIN_MOBILE="9876543210" \
-BOOTSTRAP_ADMIN_EMAIL="admin@chiragtravels.com" \
-BOOTSTRAP_ADMIN_PASSWORD="ChiragAdmin@2026!" \
+BOOTSTRAP_ADMIN_NAME="Your Admin Name" \
+BOOTSTRAP_ADMIN_MOBILE="YourMobileNumber" \
+BOOTSTRAP_ADMIN_EMAIL="admin@yourdomain.com" \
+BOOTSTRAP_ADMIN_PASSWORD="YourSecurePassword" \
 npm run bootstrap:admin --workspace=@chirag/api
 ```
 
@@ -303,14 +303,15 @@ npm run build
 
 ---
 
-## 10. Default Access Credentials Reference
+## 10. Access Credentials & Governance
 
-| Portal | Role | Mobile (Login ID) | Password | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| **Admin Operations** (`:3001`) | `ADMIN` / `OWNER` | `9876543210` | `ChiragAdmin@2026!` | Full administrative access for Faisal Bikanerwala |
-| **Agent Desk** (`:3002`) | `AGENT` | `9898012345` | `DemoAgent@2026!` | Partner Agent: Harish Mehta (*Somnath Heritage Travels, Surat*) |
-| **Agent Desk** (`:3002`) | `AGENT` | `9820099887` | *(Admin reset)* | Partner Agent: Vikram Holidays (*Ahmedabad*) |
-| **Customer Web** (`:3000`) | `GUEST` / `TRAVELER` | Public Open Access | None | Open holiday catalog, enquiry form & quote viewer |
+| Portal | Role | Access Scope | Authentication Method |
+| :--- | :--- | :--- | :--- |
+| **Admin Operations** (`:3001`) | `ADMIN` / `OWNER` | Full enterprise control | Configured during initial Admin Bootstrap |
+| **Agent Desk** (`:3002`) | `AGENT` | Assigned leads & private quotes | Provisioned by Admin via `/agents` console |
+| **Customer Web** (`:3000`) | `GUEST` / `TRAVELER` | Public holiday browsing | Open catalog & cryptographic quote tokens |
+
+> **Security Guardrail:** All production credentials must be set via environment variables. Default credentials or hardcoded keys should never be committed to source control.
 
 ---
 
