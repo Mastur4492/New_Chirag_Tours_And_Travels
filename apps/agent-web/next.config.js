@@ -3,11 +3,15 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@chirag/types', '@chirag/ui', '@chirag/utils', '@chirag/validation', '@chirag/pricing'],
   async rewrites() {
-    const apiOrigin = (process.env.API_URL || 'http://127.0.0.1:5000/api/v1').replace(/\/api\/v1\/?$/, '');
+    const defaultApiUrl = process.env.NODE_ENV === 'production'
+      ? 'https://newchirag-api.onrender.com/api/v1'
+      : 'http://127.0.0.1:5000/api/v1';
+    const targetApiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || defaultApiUrl;
+    const apiOrigin = targetApiUrl.replace(/\/api\/v1\/?$/, '');
     return [
       {
         source: '/api/proxy/:path*',
-        destination: `${process.env.API_URL || 'http://127.0.0.1:5000/api/v1'}/:path*`,
+        destination: `${targetApiUrl}/:path*`,
       },
       {
         source: '/uploads/:path*',
