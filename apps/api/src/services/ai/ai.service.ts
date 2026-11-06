@@ -25,8 +25,8 @@ export class AiService {
   private fallbackModel: string;
 
   constructor() {
-    this.primaryModel = env.AI_MODEL_NAME || 'gemini-3.5-flash-lite';
-    this.fallbackModel = 'gemini-3.1-flash-lite';
+    this.primaryModel = env.AI_MODEL_NAME || 'gemini-3.5-flash';
+    this.fallbackModel = 'gemini-3.5-flash-lite';
 
     if (env.GEMINI_API_KEY) {
       this.client = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
@@ -179,12 +179,19 @@ MANDATORY TOOL CALLING INSTRUCTIONS:
         },
       });
 
-      // 1. Send user message
-      const initialResponse = await chat.sendMessage({ message: userMessage });
+      // 1. Send initial user message
+      let currentResponse = await chat.sendMessage({ message: userMessage });
+      let loopCount = 0;
+      const MAX_TOOL_LOOPS = 5;
 
-      // 2. Check for Function / Tool Calls
-      if (initialResponse.functionCalls && initialResponse.functionCalls.length > 0) {
-        for (const fc of initialResponse.functionCalls) {
+      // 2. Autonomous multi-turn tool calling loop
+      while (currentResponse.functionCalls && currentResponse.functionCalls.length > 0 && loopCount < MAX_TOOL_LOOPS) {
+        if (signal?.aborted) break;
+        loopCount++;
+
+        const functionResponses: any[] = [];
+
+        for (const fc of currentResponse.functionCalls) {
           if (signal?.aborted) break;
 
           const toolName = fc.name || '';
@@ -210,34 +217,32 @@ MANDATORY TOOL CALLING INSTRUCTIONS:
             onToolError?.(toolName, toolResult.error || 'Tool execution failed');
           }
 
-          // Send function result back to Gemini and stream the final answer
-          const followUpStream = await chat.sendMessageStream({
-            message: [
-              {
-                functionResponse: {
-                  name: toolName,
-                  response: toolResult.success ? toolResult.result : { error: toolResult.error },
-                },
-              },
-            ],
+          functionResponses.push({
+            functionResponse: {
+              name: toolName,
+              response: toolResult.success ? toolResult.result : { error: toolResult.error },
+            },
           });
-
-          for await (const chunk of followUpStream) {
-            if (signal?.aborted) {
-              logger.info(`AI stream aborted by user disconnect [Session: ${session.sessionId}]`);
-              break;
-            }
-            const text = chunk.text || '';
-            if (text) {
-              fullText += text;
-              onChunk(text);
-            }
-          }
         }
-      } else {
-        // Plain text response without tool call
-        fullText = initialResponse.text || '';
-        onChunk(fullText);
+
+        if (signal?.aborted) break;
+
+        // Send function execution results back to Gemini
+        currentResponse = await chat.sendMessage({
+          message: functionResponses,
+        });
+      }
+
+      // 3. Stream final answer text to client
+      fullText = currentResponse.text || '';
+      if (fullText) {
+        // Stream text in words for smooth real-time reading experience
+        const words = fullText.split(' ');
+        for (let i = 0; i < words.length; i += 4) {
+          if (signal?.aborted) break;
+          const chunk = words.slice(i, i + 4).join(' ') + (i + 4 < words.length ? ' ' : '');
+          onChunk(chunk);
+        }
       }
     };
 

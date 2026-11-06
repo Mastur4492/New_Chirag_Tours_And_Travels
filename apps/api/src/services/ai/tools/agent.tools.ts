@@ -45,29 +45,22 @@ export const listMyLeadsTool: AiToolDefinition<z.infer<typeof ListMyLeadsSchema>
     const { leads, total } = await leadService.listLeads(filter, context.actor);
 
     let activeLeadsNotice = '';
-    let otherAssignedLeads: any[] = [];
+    let leadsToReturn = leads;
+
     if (leads.length === 0 && args.status !== 'ALL') {
       const allRes = await leadService.listLeads({ limit: args.limit }, context.actor);
       if (allRes.leads.length > 0) {
-        otherAssignedLeads = allRes.leads.map((l) => ({
-          id: l.id,
-          leadNumber: l.leadNumber,
-          customerName: l.customerName,
-          customerMobile: l.customerMobile,
-          destinationName: l.destinationName,
-          status: l.status,
-          nextFollowUpDate: l.nextFollowUpDate,
-        }));
-        activeLeadsNotice = `No leads found with status ${args.status}, but ${allRes.total} total active assigned leads exist across other pipeline stages.`;
+        leadsToReturn = allRes.leads;
+        activeLeadsNotice = `No leads found strictly with stage '${args.status}'. Showing ${allRes.total} total assigned leads in your pipeline.`;
       }
     }
 
     return {
       totalAssigned: total,
-      returnedCount: leads.length,
+      returnedCount: leadsToReturn.length,
       requestedStatus: args.status,
       notice: activeLeadsNotice || undefined,
-      leads: leads.map((l) => ({
+      leads: leadsToReturn.map((l) => ({
         id: l.id,
         leadNumber: l.leadNumber,
         customerName: l.customerName,
@@ -78,7 +71,6 @@ export const listMyLeadsTool: AiToolDefinition<z.infer<typeof ListMyLeadsSchema>
         nextFollowUpDate: l.nextFollowUpDate,
         followUpNotes: l.followUpNotes,
       })),
-      otherAssignedLeads: otherAssignedLeads.length > 0 ? otherAssignedLeads : undefined,
     };
   },
 };
