@@ -76,8 +76,8 @@ async function main() {
     const adminLogin = await request('/auth/login', {
       method: 'POST',
       body: {
-        mobile: env.BOOTSTRAP_ADMIN_MOBILE || '9999999999',
-        password: env.BOOTSTRAP_ADMIN_PASSWORD || 'TestAdmin@12345!',
+        mobile: process.env.BOOTSTRAP_ADMIN_MOBILE || '9999999999',
+        password: process.env.BOOTSTRAP_ADMIN_PASSWORD || 'TestAdmin@12345!',
       },
     });
     assert(adminLogin.status === 200, 'Admin login succeeded', `HTTP ${adminLogin.status}`);
