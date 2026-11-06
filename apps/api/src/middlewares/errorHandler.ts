@@ -23,6 +23,10 @@ export function errorHandler(
     code = err.code;
     message = err.message;
     details = err.details;
+  } else if (err.message && err.message.startsWith('CORS policy violation')) {
+    statusCode = 403;
+    code = ErrorCodes.FORBIDDEN;
+    message = err.message;
   } else if (err instanceof mongoose.Error.CastError) {
     statusCode = 400;
     code = ErrorCodes.BAD_REQUEST;

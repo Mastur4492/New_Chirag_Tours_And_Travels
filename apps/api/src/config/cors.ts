@@ -8,7 +8,17 @@ export const corsOptions: CorsOptions = {
       return callback(null, true);
     }
 
+    // Allow wildcard '*'
+    if (env.CORS_ALLOWED_ORIGINS.includes('*')) {
+      return callback(null, true);
+    }
+
     if (env.CORS_ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow Vercel production and preview deployments
+    if (/^https:\/\/newchirag-.*\.vercel\.app$/.test(origin) || /^https:\/\/.*\.vercel\.app$/.test(origin)) {
       return callback(null, true);
     }
 
