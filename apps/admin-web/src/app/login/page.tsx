@@ -15,10 +15,10 @@ import { setUserSession } from '@/lib/api';
 import { COMPANY_BRANDING } from '@/lib/branding';
 
 export default function LoginPage() {
-  const [mobile, setMobile] = useState('9876543210');
-  const [password, setPassword] = useState('ChiragAdmin@2026!');
+  const [mobile, setMobile] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -423,7 +423,7 @@ export default function LoginPage() {
               </div>
             </div>
             <a
-              href="http://localhost:3002/login"
+              href={typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') ? 'https://newchirag-agent.vercel.app/login' : 'http://localhost:3002/login'}
               style={{
                 fontSize: '12px',
                 fontWeight: 700,

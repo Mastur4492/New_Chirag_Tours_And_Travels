@@ -18,8 +18,8 @@ function AgentLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [mobile, setMobile] = useState('9876543211');
-  const [password, setPassword] = useState('DemoAgent@2026!');
+  const [mobile, setMobile] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,15 +84,6 @@ function AgentLoginForm() {
       return;
     }
 
-    const isAuto =
-      searchParams.get('auto') === 'true' ||
-      (typeof window !== 'undefined' && window.location.search.includes('auto=true'));
-
-    if (isAuto) {
-      performLogin('9876543211', 'DemoAgent@2026!');
-      return;
-    }
-
     const existingToken = getAgentToken();
     if (existingToken) {
       router.push('/');
@@ -104,12 +95,6 @@ function AgentLoginForm() {
       e.preventDefault();
     }
     await performLogin(mobile, password);
-  };
-
-  const handleQuickFillAndLogin = async () => {
-    setMobile('9876543211');
-    setPassword('DemoAgent@2026!');
-    await performLogin('9876543211', 'DemoAgent@2026!');
   };
 
   return (
@@ -244,7 +229,7 @@ function AgentLoginForm() {
                   maxLength={10}
                   value={mobile}
                   onChange={(e) => setMobile(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="98765 43211"
+                  placeholder="Enter 10-digit mobile number"
                   style={{
                     flex: 1,
                     border: 'none',
@@ -352,27 +337,6 @@ function AgentLoginForm() {
                   <ArrowRight size={16} />
                 </>
               )}
-            </button>
-
-            {/* Quick 1-Click Fill Button */}
-            <button
-              type="button"
-              onClick={handleQuickFillAndLogin}
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: 10,
-                background: '#f1f5f9',
-                border: '1px solid #cbd5e1',
-                color: '#334155',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              ⚡ Quick Fill & Login as Verified Agent (9876543211)
             </button>
           </form>
 
