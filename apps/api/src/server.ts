@@ -11,7 +11,7 @@ async function startServer(): Promise<void> {
 
     const server = http.createServer(app);
 
-    server.listen(env.PORT, () => {
+    server.listen(env.PORT, '0.0.0.0', () => {
       logger.info(`🚀 API Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
       logger.info(`📡 API Endpoints base: http://localhost:${env.PORT}${env.API_PREFIX}`);
       logger.info(`🩺 Health check: http://localhost:${env.PORT}/health`);
