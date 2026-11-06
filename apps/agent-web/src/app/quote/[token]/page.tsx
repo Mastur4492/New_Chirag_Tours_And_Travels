@@ -25,6 +25,9 @@ import {
   ArrowRight,
   Printer,
   Check,
+  Share2,
+  ExternalLink,
+  Eye,
 } from 'lucide-react';
 import { QuotationPublicDto, MEAL_PLAN_LABELS, MealPlan, AgencySettingsDto } from '@chirag/types';
 import { COMPANY_BRANDING } from '@/lib/branding';
@@ -39,17 +42,12 @@ export default function CustomerQuotationPage() {
   const [error, setError] = useState<string | null>(null);
   const [agencySettings, setAgencySettings] = useState<AgencySettingsDto | null>(null);
 
-  // Acceptance Modal & State
-  const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
-  const [accepting, setAccepting] = useState(false);
-  const [termsAgreed, setTermsAgreed] = useState(false);
-  const [acceptError, setAcceptError] = useState<string | null>(null);
-
   // Modification Request Modal & State
   const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
   const [modMessage, setModMessage] = useState('');
   const [modifying, setModifying] = useState(false);
   const [modError, setModError] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Success Feedback
   const [feedback, setFeedback] = useState<{ title: string; message: string; type: 'success' | 'info' } | null>(null);
@@ -81,34 +79,6 @@ export default function CustomerQuotationPage() {
       })
       .catch((err) => console.warn('Could not load agency settings in agent quote preview', err));
   }, [token]);
-
-  const handleAcceptQuote = async () => {
-    if (!termsAgreed || accepting) return;
-    setAccepting(true);
-    setAcceptError(null);
-    try {
-      const res = await fetch(`/api/proxy/quotations/public/${token}/accept`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agreedToTerms: true }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Failed to accept quotation');
-      }
-      setQuote(data.data);
-      setIsAcceptModalOpen(false);
-      setFeedback({
-        title: 'Quotation Accepted Successfully!',
-        message: 'Thank you for choosing New Chirag Tours & Travels. Your acceptance has been recorded, and our travel desk is now processing your booking reservation.',
-        type: 'success',
-      });
-    } catch (err: any) {
-      setAcceptError(err.message || 'Error accepting quote');
-    } finally {
-      setAccepting(false);
-    }
-  };
 
   const handleRequestChanges = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -753,24 +723,21 @@ export default function CustomerQuotationPage() {
             </div>
           ) : (
             <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', background: '#ecfdf5', color: '#047857', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 700, marginBottom: 8, border: '1px solid #a7f3d0' }}>
+                <Eye size={14} />
+                <span>Agent Proposal Preview Mode</span>
+              </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                Ready to Confirm Your Holiday?
+                Share Proposal with Traveler
               </h3>
               <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '6px 0 20px 0' }}>
-                Lock in your accommodations and itinerary by accepting online or requesting adjustments.
+                This is your consultant preview. To confirm this holiday, share the official link with your traveler. The customer reviews the itinerary and accepts online at the Customer Portal.
               </p>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setIsModifyModalOpen(true)}
-                  style={{ padding: '12px 24px', borderRadius: 8, background: '#f8fafc', border: '1.5px solid #cbd5e1', color: '#334155', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer' }}
-                >
-                  Request Changes
-                </button>
-
                 <a
-                  href={`https://wa.me/91${COMPANY_BRANDING.phoneRaw}?text=${encodeURIComponent(
-                    `Hi New Chirag Tours & Travels, I have reviewed quotation ${quote.quoteNumber} for ${sanitizeDisplayName(quote.destinationName) || 'Holiday Package'} (${quote.durationNights} Nights). Please assist with booking.`
+                  href={`https://wa.me/?text=${encodeURIComponent(
+                    `Hello ${quote.customerName || 'Traveler'}! Here is your official holiday proposal from New Chirag Tours & Travels for ${sanitizeDisplayName(quote.destinationName) || 'Holiday Package'} (${quote.durationNights}N/${quote.durationDays}D):\nhttp://localhost:3000/quote/${token}`
                   )}`}
                   target="_blank"
                   rel="noreferrer"
@@ -788,15 +755,35 @@ export default function CustomerQuotationPage() {
                   }}
                 >
                   <MessageSquare size={18} />
-                  <span>Chat on WhatsApp</span>
+                  <span>Share on WhatsApp</span>
                 </a>
 
                 <button
-                  onClick={() => setIsAcceptModalOpen(true)}
-                  style={{ padding: '12px 32px', borderRadius: 8, background: '#0f766e', border: 'none', color: '#ffffff', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                  type="button"
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                      navigator.clipboard.writeText(`http://localhost:3000/quote/${token}`);
+                      setCopiedLink(true);
+                      setTimeout(() => setCopiedLink(false), 3000);
+                    }
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '12px 22px',
+                    borderRadius: 8,
+                    background: copiedLink ? '#059669' : '#0f766e',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    border: 'none',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
                 >
-                  <Check size={18} />
-                  <span>Accept Quotation Proposal</span>
+                  {copiedLink ? <Check size={18} /> : <ExternalLink size={18} />}
+                  <span>{copiedLink ? 'Link Copied to Clipboard! ✓' : 'Copy Customer Link'}</span>
                 </button>
               </div>
             </div>
@@ -809,52 +796,6 @@ export default function CustomerQuotationPage() {
           <div style={{ marginTop: 4 }}>Phone: {COMPANY_BRANDING.phone} · Danilimda, Ahmedabad, Gujarat 382405</div>
         </footer>
       </div>
-
-      {/* Acceptance Modal */}
-      {isAcceptModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.5)', padding: 16 }}>
-          <div style={{ maxWidth: 480, width: '100%', background: '#ffffff', borderRadius: 16, padding: 28, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0' }}>
-              Confirm Quotation Acceptance
-            </h3>
-            <p style={{ fontSize: '0.88rem', color: '#475569', lineHeight: 1.6, margin: 0 }}>
-              By accepting proposal <strong>{quote.quoteNumber}</strong>, you approve the travel dates, hotel accommodations, and total price of <strong>{formatCurrency(quote.pricingSummary.finalSellingPrice)}</strong>.
-            </p>
-
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 18, padding: 12, background: '#f8fafc', borderRadius: 8 }}>
-              <input
-                type="checkbox"
-                id="terms"
-                checked={termsAgreed}
-                onChange={(e) => setTermsAgreed(e.target.checked)}
-                style={{ marginTop: 3, width: 16, height: 16 }}
-              />
-              <label htmlFor="terms" style={{ fontSize: '0.82rem', color: '#334155', cursor: 'pointer' }}>
-                I agree to the tour terms, cancellation policy, and advance payment schedule of New Chirag Tours & Travels.
-              </label>
-            </div>
-
-            {acceptError && (
-              <div style={{ padding: '8px 12px', background: '#fff1f2', color: '#be123c', borderRadius: 6, fontSize: '0.8rem', marginTop: 12 }}>
-                {acceptError}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24 }}>
-              <button onClick={() => setIsAcceptModalOpen(false)} style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569', cursor: 'pointer', fontWeight: 600 }}>
-                Cancel
-              </button>
-              <button
-                onClick={handleAcceptQuote}
-                disabled={!termsAgreed || accepting}
-                style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: termsAgreed ? '#0f766e' : '#cbd5e1', color: '#ffffff', cursor: termsAgreed ? 'pointer' : 'not-allowed', fontWeight: 700 }}
-              >
-                {accepting ? 'Recording Acceptance...' : 'Confirm Acceptance'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modify Modal */}
       {isModifyModalOpen && (

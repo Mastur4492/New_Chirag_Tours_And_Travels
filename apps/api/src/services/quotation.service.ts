@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 import {
   ApproveQuotationInput,
   CreateQuotationInput,
@@ -1057,9 +1058,15 @@ export class QuotationService {
 
       // 4. In-App Notifications for Admin and Assigned Agent
       let clientName = 'Client';
-      if (quotation.customerId) {
-        const cust = await customerRepository.findById(quotation.customerId.toString());
-        if (cust?.fullName) clientName = cust.fullName;
+      const custObj = quotation.customerId as any;
+      if (custObj && typeof custObj === 'object' && custObj.fullName) {
+        clientName = custObj.fullName;
+      } else {
+        const rawId = custObj?._id ? custObj._id.toString() : quotation.customerId ? quotation.customerId.toString() : null;
+        if (rawId && mongoose.Types.ObjectId.isValid(rawId)) {
+          const cust = await customerRepository.findById(rawId);
+          if (cust?.fullName) clientName = cust.fullName;
+        }
       }
 
       notificationService

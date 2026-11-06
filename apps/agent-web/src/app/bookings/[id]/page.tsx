@@ -1025,7 +1025,21 @@ export default function BookingDetailPage() {
                           >
                             {/* Receipt & Reference */}
                             <td style={{ padding: '12px 14px', verticalAlign: 'top' }}>
-                              <div style={{ fontFamily: 'monospace', fontWeight: 700, color: isRefund ? '#9f1239' : 'var(--primary)' }}>
+                              <div
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  background: isRefund ? '#fff1f2' : '#f0fdfa',
+                                  border: isRefund ? '1px solid #fecdd3' : '1px solid #ccfbf1',
+                                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                                  fontSize: '0.82rem',
+                                  fontWeight: 700,
+                                  color: isRefund ? '#9f1239' : '#0f766e',
+                                  letterSpacing: '0.02em',
+                                }}
+                              >
                                 {p.receiptNumber}
                               </div>
                               {p.transactionReference && (

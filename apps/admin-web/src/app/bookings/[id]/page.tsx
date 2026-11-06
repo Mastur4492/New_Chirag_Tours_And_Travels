@@ -733,8 +733,16 @@ export default function BookingDetailsPage() {
                       return (
                         <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
                           {/* Receipt Number */}
-                          <td className="py-3.5 px-4 font-mono font-semibold text-slate-900">
-                            {p.receiptNumber}
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-md font-mono text-xs font-bold border ${
+                                p.isRefund
+                                  ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                  : 'bg-teal-50 text-teal-800 border-teal-200'
+                              }`}
+                            >
+                              {p.receiptNumber}
+                            </span>
                             {p.isRefund && (
                               <span
                                 className={`block text-[10px] font-sans font-semibold mt-0.5 ${

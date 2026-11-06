@@ -130,7 +130,7 @@ describe('Scale Phase Services: Caching, Async Job Queue, PDF Generation & Whats
       expect(html).toContain('48,500');
       expect(html).toContain('Wangnoo Heritage Houseboats');
       expect(html).toContain('Toyota Innova Crysta');
-      expect(html).toContain('SBIN0002145');
+      expect(html).toContain('HDFC0001842');
     });
   });
 

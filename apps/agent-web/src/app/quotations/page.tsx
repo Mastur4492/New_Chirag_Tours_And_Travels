@@ -197,47 +197,6 @@ export default function QuotationsPage() {
     }
   };
 
-  const [quoteToAccept, setQuoteToAccept] = useState<QuotationDto | null>(null);
-  const [acceptingQuoteId, setAcceptingQuoteId] = useState<string | null>(null);
-
-  const handleAcceptQuotation = (quote: QuotationDto) => {
-    if (!quote.shareableToken) {
-      setError('Quotation does not have an active shareable token. Please issue or refresh first.');
-      return;
-    }
-    setQuoteToAccept(quote);
-  };
-
-  const executeAcceptQuotation = async () => {
-    if (!quoteToAccept || !quoteToAccept.shareableToken) return;
-    const quote = quoteToAccept;
-    setAcceptingQuoteId(quote.id);
-    setError(null);
-    try {
-      const res = await fetch(`/api/proxy/quotations/public/${encodeURIComponent(quote.shareableToken || '')}/accept`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agreedToTerms: true, notes: 'Client accepted proposal via Phone/WhatsApp confirmation' }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Failed to accept quotation');
-      }
-
-      setActionSuccess(`Proposal ${quote.quoteNumber} marked ACCEPTED! Official booking request generated.`);
-      setTimeout(() => setActionSuccess(null), 6000);
-      setQuoteToAccept(null);
-
-      loadQuotations();
-      if (selectedQuote?.id === quote.id) {
-        setSelectedQuote({ ...selectedQuote, status: 'ACCEPTED' });
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Error accepting proposal');
-    } finally {
-      setAcceptingQuoteId(null);
-    }
-  };
 
   // Open Share Modal
   const handleOpenShare = (quote: QuotationDto) => {
@@ -735,20 +694,6 @@ export default function QuotationsPage() {
                             </button>
                           )}
 
-                          {/* Mark as Accepted (if issued and not yet accepted) */}
-                          {isIssued && !isAccepted && q.shareableToken && (
-                            <button
-                              onClick={() => handleAcceptQuotation(q)}
-                              disabled={acceptingQuoteId === q.id}
-                              className="btn"
-                              style={{ padding: '4px 8px', height: 28, fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: 3, backgroundColor: '#ecfdf5', color: '#065f46', borderColor: '#a7f3d0' }}
-                              title="Mark proposal as Accepted (Client confirmed via Phone / WhatsApp)"
-                            >
-                              <CheckCircle2 size={12} />
-                              <span>{acceptingQuoteId === q.id ? 'Accepting...' : 'Mark Accepted'}</span>
-                            </button>
-                          )}
-
                           {/* Issue Button (if approved or draft within limits) */}
                           {canIssue && !isPendingApproval && (
                             <button
@@ -1104,17 +1049,6 @@ export default function QuotationsPage() {
                 </button>
               )}
 
-              {(selectedQuote.status === 'ISSUED' || selectedQuote.status === 'SENT') && selectedQuote.shareableToken && (
-                <button
-                  onClick={() => handleAcceptQuotation(selectedQuote)}
-                  disabled={acceptingQuoteId === selectedQuote.id}
-                  className="btn"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: '#059669', color: '#ffffff', border: 'none' }}
-                >
-                  <CheckCircle2 size={16} />
-                  <span>{acceptingQuoteId === selectedQuote.id ? 'Accepting...' : 'Mark Accepted (Client Agreed)'}</span>
-                </button>
-              )}
 
               {(selectedQuote.status === 'APPROVED' || selectedQuote.status === 'DRAFT') && (
                 <button
@@ -1699,61 +1633,7 @@ export default function QuotationsPage() {
         </div>
       )}
 
-      {/* Modern Acceptance Confirmation Modal */}
-      <ConfirmModal
-        isOpen={Boolean(quoteToAccept)}
-        title="Confirm Proposal Acceptance"
-        variant="primary"
-        confirmLabel="Accept & Create Booking"
-        cancelLabel="Cancel"
-        isLoading={Boolean(acceptingQuoteId)}
-        onCancel={() => {
-          if (!acceptingQuoteId) setQuoteToAccept(null);
-        }}
-        onConfirm={executeAcceptQuotation}
-        message={
-          quoteToAccept && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <p style={{ margin: 0 }}>
-                Accept proposal <strong>{quoteToAccept.quoteNumber}</strong> on behalf of{' '}
-                <strong style={{ color: '#0f766e' }}>{quoteToAccept.customerName || 'the traveler'}</strong>?
-              </p>
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 10,
-                  padding: '12px 14px',
-                  fontSize: '0.82rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Destination:</span>
-                  <span style={{ fontWeight: 600, color: '#1e293b' }}>{quoteToAccept.destinationName}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Duration:</span>
-                  <span style={{ fontWeight: 600, color: '#1e293b' }}>
-                    {quoteToAccept.durationNights}N / {quoteToAccept.durationDays}D
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Total Package Cost:</span>
-                  <span style={{ fontWeight: 700, color: '#0f766e' }}>
-                    {formatCurrency(quoteToAccept.pricingSummary?.finalSellingPrice)}
-                  </span>
-                </div>
-              </div>
-              <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
-                This will officially mark the proposal as <strong>ACCEPTED</strong> and automatically generate an official booking request in the accounting ledger.
-              </p>
-            </div>
-          )
-        }
-      />
+
     </div>
   );
 }

@@ -5,10 +5,35 @@ import { listMyLeadsTool, getLeadDetailsTool } from '../src/services/ai/tools/ag
 import { getFinancialAnalyticsTool, reassignLeadConsultantTool } from '../src/services/ai/tools/admin.tools';
 import { leadService } from '../src/services/lead.service';
 import { analyticsService } from '../src/services/analytics.service';
+import { destinationRepository } from '../src/repositories/destination.repository';
+import { hotelService } from '../src/services/hotel.service';
+import { transportRepository } from '../src/repositories/transport.repository';
 
 describe('AI Role-Based Tool Registries - Step 2 Verification', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(destinationRepository, 'findMany').mockResolvedValue({
+      destinations: [
+        {
+          _id: { toString: () => 'dest-1' },
+          name: 'Kashmir',
+          slug: 'kashmir',
+          isActive: true,
+        } as any,
+      ],
+      total: 1,
+    });
+    vi.spyOn(hotelService, 'listHotels').mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 50,
+      totalPages: 0,
+    } as any);
+    vi.spyOn(transportRepository, 'findTariffs').mockResolvedValue({
+      tariffs: [],
+      total: 0,
+    } as any);
   });
 
   describe('Zero-Trust Tool Isolation & Registry RBAC', () => {

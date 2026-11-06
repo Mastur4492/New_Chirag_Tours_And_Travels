@@ -5,9 +5,12 @@ import { BookingModel } from '../src/models/booking.model';
 import { QuotationModel } from '../src/models/quotation.model';
 import { auditLogRepository } from '../src/repositories/auditLog.repository';
 import { bookingRepository } from '../src/repositories/booking.repository';
+import { customerRepository } from '../src/repositories/customer.repository';
 import { leadRepository } from '../src/repositories/lead.repository';
 import { quotationRepository } from '../src/repositories/quotation.repository';
 import { quotationService } from '../src/services/quotation.service';
+import { notificationService } from '../src/services/notification.service';
+import { realtimeService } from '../src/services/realtime.service';
 import * as sequenceModule from '../src/models/sequence.model';
 import { AppError } from '../src/utils/appError';
 
@@ -68,6 +71,12 @@ describe('Stage 3: Public Quotation Acceptance to Booking Request Workflow', () 
     } as any);
     vi.spyOn(leadRepository, 'update').mockResolvedValue({} as any);
     vi.spyOn(leadRepository, 'addTimelineEvent').mockResolvedValue({} as any);
+    vi.spyOn(customerRepository, 'findById').mockResolvedValue({
+      _id: new mongoose.Types.ObjectId(customerId),
+      fullName: 'Test Customer',
+    } as any);
+    vi.spyOn(notificationService, 'createNotification').mockResolvedValue({} as any);
+    vi.spyOn(realtimeService, 'broadcast').mockReturnValue();
     vi.spyOn(auditLogRepository, 'findQuotationAcceptanceLog').mockResolvedValue({} as any);
     vi.spyOn(auditLogRepository, 'record').mockResolvedValue(null as any);
   });
