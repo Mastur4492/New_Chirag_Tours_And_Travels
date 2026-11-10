@@ -51,6 +51,7 @@ export class TourPackageService {
       defaultMealPlan: input.defaultMealPlan,
       defaultVehicleCategory: input.defaultVehicleCategory,
       startingPrice: input.startingPrice,
+      b2bStartingPrice: input.b2bStartingPrice,
       isPublished: input.isPublished !== undefined ? input.isPublished : true,
     });
 

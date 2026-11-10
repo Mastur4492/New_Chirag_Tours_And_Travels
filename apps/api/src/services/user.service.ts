@@ -90,10 +90,12 @@ export class UserService {
     const updatedProfile = {
       agencyName: agent.agentProfile?.agencyName,
       city: agent.agentProfile?.city,
-      maxDiscountPercent: permissions.maxDiscountPercent,
-      maxMarkupPercent: permissions.maxMarkupPercent,
-      canApproveFinalPrice: permissions.canApproveFinalPrice,
+      maxDiscountPercent: permissions.maxDiscountPercent ?? agent.agentProfile?.maxDiscountPercent ?? 100,
+      maxMarkupPercent: permissions.maxMarkupPercent ?? agent.agentProfile?.maxMarkupPercent ?? 100,
+      canApproveFinalPrice: permissions.canApproveFinalPrice ?? agent.agentProfile?.canApproveFinalPrice ?? true,
       commissionRatePercent: permissions.commissionRatePercent ?? agent.agentProfile?.commissionRatePercent,
+      rateSheetTier: permissions.rateSheetTier ?? agent.agentProfile?.rateSheetTier ?? 'Standard Wholesale B2B',
+      pricingModel: permissions.pricingModel ?? agent.agentProfile?.pricingModel ?? 'WHOLESALE_NET',
     };
 
     const updated = await userRepository.update(agentId, {

@@ -264,6 +264,7 @@ export function calculateHotelStayPricing(input: HotelStayPricingInput): HotelSt
       if (anyCard) {
         const sourceMeal = normalizeMealPlan(anyCard.mealPlan);
         const MEAL_DELTAS: Record<string, { cost: number; selling: number }> = {
+          EP: { cost: -600, selling: -800 },
           RO: { cost: -600, selling: -800 },
           CP: { cost: -300, selling: -400 },
           MAP: { cost: 0, selling: 0 },
@@ -289,6 +290,7 @@ export function calculateHotelStayPricing(input: HotelStayPricingInput): HotelSt
       const baseSelling = (roomCategory as any).pricePerNight || 4500;
       const baseCost = Math.round(baseSelling * 0.72);
       const MEAL_DELTAS: Record<string, { cost: number; selling: number }> = {
+        EP: { cost: -600, selling: -800 },
         RO: { cost: -600, selling: -800 },
         CP: { cost: -300, selling: -400 },
         MAP: { cost: 0, selling: 0 },

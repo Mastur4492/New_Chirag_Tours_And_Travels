@@ -50,7 +50,7 @@ export class PdfService {
     ).toLocaleString('en-IN');
 
     const customerMobile =
-      anyQuote.customerMobile || (quote as any).companyInfo?.phone || '+91 99786 55529';
+      anyQuote.customerMobile || (quote as any).companyInfo?.phone || '+91 88660 06640';
     const customerEmail = anyQuote.customerEmail || (quote as any).companyInfo?.email;
 
     // Build itinerary rows
@@ -402,7 +402,7 @@ export class PdfService {
         </td>
         <td class="company-meta">
           <strong>Owner Desk:</strong> ${settings?.founderName || 'Faisal Bikanerwala'}<br>
-          <strong>Direct Line:</strong> ${settings?.supportPhoneDisplay || '+91 99786 55529'}<br>
+          <strong>Direct Line:</strong> ${settings?.supportPhoneDisplay || '+91 88660 06640'} / +91 70430 46833<br>
           <strong>${settings?.city || 'Ahmedabad'}, ${settings?.state || 'Gujarat'}, India</strong><br>
           <strong>Email:</strong> ${settings?.supportEmail || 'newchiragtoursandtravels@gmail.com'}
         </td>
@@ -465,7 +465,7 @@ export class PdfService {
         <strong>Official Bank Remittance & Instant UPI Details:</strong><br>
         A/C Name: <strong>${settings?.accountHolderName || 'NEW CHIRAG TOURS AND TRAVELS'}</strong> • Bank: <strong>${settings?.bankName || 'HDFC Bank Ltd'}</strong><br>
         Account Number: <strong>${settings?.accountNumber || '50200084920194'}</strong> (${settings?.accountType || 'Current Account'}) • IFSC: <strong>${settings?.ifscCode || 'HDFC0001842'}</strong> (${settings?.branchName || 'Danilimda Branch, Ahmedabad'})<br>
-        UPI ID: <strong>${settings?.upiId || '9978655529@upi'}</strong> • PhonePe/GPay: <strong>${settings?.upiNumber || '+91 99786 55529'}</strong><br>
+        UPI ID: <strong>${settings?.upiId || '8866006640@upi'}</strong> • PhonePe/GPay: <strong>${settings?.upiNumber || '+91 88660 06640'}</strong><br>
         <em>Policy: ${settings?.paymentTerms || '25% Advance to Lock Allotments • Balance 75% on Arrival / Prior to Hotel Check-in'}</em>
       </div>
     </div>

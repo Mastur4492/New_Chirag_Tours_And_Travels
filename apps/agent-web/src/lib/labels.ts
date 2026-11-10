@@ -67,8 +67,9 @@ export const QUOTATION_STATUS_CONFIG: Record<
   },
 };
 
-export const MEAL_PLAN_LABELS: Record<MealPlan, { name: string; description: string }> = {
-  RO: { name: 'RO / EP (Room Only / European Plan)', description: 'Room Only' },
+export const MEAL_PLAN_LABELS: Record<string, { name: string; description: string }> = {
+  EP: { name: 'EP (European Plan - Room Only)', description: 'Room Only' },
+  RO: { name: 'EP (European Plan - Room Only)', description: 'Room Only' },
   CP: { name: 'CP (Continental Plan)', description: 'Room + Breakfast Included' },
   MAP: { name: 'MAP (Modified American)', description: 'Room + Breakfast + Dinner' },
   AP: { name: 'AP (American Plan)', description: 'All Meals Included (Breakfast, Lunch, Dinner)' },

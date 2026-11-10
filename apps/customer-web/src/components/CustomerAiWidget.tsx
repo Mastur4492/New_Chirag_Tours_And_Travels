@@ -266,7 +266,7 @@ export function CustomerAiWidget() {
                 ...m,
                 text:
                   m.text ||
-                  `Sorry, I am having trouble connecting to the travel desk right now: ${err.message}. Please feel free to call our desk directly at +91 99786 55529.`,
+                  `Sorry, I am having trouble connecting to the travel desk right now: ${err.message}. Please feel free to call our desk directly at +91 88660 06640 / +91 70430 46833.`,
               }
             : m
         )

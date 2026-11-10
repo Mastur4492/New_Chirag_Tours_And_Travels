@@ -39,13 +39,14 @@ import {
   RoomCategoryDto,
   TransportTariffDto,
 } from '@chirag/types';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, getApiBaseUrl, getPublicApiUrl } from '@/lib/api';
 import { Pagination } from '@/components/Pagination';
 import { InfoBadge } from '@/components/InfoBadge';
 import { QUOTATION_STATUS_CONFIG, formatDate, formatCurrency, sanitizeDisplayName } from '@/lib/labels';
 import { resolvePublicQuoteUrl } from '@/lib/publicQuoteUrl';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 const STATUS_FILTERS: (QuotationStatus | 'ALL')[] = [
   'ALL',
@@ -762,7 +763,7 @@ export default function QuotationsPage() {
                         {quote.shareableToken && (
                           <>
                             <a
-                              href={`http://localhost:3000/quote/${quote.shareableToken}`}
+                              href={resolvePublicQuoteUrl(quote.shareableToken).url || `/quote/${quote.shareableToken}`}
                               target="_blank"
                               rel="noreferrer"
                               className="text-xs px-2.5 py-1 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg font-semibold border border-teal-200 transition-colors inline-flex items-center gap-1"
@@ -771,7 +772,7 @@ export default function QuotationsPage() {
                               View Proposal
                             </a>
                             <a
-                              href={`http://localhost:5000/api/v1/quotations/public/${quote.shareableToken}/pdf`}
+                              href={`${getPublicApiUrl()}/quotations/public/${quote.shareableToken}/pdf`}
                               target="_blank"
                               rel="noreferrer"
                               className="text-xs px-2.5 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg font-semibold border border-emerald-200 transition-colors inline-flex items-center gap-1"
@@ -1093,56 +1094,41 @@ export default function QuotationsPage() {
                       <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
                         Customer Enquiry (Lead) <span style={{ color: '#ef4444' }}>*</span>
                       </label>
-                      <select
-                        required
+                      <SearchableSelect
+                        options={[
+                          { value: '', label: 'Select Enquiry' },
+                          ...leads.map((l) => ({
+                            value: l.id,
+                            label: `${l.leadNumber} — ${l.customerName || 'Customer'}`,
+                            subLabel: `${l.customerMobile || 'No mobile'} • ${sanitizeDisplayName(l.destinationName) || 'Custom'}`,
+                            badge: l.status,
+                          })),
+                        ]}
                         value={selectedLeadId}
-                        onChange={(e) => handleLeadChange(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          background: '#f8fafc',
-                          border: '1.5px solid #cbd5e1',
-                          borderRadius: '10px',
-                          fontSize: '13.5px',
-                          color: '#0f172a',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <option value="">Select Enquiry</option>
-                        {leads.map((l) => (
-                          <option key={l.id} value={l.id}>
-                            {l.leadNumber} — {l.customerName || 'Customer'} ({sanitizeDisplayName(l.destinationName) || 'Custom'})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleLeadChange(val)}
+                        placeholder="Select Customer Enquiry..."
+                        searchPlaceholder="Type customer name, mobile, or ID..."
+                      />
                     </div>
 
                     <div>
                       <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
                         Holiday Destination <span style={{ color: '#ef4444' }}>*</span>
                       </label>
-                      <select
-                        required
+                      <SearchableSelect
+                        options={[
+                          { value: '', label: 'Select Destination' },
+                          ...destinations.map((d) => ({
+                            value: d.id,
+                            label: sanitizeDisplayName(d.name),
+                            subLabel: `${d.region} • ${d.state}`,
+                          })),
+                        ]}
                         value={selectedDestinationId}
-                        onChange={(e) => setSelectedDestinationId(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          background: '#f8fafc',
-                          border: '1.5px solid #cbd5e1',
-                          borderRadius: '10px',
-                          fontSize: '13.5px',
-                          color: '#0f172a',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <option value="">Select Destination</option>
-                        {destinations.map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {sanitizeDisplayName(d.name)}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => setSelectedDestinationId(val)}
+                        placeholder="Select Destination..."
+                        searchPlaceholder="Type destination or state name..."
+                      />
                     </div>
                   </div>
 
@@ -1262,86 +1248,66 @@ export default function QuotationsPage() {
                       <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
                         Choose Hotel Property
                       </label>
-                      <select
+                      <SearchableSelect
+                        options={[
+                          { value: '', label: 'No Hotel (Transport Only)' },
+                          ...hotels
+                            .filter((h) => !selectedDestinationId || h.destinationId === selectedDestinationId)
+                            .map((h) => {
+                              const details = [h.city, h.starRating ? `${h.starRating}★` : null].filter(Boolean).join(' • ');
+                              return {
+                                value: h.id,
+                                label: h.name,
+                                subLabel: details,
+                                badge: h.propertyType,
+                              };
+                            }),
+                        ]}
                         value={selectedHotelId}
-                        onChange={(e) => setSelectedHotelId(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          background: '#f8fafc',
-                          border: '1.5px solid #cbd5e1',
-                          borderRadius: '10px',
-                          fontSize: '13.5px',
-                          color: '#0f172a',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <option value="">No Hotel (Transport Only)</option>
-                        {hotels
-                          .filter((h) => !selectedDestinationId || h.destinationId === selectedDestinationId)
-                          .map((h) => {
-                            const details = [h.city, h.starRating ? `${h.starRating}★` : null].filter(Boolean).join(' • ');
-                            return (
-                              <option key={h.id} value={h.id}>
-                                {h.name}{details ? ` (${details})` : ''}
-                              </option>
-                            );
-                          })}
-                      </select>
+                        onChange={(val) => setSelectedHotelId(val)}
+                        placeholder="Choose Hotel Property..."
+                        searchPlaceholder="Type hotel name or star rating..."
+                      />
                     </div>
 
                     <div>
                       <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
                         Room Category
                       </label>
-                      <select
+                      <SearchableSelect
+                        options={[
+                          { value: '', label: 'Select Category' },
+                          ...roomCategories.map((rc) => ({
+                            value: rc.id,
+                            label: rc.name,
+                            subLabel: `Base Occupancy: ${rc.baseOccupancy}`,
+                            badge: rc.extraBedSupported ? '+Extra Bed' : undefined,
+                          })),
+                        ]}
                         value={selectedRoomCatId}
-                        onChange={(e) => setSelectedRoomCatId(e.target.value)}
+                        onChange={(val) => setSelectedRoomCatId(val)}
                         disabled={!selectedHotelId || roomCategories.length === 0}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          background: !selectedHotelId ? '#f1f5f9' : '#f8fafc',
-                          border: '1.5px solid #cbd5e1',
-                          borderRadius: '10px',
-                          fontSize: '13.5px',
-                          color: '#0f172a',
-                          fontWeight: 500,
-                          cursor: !selectedHotelId ? 'not-allowed' : 'pointer',
-                        }}
-                      >
-                        <option value="">Select Category</option>
-                        {roomCategories.map((rc) => (
-                          <option key={rc.id} value={rc.id}>
-                            {rc.name} (Base {rc.baseOccupancy})
-                          </option>
-                        ))}
-                      </select>
+                        placeholder={!selectedHotelId ? 'Select a hotel first' : roomCategories.length === 0 ? 'No room categories' : 'Select Category...'}
+                        searchPlaceholder="Search room category..."
+                      />
                     </div>
 
                     <div>
                       <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
                         Meal Plan (Food)
                       </label>
-                      <select
+                      <SearchableSelect
+                        options={[
+                          { value: 'EP', label: 'EP (Room Only — European Plan)', subLabel: 'No Meals Included' },
+                          { value: 'CP', label: 'CP (Bed & Breakfast Included)', subLabel: 'Daily Breakfast' },
+                          { value: 'MAP', label: 'MAP (Breakfast + Dinner Included)', subLabel: 'Daily Breakfast & Dinner' },
+                          { value: 'AP', label: 'AP (All Meals — B, L, D)', subLabel: 'Daily Breakfast, Lunch & Dinner' },
+                        ]}
                         value={selectedMealPlan}
-                        onChange={(e) => setSelectedMealPlan(e.target.value as MealPlan)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          background: '#f8fafc',
-                          border: '1.5px solid #cbd5e1',
-                          borderRadius: '10px',
-                          fontSize: '13.5px',
-                          color: '#0f172a',
-                          fontWeight: 500,
-                        }}
-                      >
-                        <option value="CP">CP (Bed & Breakfast Included)</option>
-                        <option value="MAP">MAP (Breakfast + Dinner Included)</option>
-                        <option value="AP">AP (All Meals — Breakfast, Lunch, Dinner)</option>
-                        <option value="RO">RO (Room Only — No Meals)</option>
-                      </select>
+                        onChange={(val) => setSelectedMealPlan(val as MealPlan)}
+                        placeholder="Select Meal Plan..."
+                        searchPlaceholder="Search EP, CP, MAP, AP..."
+                      />
                     </div>
 
                     <div>
@@ -2333,7 +2299,7 @@ export default function QuotationsPage() {
                 return (
                   <div className="flex items-center gap-2">
                     <a
-                      href={urlInfo.url || `http://localhost:3000/quote/${shareableModal.token}`}
+                      href={urlInfo.url || `/quote/${shareableModal.token}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-secondary"
@@ -2341,7 +2307,7 @@ export default function QuotationsPage() {
                       Open Customer Portal
                     </a>
                     <a
-                      href={`http://localhost:5000/api/v1/quotations/public/${shareableModal.token}/pdf`}
+                      href={`${getPublicApiUrl()}/quotations/public/${shareableModal.token}/pdf`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-primary"

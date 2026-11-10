@@ -278,7 +278,7 @@ export default function AgentProfilePage() {
             }}
           >
             <Percent size={14} color="#60a5fa" />
-            <span>Max Discount Allowed: {agentProfile.maxDiscountPercent ?? 5}%</span>
+            <span>Pricing: Wholesale Net B2B (Full Autonomy)</span>
           </div>
         </div>
       </div>

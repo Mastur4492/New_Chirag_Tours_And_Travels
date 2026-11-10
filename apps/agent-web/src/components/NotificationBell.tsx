@@ -14,7 +14,7 @@ import {
   ExternalLink,
   X,
 } from 'lucide-react';
-import { notificationsApi } from '@/lib/api';
+import { notificationsApi, getAgentUser } from '@/lib/api';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 function formatRelativeTime(dateString: string): string {
@@ -93,17 +93,49 @@ export function NotificationBell() {
   useRealtimeSync({
     eventTypes: ['NOTIFICATION', 'QUOTATION_UPDATE', 'PAYMENT_UPDATE', 'BOOKING_UPDATE'],
     onRefresh: () => {
-      fetchCount();
       if (isOpen) {
         fetchNotifications();
       }
     },
     onEvent: (msg) => {
+      // 1. Strictly gate toast popups to genuine NOTIFICATION events only
+      // Non-notification events (QUOTATION_UPDATE, PAYMENT_UPDATE, BOOKING_UPDATE) are for silent table refresh
+      if (msg.type !== 'NOTIFICATION') {
+        return;
+      }
+
+      // 2. Filter recipient user
+      const currentUser = getAgentUser();
+      const currentUserId = currentUser?._id || currentUser?.id;
+      const currentRole = 'AGENT';
+      const targetUserId = msg.recipientUserId || msg.data?.recipientUserId;
+      const targetRole = msg.recipientRole || msg.data?.recipientRole;
+
+      if (targetUserId && currentUserId && targetUserId !== currentUserId) {
+        return;
+      }
+
+      // 3. Filter recipient role
+      if (targetRole && targetRole !== 'ALL' && targetRole !== currentRole) {
+        return;
+      }
+
+      // 4. Suppress self-action notifications (if the current user performed the action)
+      if (msg.data?.actorId && currentUserId && msg.data.actorId === currentUserId) {
+        return;
+      }
+
+      // 5. Update unread badge count
       fetchCount();
+      if (isOpen) {
+        fetchNotifications();
+      }
+
+      // 6. Show toast popup
       if (msg.title || msg.message) {
         setLiveToast({
           id: String(Date.now()),
-          title: msg.title || 'Live Activity Update',
+          title: msg.title || 'Notification',
           message: msg.message || '',
           link: msg.data?.link,
         });

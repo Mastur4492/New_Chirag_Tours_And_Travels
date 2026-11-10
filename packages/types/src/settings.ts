@@ -5,6 +5,8 @@ export interface AgencySettingsDto {
   tagline?: string;
   supportPhone: string;
   supportPhoneDisplay: string;
+  altPhone?: string;
+  altPhoneDisplay?: string;
   supportEmail: string;
   operatingHours: string;
   headOfficeAddress: string;

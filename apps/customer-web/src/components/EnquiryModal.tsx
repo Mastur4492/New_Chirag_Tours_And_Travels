@@ -6,6 +6,7 @@ import { customerApi } from '@/lib/api';
 import { DestinationDto, TourPackageDto, PublicEnquiryResultDto } from '@chirag/types';
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { InfoBadge } from '@/components/InfoBadge';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 interface EnquiryModalProps {
   isOpen: boolean;
@@ -367,36 +368,38 @@ export function EnquiryModal({
                   <label className="form-label">
                     Destination <span className="required">*</span>
                   </label>
-                  <select
-                    required
-                    className="form-select"
+                  <SearchableSelect
+                    options={destinations.map((d) => ({
+                      value: d.id,
+                      label: `${d.name} (${d.country})`,
+                      subLabel: d.country,
+                    }))}
                     value={destinationId}
-                    onChange={(e) => setDestinationId(e.target.value)}
-                  >
-                    <option value="">Select Circuit / Region</option>
-                    {destinations.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.country})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setDestinationId(val)}
+                    placeholder="Select Circuit / Region"
+                    searchPlaceholder="Search destination (type letter to jump)..."
+                    required
+                  />
                 </div>
                 <div>
                   <label className="form-label">Specific Tour Package (Optional)</label>
-                  <select
-                    className="form-select"
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: 'Custom Tailored Itinerary' },
+                      ...packages
+                        .filter((p) => !destinationId || p.destinationId === destinationId)
+                        .map((p) => ({
+                          value: p.id,
+                          label: `${p.title} (${p.durationNights}N/${p.durationDays}D)`,
+                          subLabel: `${p.durationDays} Days Tour`,
+                        })),
+                    ]}
                     value={packageId}
-                    onChange={(e) => setPackageId(e.target.value)}
-                  >
-                    <option value="">Custom Tailored Itinerary</option>
-                    {packages
-                      .filter((p) => !destinationId || p.destinationId === destinationId)
-                      .map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.title} ({p.durationNights}N/{p.durationDays}D)
-                        </option>
-                      ))}
-                  </select>
+                    onChange={(val) => setPackageId(val)}
+                    placeholder="Custom Tailored Itinerary"
+                    searchPlaceholder="Search tour package (type letter to jump)..."
+                    clearable
+                  />
                 </div>
               </div>
 

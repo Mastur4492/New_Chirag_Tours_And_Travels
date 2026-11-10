@@ -316,7 +316,7 @@ export default function DestinationDetailPage() {
               </button>
 
               <a
-                href={`https://wa.me/919978655529?text=${encodeURIComponent(
+                href={`https://wa.me/918866006640?text=${encodeURIComponent(
                   `Hello Faisal Bikanerwala, I want to inquire about verified hotels and holiday packages for ${cleanDestName}. Please share details.`
                 )}`}
                 target="_blank"
@@ -739,7 +739,7 @@ export default function DestinationDetailPage() {
                         </button>
 
                         <a
-                          href={`https://wa.me/919978655529?text=${encodeURIComponent(
+                          href={`https://wa.me/918866006640?text=${encodeURIComponent(
                             `Hello Faisal Bikanerwala, I want to book / inquire about ${hotel.name} in ${cleanDestName}. Please check room availability and rates.`
                           )}`}
                           target="_blank"
@@ -1118,7 +1118,7 @@ export default function DestinationDetailPage() {
                 </button>
 
                 <a
-                  href={`https://wa.me/919978655529?text=${encodeURIComponent(
+                  href={`https://wa.me/918866006640?text=${encodeURIComponent(
                     `Hello Faisal Bikanerwala, I want to book ${selectedHotelDetail.name} in ${cleanDestName}. Please confirm dates and availability.`
                   )}`}
                   target="_blank"

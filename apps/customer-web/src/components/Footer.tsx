@@ -68,9 +68,16 @@ export function Footer() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Phone size={16} color="var(--emerald-400)" style={{ flexShrink: 0 }} />
-                <a href={`tel:${COMPANY_BRANDING.phoneRaw}`} style={{ color: 'var(--white)', fontWeight: 600 }}>
-                  {COMPANY_BRANDING.phoneDisplay}
-                </a>
+                <div>
+                  <a href={`tel:${COMPANY_BRANDING.phoneRaw}`} style={{ color: 'var(--white)', fontWeight: 600 }}>
+                    {COMPANY_BRANDING.phoneDisplay}
+                  </a>
+                  {COMPANY_BRANDING.altPhoneDisplay && (
+                    <span style={{ color: '#d1e2da', marginLeft: 8 }}>
+                      / <a href={`tel:${COMPANY_BRANDING.altPhoneRaw}`} style={{ color: 'var(--white)', fontWeight: 600 }}>{COMPANY_BRANDING.altPhoneDisplay}</a>
+                    </span>
+                  )}
+                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Mail size={16} color="var(--emerald-400)" style={{ flexShrink: 0 }} />

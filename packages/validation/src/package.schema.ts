@@ -31,6 +31,7 @@ export const createTourPackageSchema = z.object({
   defaultMealPlan: mealPlanSchema.optional(),
   defaultVehicleCategory: vehicleCategorySchema.optional(),
   startingPrice: z.number().min(0).optional(),
+  b2bStartingPrice: z.number().min(0).optional(),
   isPublished: z.boolean().default(true),
 });
 

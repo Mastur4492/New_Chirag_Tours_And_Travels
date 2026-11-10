@@ -338,7 +338,7 @@ npm run build
 ### New Chirag Tours & Travels Platform
 **Officially Licensed & Maintained by Faisal Bikanerwala**  
 *Shop No 3, Al-Rehman Plaza, nr. Nagori Complex, opp. Alishan Complex, Shakti Society, Danilimda, Ahmedabad, Gujarat 382405*  
-**Official Agency Line:** +91 99786 55529 • **Email:** newchiragtoursandtravels@gmail.com
+**Official Agency Line:** +91 88660 06640 / +91 70430 46833 • **Email:** newchiragtoursandtravels@gmail.com
 
 ---
 

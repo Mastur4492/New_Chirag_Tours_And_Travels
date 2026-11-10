@@ -50,6 +50,7 @@ import {
   isToday,
   isOverdue,
 } from '@/lib/labels';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 const ALL_STATUSES: LeadStatus[] = [
   'NEW',
@@ -1840,7 +1841,7 @@ export default function LeadsPage() {
                         setMobile(e.target.value);
                         if (fieldErrors.mobile) setFieldErrors((prev) => ({ ...prev, mobile: '' }));
                       }}
-                      placeholder="e.g. 99786 55529 (10-digit mobile)"
+                      placeholder="e.g. 88660 06640 (10-digit mobile)"
                       required
                       className={fieldErrors.mobile ? '!border-rose-400 !bg-rose-50/20' : ''}
                     />
@@ -1899,22 +1900,21 @@ export default function LeadsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="form-label">Where do they want to travel? *</label>
-                    <select
+                    <SearchableSelect
+                      options={destinations.map((d) => ({
+                        value: d.id,
+                        label: `${sanitizeDisplayName(d.name)} (${d.state || d.country})`,
+                        subLabel: d.country,
+                      }))}
                       value={destinationId}
-                      onChange={(e) => {
-                        setDestinationId(e.target.value);
+                      onChange={(val) => {
+                        setDestinationId(val);
                         if (fieldErrors.destinationId) setFieldErrors((prev) => ({ ...prev, destinationId: '' }));
                       }}
+                      placeholder="-- Choose Holiday Destination --"
+                      searchPlaceholder="Search destination (type letter to jump)..."
                       required
-                      className={fieldErrors.destinationId ? '!border-rose-400 !bg-rose-50/20' : ''}
-                    >
-                      <option value="">-- Choose Holiday Destination --</option>
-                      {destinations.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {sanitizeDisplayName(d.name)} ({d.state || d.country})
-                        </option>
-                      ))}
-                    </select>
+                    />
                     {fieldErrors.destinationId && (
                       <p className="text-rose-600 text-[11px] font-medium mt-1 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3 flex-shrink-0" /> {fieldErrors.destinationId}
@@ -2000,17 +2000,22 @@ export default function LeadsPage() {
 
                 <div>
                   <label className="form-label">Assign to Travel Consultant</label>
-                  <select
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: '-- Keep Unassigned (Direct Admin Queue) --' },
+                      ...agents.map((ag) => ({
+                        value: ag.id,
+                        label: ag.fullName,
+                        subLabel: ag.role,
+                        badge: ag.role === 'ADMIN' ? 'Admin' : 'Agent',
+                      })),
+                    ]}
                     value={assignedAgentId}
-                    onChange={(e) => setAssignedAgentId(e.target.value)}
-                  >
-                    <option value="">-- Keep Unassigned (Direct Admin Queue) --</option>
-                    {agents.map((ag) => (
-                      <option key={ag.id} value={ag.id}>
-                        {ag.fullName} ({ag.role})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setAssignedAgentId(val)}
+                    placeholder="-- Select Travel Consultant --"
+                    searchPlaceholder="Search agent (type letter to jump)..."
+                    clearable
+                  />
                 </div>
 
                 <div>

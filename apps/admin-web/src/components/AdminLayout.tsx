@@ -55,7 +55,6 @@ const workspaceNavItems: NavItem[] = [
 ];
 
 const inventoryNavItems: NavItem[] = [
-  { name: 'Operations Desk', href: '/operations', icon: ShieldCheck },
   { name: 'Tour Packages', href: '/packages', icon: Compass },
   { name: 'Hotels & Rooms', href: '/hotels', icon: Building2 },
   { name: 'Transport & Fleet', href: '/transport', icon: Car },

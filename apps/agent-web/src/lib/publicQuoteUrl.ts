@@ -34,6 +34,8 @@ export function resolvePublicQuoteUrl(token: string): PublicQuoteUrlResult {
     const origin = window.location.origin.replace(/\/+$/, '');
     if (origin.includes(':3001') || origin.includes(':3002')) {
       baseUrl = origin.replace(/:300[12]/, ':3000');
+    } else if (origin.includes('newchirag-admin') || origin.includes('newchirag-agent')) {
+      baseUrl = origin.replace(/newchirag-(admin|agent)/, 'newchirag-customer');
     } else {
       baseUrl = origin;
     }

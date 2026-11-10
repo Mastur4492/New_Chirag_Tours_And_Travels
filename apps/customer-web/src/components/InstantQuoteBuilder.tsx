@@ -31,6 +31,7 @@ import { customerApi } from '@/lib/api';
 import { DestinationDto } from '@chirag/types';
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { formatDisplayTitle, formatINR, getDestinationStyle } from '@/lib/utils';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 // Pre-configured baseline rates per night per room for domestic circuits
 const HOTEL_TIER_RATES: Record<
@@ -242,13 +243,16 @@ export function InstantQuoteBuilder() {
     }
   };
 
-  const handleDestDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value;
+  const handleSelectDestId = (id: string) => {
     setSelectedDestId(id);
     const found = destinations.find((d) => d.id === id);
     if (found) {
       setSelectedDestName(found.name);
     }
+  };
+
+  const handleDestDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleSelectDestId(e.target.value);
   };
 
   // Auto-suggest vehicle if passenger count exceeds sedan capacity
@@ -351,7 +355,7 @@ I designed this custom package on your website for *${cleanDest}*.
 Please check availability and share a confirmed booking proposal!`;
   }, [selectedDestName, durationNights, calculation, adults, children, hotelTier, vehicleTier, travelMonth]);
 
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=919978655529&text=${encodeURIComponent(whatsappMessage)}`;
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=${COMPANY_BRANDING.phoneRaw}&text=${encodeURIComponent(whatsappMessage)}`;
 
   // Submit Direct Enquiry to Admin CRM
   const handleSubmitEnquiry = async (e: React.FormEvent) => {
@@ -664,27 +668,27 @@ Tentative Month: ${travelMonth}`;
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748B', marginBottom: 6 }}>
                   Or select from full catalog database:
                 </label>
-                <select
-                  className="form-select"
+                <SearchableSelect
+                  options={
+                    destinations.length > 0
+                      ? destinations.map((d) => ({
+                          value: d.id,
+                          label: `${formatDisplayTitle(d.name)} (${d.country})`,
+                          subLabel: d.country,
+                        }))
+                      : [
+                          { value: 'kashmir', label: 'Kashmir Valley Circuit (Srinagar, Gulmarg, Pahalgam)' },
+                          { value: 'kerala', label: 'Kerala Serene Backwaters (Munnar, Alleppey, Thekkady)' },
+                          { value: 'rajasthan', label: 'Royal Rajasthan (Jaipur, Jodhpur, Udaipur)' },
+                          { value: 'himachal', label: 'Himachal Hills (Manali, Shimla, Solang Valley)' },
+                          { value: 'goa', label: 'Goa Beach Holiday' },
+                        ]
+                  }
                   value={selectedDestId}
-                  onChange={handleDestDropdownChange}
-                  style={{ width: '100%', fontSize: '0.92rem', fontWeight: 600, padding: '10px 14px' }}
-                >
-                  {destinations.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {formatDisplayTitle(d.name)} ({d.country})
-                    </option>
-                  ))}
-                  {destinations.length === 0 && (
-                    <>
-                      <option value="kashmir">Kashmir Valley Circuit (Srinagar, Gulmarg, Pahalgam)</option>
-                      <option value="kerala">Kerala Serene Backwaters (Munnar, Alleppey, Thekkady)</option>
-                      <option value="rajasthan">Royal Rajasthan (Jaipur, Jodhpur, Udaipur)</option>
-                      <option value="himachal">Himachal Hills (Manali, Shimla, Solang Valley)</option>
-                      <option value="goa">Goa Beach Holiday</option>
-                    </>
-                  )}
-                </select>
+                  onChange={(val) => handleSelectDestId(val)}
+                  placeholder="Select Destination Circuit..."
+                  searchPlaceholder="Search destination (type letter to jump)..."
+                />
               </div>
             </div>
 
@@ -1465,7 +1469,7 @@ Tentative Month: ${travelMonth}`;
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.88rem', color: '#0F172A' }}>
                 <MessageCircle size={16} color="#25D366" />
-                <span>WhatsApp: <strong><a href={COMPANY_BRANDING.whatsappUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#059669', textDecoration: 'none' }}>+91 99786 55529</a></strong> (Instant Reply)</span>
+                <span>WhatsApp: <strong><a href={COMPANY_BRANDING.whatsappUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#059669', textDecoration: 'none' }}>{COMPANY_BRANDING.phoneDisplay}</a></strong> (Instant Reply)</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.86rem', color: '#0F172A' }}>
                 <MapPin size={16} color="#475569" />
@@ -1494,7 +1498,7 @@ Tentative Month: ${travelMonth}`;
               },
               {
                 q: 'How do I confirm the booking and receive hotel vouchers?',
-                a: 'To lock your reservation, only a 30% advance deposit is required. Upon receipt, we issue official hotel confirmation vouchers and cab allotment details. The balance is payable before or during your tour.',
+                a: 'To lock your reservation, only a 35% advance deposit is required. Upon receipt, we issue official hotel confirmation vouchers and cab allotment details. The balance is payable before or during your tour.',
               },
               {
                 q: 'Are toll taxes, parking, driver charges, and GST included in this quote?',

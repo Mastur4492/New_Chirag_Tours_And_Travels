@@ -418,21 +418,6 @@ export class LeadService {
         console.error('[LeadService] Failed to create in-app notification for agent:', err);
       });
 
-    // In-app notification for Admin team
-    notificationService
-      .createNotification({
-        recipientRole: 'ADMIN',
-        type: 'LEAD_ASSIGNED',
-        title: `Enquiry Reassigned: ${lead.leadNumber}`,
-        message: `Enquiry ${lead.leadNumber} (${customerDoc?.fullName || 'Traveler'}) assigned to ${targetAgent.fullName} by ${adminUser?.fullName || 'Admin'}.`,
-        link: `/leads?openLead=${lead._id.toString()}`,
-        entityType: 'LEAD',
-        entityId: lead._id.toString(),
-      })
-      .catch((err) => {
-        console.error('[LeadService] Failed to create admin notification:', err);
-      });
-
     // WhatsApp alert directly to target agent with full traveler specifications
     if (targetAgent.mobile) {
       whatsappService

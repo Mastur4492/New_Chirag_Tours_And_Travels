@@ -24,10 +24,14 @@ export interface UnifiedBookingCardProps {
     finalTotal: number;
     perPersonPrice: number;
     roomsCount: number;
+    extraBedsCount?: number;
+    extraBedRate?: number;
+    totalExtraBedCost?: number;
     effectiveHotelRate: number;
     days: number;
     gstAmount: number;
     advancePayable: number;
+    advancePercentage?: number;
   };
   durationNights: number;
   adults: number;
@@ -265,14 +269,30 @@ export default function UnifiedBookingCard({
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <CheckCircle2 size={17} color="#34D399" style={{ flexShrink: 0, marginTop: 2 }} />
                   <span>
-                    <strong>{calculation.roomsCount} Room(s)</strong> at verified hotel ({selectedRoom?.name || 'Deluxe Room'})
+                    <strong>{calculation.roomsCount} Room(s){(calculation.extraBedsCount || 0) > 0 ? ` + ${calculation.extraBedsCount} Extra Bed(s)` : ''}</strong> at verified hotel ({selectedRoom?.name || 'Deluxe Room'})
                   </span>
                 </div>
+
+                {(calculation.extraBedsCount || 0) > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <CheckCircle2 size={17} color="#34D399" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <span>
+                      <strong>Extra Bed Included:</strong> {calculation.extraBedsCount} Bed(s) @ ₹{(calculation.extraBedRate || 1200).toLocaleString('en-IN')}/night
+                    </span>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <CheckCircle2 size={17} color="#34D399" style={{ flexShrink: 0, marginTop: 2 }} />
                   <span>
-                    <strong>{mealPlan} Meal Plan:</strong> {mealPlan === 'MAP' ? 'Daily Breakfast & Dinner Included' : 'Daily Breakfast Included'}
+                    <strong>{mealPlan} Meal Plan:</strong>{' '}
+                    {mealPlan === 'AP'
+                      ? 'Daily Breakfast, Lunch & Dinner Included'
+                      : mealPlan === 'MAP'
+                      ? 'Daily Breakfast & Dinner Included'
+                      : mealPlan === 'CP'
+                      ? 'Daily Breakfast Included'
+                      : 'Room Only (No Meals Included)'}
                   </span>
                 </div>
 
@@ -312,7 +332,7 @@ export default function UnifiedBookingCard({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Lock size={16} color="#FBBF24" />
-                <span>Advance to Confirm (25%):</span>
+                <span>Advance to Confirm ({calculation.advancePercentage || 35}%):</span>
               </div>
               <strong style={{ color: '#FBBF24', fontSize: '1.08rem' }}>
                 {formatINR(calculation.advancePayable)}
@@ -472,7 +492,7 @@ export default function UnifiedBookingCard({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <ShieldCheck size={18} color="#059669" />
                     <div style={{ fontSize: '0.84rem', fontWeight: 900, color: '#0F172A' }}>
-                      Ready to lock? 25% Advance Account Details
+                      Ready to lock? {calculation.advancePercentage || 35}% Advance Account Details
                     </div>
                   </div>
                   <p style={{ fontSize: '0.74rem', color: '#64748B', margin: '0 0 10px' }}>
@@ -723,7 +743,7 @@ export default function UnifiedBookingCard({
                       <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontSize: '0.68rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
                         3
                       </span>
-                      <span><strong>Zero Price Hike Lock:</strong> Lock your verified room allotment with 25% advance when you are 100% satisfied.</span>
+                      <span><strong>Zero Price Hike Lock:</strong> Lock your verified room allotment with {calculation.advancePercentage || 35}% advance when you are 100% satisfied.</span>
                     </div>
                   </div>
 

@@ -14,6 +14,9 @@ export interface CompanyBranding {
   phone: string;
   phoneDisplay: string;
   phoneRaw: string;
+  altPhone: string;
+  altPhoneDisplay: string;
+  altPhoneRaw: string;
   address: string;
   city: string;
   state: string;
@@ -46,9 +49,12 @@ export const COMPANY_BRANDING: CompanyBranding = {
   owner: 'Faisal Bikanerwala',
   role: 'Managing Director & Operations',
   email: 'newchiragtoursandtravels@gmail.com',
-  phone: '+91 99786 55529',
-  phoneDisplay: '+91 99786 55529',
-  phoneRaw: '9978655529',
+  phone: '+91 88660 06640',
+  phoneDisplay: '+91 88660 06640',
+  phoneRaw: '8866006640',
+  altPhone: '+91 70430 46833',
+  altPhoneDisplay: '+91 70430 46833',
+  altPhoneRaw: '7043046833',
   address: 'Shop No 3, Al-Rehman Plaza, nr. Nagori Complex, opp. Alishan Complex, Shakti Society, Danilimda',
   city: 'Ahmedabad',
   state: 'Gujarat',

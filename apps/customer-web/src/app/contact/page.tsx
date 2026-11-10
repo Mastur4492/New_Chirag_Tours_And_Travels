@@ -48,10 +48,17 @@ export default function ContactPage() {
                 <Phone size={20} color="#D4AF37" style={{ flexShrink: 0, marginTop: 2 }} />
                 <div>
                   <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 2 }}>Phone & Mobile</div>
-                  <a href={`tel:${COMPANY_BRANDING.phoneRaw}`} style={{ color: '#0B192C', fontWeight: 700 }}>
-                    {COMPANY_BRANDING.phoneDisplay}
-                  </a>
-                  <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>Direct line to Faisal Bikanerwala</div>
+                  <div>
+                    <a href={`tel:${COMPANY_BRANDING.phoneRaw}`} style={{ color: '#0B192C', fontWeight: 700 }}>
+                      {COMPANY_BRANDING.phoneDisplay}
+                    </a>
+                    {COMPANY_BRANDING.altPhoneDisplay && (
+                      <span style={{ color: '#64748B', marginLeft: 8 }}>
+                        / <a href={`tel:${COMPANY_BRANDING.altPhoneRaw}`} style={{ color: '#0B192C', fontWeight: 700 }}>{COMPANY_BRANDING.altPhoneDisplay}</a>
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>Direct lines to Faisal Bikanerwala (Primary & Alternate)</div>
                 </div>
               </div>
 

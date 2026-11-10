@@ -778,7 +778,7 @@ export default function SeasonsPage() {
                           </div>
                         </td>
                         <td>
-                          <span className="badge badge-regular">{rc.mealPlan}</span>
+                          <span className="badge badge-regular">{rc.mealPlan === 'RO' ? 'EP' : rc.mealPlan}</span>
                         </td>
                         <td>
                           <strong style={{ color: '#d97706', fontSize: '14px' }}>
@@ -838,7 +838,7 @@ export default function SeasonsPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                       <div>
                         <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>{getHotelName(rc.hotelId)}</div>
-                        <span className="badge badge-regular" style={{ marginTop: '2px' }}>{rc.mealPlan}</span>
+                        <span className="badge badge-regular" style={{ marginTop: '2px' }}>{rc.mealPlan === 'RO' ? 'EP' : rc.mealPlan}</span>
                       </div>
                       <span className={`badge ${rc.isActive ? 'badge-active' : 'badge-inactive'}`}>
                         {rc.isActive ? 'Active' : 'Inactive'}
@@ -1214,7 +1214,7 @@ export default function SeasonsPage() {
                   >
                     {MEAL_PLANS.map((mp) => (
                       <option key={mp} value={mp}>
-                        {mp}
+                        {mp === 'RO' ? 'EP' : mp}
                       </option>
                     ))}
                   </select>

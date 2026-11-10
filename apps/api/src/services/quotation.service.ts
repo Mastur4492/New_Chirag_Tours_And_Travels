@@ -326,15 +326,21 @@ export class QuotationService {
 
     if (actor.role === 'AGENT') {
       const agentUser = await userRepository.findById(actor.userId);
-      const maxDiscount = agentUser?.agentProfile?.maxDiscountPercent ?? 5;
-      const maxMarkup = agentUser?.agentProfile?.maxMarkupPercent ?? 20;
+      // In B2B Wholesale Net pricing model, New Chirag's profit is locked in wholesale net rates.
+      // Agents enjoy 100% pricing autonomy unless a strict custom cap below 100% is explicitly configured.
+      const isAutonomous =
+        agentUser?.agentProfile?.pricingModel !== 'COMMISSION_BASED' &&
+        (agentUser?.agentProfile?.maxDiscountPercent === undefined || (agentUser?.agentProfile?.maxDiscountPercent ?? 100) >= 100);
+
+      const maxDiscount = agentUser?.agentProfile?.maxDiscountPercent ?? 100;
+      const maxMarkup = agentUser?.agentProfile?.maxMarkupPercent ?? 100;
 
       const requestedDiscount = evaluated.pricingSummary.discountPercent || 0;
       const requestedMarkup = evaluated.pricingSummary.markupPercent || 0;
 
-      if (requestedDiscount > maxDiscount || requestedMarkup > maxMarkup) {
+      if (!isAutonomous && (requestedDiscount > maxDiscount || requestedMarkup > maxMarkup)) {
         initialStatus = 'PENDING_ADMIN_APPROVAL';
-        approvalReason = `Discount (${requestedDiscount.toFixed(1)}%) or Markup (${requestedMarkup.toFixed(1)}%) exceeds agent threshold (Max Discount: ${maxDiscount}%, Max Markup: ${maxMarkup}%)`;
+        approvalReason = `Discount (${requestedDiscount.toFixed(1)}%) or Markup (${requestedMarkup.toFixed(1)}%) exceeds agent policy limit (${maxDiscount}%)`;
       }
     } else if (actor.role === 'ADMIN') {
       initialStatus = 'APPROVED';
@@ -470,15 +476,19 @@ export class QuotationService {
 
     if (actor.role === 'AGENT') {
       const agentUser = await userRepository.findById(actor.userId);
-      const maxDiscount = agentUser?.agentProfile?.maxDiscountPercent ?? 5;
-      const maxMarkup = agentUser?.agentProfile?.maxMarkupPercent ?? 20;
+      const isAutonomous =
+        agentUser?.agentProfile?.pricingModel !== 'COMMISSION_BASED' &&
+        (agentUser?.agentProfile?.maxDiscountPercent === undefined || (agentUser?.agentProfile?.maxDiscountPercent ?? 100) >= 100);
+
+      const maxDiscount = agentUser?.agentProfile?.maxDiscountPercent ?? 100;
+      const maxMarkup = agentUser?.agentProfile?.maxMarkupPercent ?? 100;
 
       const requestedDiscount = evaluated.pricingSummary.discountPercent || 0;
       const requestedMarkup = evaluated.pricingSummary.markupPercent || 0;
 
-      if (requestedDiscount > maxDiscount || requestedMarkup > maxMarkup) {
+      if (!isAutonomous && (requestedDiscount > maxDiscount || requestedMarkup > maxMarkup)) {
         status = 'PENDING_ADMIN_APPROVAL';
-        approvalReason = `Revision exceeds agent limits (Discount: ${requestedDiscount.toFixed(1)}%, Markup: ${requestedMarkup.toFixed(1)}%)`;
+        approvalReason = `Revision exceeds agent policy limit (Discount: ${requestedDiscount.toFixed(1)}%, Markup: ${requestedMarkup.toFixed(1)}%)`;
       }
     } else if (actor.role === 'ADMIN') {
       status = 'APPROVED';

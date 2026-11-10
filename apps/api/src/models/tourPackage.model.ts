@@ -23,6 +23,7 @@ export interface ITourPackageDocument extends Document {
   defaultMealPlan?: MealPlan;
   defaultVehicleCategory?: VehicleCategory;
   startingPrice?: number;
+  b2bStartingPrice?: number;
   isPublished: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -105,6 +106,10 @@ const TourPackageSchema = new Schema<ITourPackageDocument>(
       type: Number,
       min: 0,
     },
+    b2bStartingPrice: {
+      type: Number,
+      min: 0,
+    },
     isPublished: {
       type: Boolean,
       default: true,
@@ -138,6 +143,7 @@ TourPackageSchema.methods.toDto = function (): TourPackageDto {
     defaultMealPlan: this.defaultMealPlan,
     defaultVehicleCategory: this.defaultVehicleCategory,
     startingPrice: this.startingPrice,
+    b2bStartingPrice: this.b2bStartingPrice,
     isPublished: this.isPublished,
     createdAt: (this.createdAt instanceof Date ? this.createdAt : new Date()).toISOString(),
     updatedAt: (this.updatedAt instanceof Date ? this.updatedAt : new Date()).toISOString(),

@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Globe,
-  Calendar,
   ShieldCheck,
   Check,
   ExternalLink,
@@ -12,7 +11,6 @@ import {
   Compass,
   ArrowRight,
   CreditCard,
-  Percent,
   CheckCircle2,
   Copy,
   Layers,
@@ -24,11 +22,11 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { TourPackageDto } from '@chirag/types';
-import { apiRequest, agencySettingsApi } from '@/lib/api';
+import { apiRequest, agencySettingsApi, clearClientCache } from '@/lib/api';
 import { sanitizeDisplayName } from '@/lib/labels';
 
 export default function CustomerSettingsPage() {
-  const [activeTab, setActiveTab] = useState<'format' | 'inclusions' | 'commercial' | 'banking'>('format');
+  const [activeTab, setActiveTab] = useState<'inclusions' | 'banking'>('inclusions');
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -42,14 +40,6 @@ export default function CustomerSettingsPage() {
   const [newExclusionText, setNewExclusionText] = useState('');
   const [isSavingInclusions, setIsSavingInclusions] = useState(false);
 
-  // Duration Format Preference
-  const [durationFormat, setDurationFormat] = useState<'DAYS_FIRST' | 'NIGHTS_FIRST'>('DAYS_FIRST');
-
-  // Commercial Policy
-  const [advancePercent, setAdvancePercent] = useState<number>(25);
-  const [agencyMargin, setAgencyMargin] = useState<number>(10);
-  const [gstPercent, setGstPercent] = useState<number>(5);
-
   // Bank Details
   const [bankDetails, setBankDetails] = useState({
     bankName: 'HDFC Bank',
@@ -57,26 +47,15 @@ export default function CustomerSettingsPage() {
     accountName: 'NEW CHIRAG TOURS AND TRAVELS',
     accountNumber: '50200084920194',
     ifsc: 'HDFC0001842',
-    upiId: '9978655529@upi',
+    upiId: '8866006640@upi',
   });
 
   // Load from local storage or server
   useEffect(() => {
     try {
-      const savedFormat = localStorage.getItem('nct_duration_format');
-      if (savedFormat === 'NIGHTS_FIRST' || savedFormat === 'DAYS_FIRST') {
-        setDurationFormat(savedFormat);
-      }
       const savedBank = localStorage.getItem('nct_bank_details');
       if (savedBank) {
         setBankDetails(JSON.parse(savedBank));
-      }
-      const savedPolicies = localStorage.getItem('nct_commercial_policy');
-      if (savedPolicies) {
-        const p = JSON.parse(savedPolicies);
-        if (p.advancePercent) setAdvancePercent(p.advancePercent);
-        if (p.agencyMargin) setAgencyMargin(p.agencyMargin);
-        if (p.gstPercent) setGstPercent(p.gstPercent);
       }
     } catch {
       // Ignore
@@ -93,23 +72,12 @@ export default function CustomerSettingsPage() {
             accountName: settings.accountHolderName || 'NEW CHIRAG TOURS AND TRAVELS',
             accountNumber: settings.accountNumber || '50200084920194',
             ifsc: settings.ifscCode || 'HDFC0001842',
-            upiId: settings.upiId || '9978655529@upi',
+            upiId: settings.upiId || '8866006640@upi',
           });
-          if (settings.advancePercentage) {
-            setAdvancePercent(settings.advancePercentage);
-          }
         }
       })
       .catch((err) => console.warn('Could not load agency settings from DB', err));
   }, []);
-
-  const handleSaveFormat = (fmt: 'DAYS_FIRST' | 'NIGHTS_FIRST') => {
-    setDurationFormat(fmt);
-    try {
-      localStorage.setItem('nct_duration_format', fmt);
-    } catch {}
-    triggerSuccess('Duration display format preference saved!');
-  };
 
   const handleSaveBank = async () => {
     try {
@@ -122,25 +90,11 @@ export default function CustomerSettingsPage() {
         ifscCode: bankDetails.ifsc,
         upiId: bankDetails.upiId,
       });
+      clearClientCache();
     } catch (err) {
       console.error('Failed to sync bank details to database:', err);
     }
     triggerSuccess('Official bank account details saved & synced to proposals!');
-  };
-
-  const handleSavePolicies = async () => {
-    try {
-      localStorage.setItem(
-        'nct_commercial_policy',
-        JSON.stringify({ advancePercent, agencyMargin, gstPercent })
-      );
-      await agencySettingsApi.update({
-        advancePercentage: advancePercent,
-      });
-    } catch (err) {
-      console.error('Failed to sync policies to database:', err);
-    }
-    triggerSuccess('Advance & Commercial tax policies saved successfully!');
   };
 
   const fetchPackages = async () => {
@@ -262,7 +216,7 @@ export default function CustomerSettingsPage() {
                 Customer Portal Settings
               </h1>
               <p style={{ fontSize: '0.86rem', color: '#64748B', margin: '4px 0 0' }}>
-                Global commercial policies, duration notation, dynamic inclusions engine, and official bank lock settings.
+                Global commercial policies, dynamic inclusions engine, and official bank lock settings.
               </p>
             </div>
           </div>
@@ -290,7 +244,7 @@ export default function CustomerSettingsPage() {
           </Link>
 
           <a
-            href="http://localhost:3000"
+            href={process.env.NEXT_PUBLIC_CUSTOMER_PORTAL_URL || '/'}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -380,19 +334,16 @@ export default function CustomerSettingsPage() {
         </div>
 
         <div style={{ background: '#FFFFFF', padding: '16px 18px', borderRadius: 14, border: '1.5px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 800, textTransform: 'uppercase' }}>Duration Format</div>
-          <div style={{ fontSize: '1.20rem', fontWeight: 900, color: '#059669', marginTop: 4 }}>
-            {durationFormat === 'DAYS_FIRST' ? '8 Days / 7 Nights (8D / 7N)' : '7 Nights / 8 Days (7N / 8D)'}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: '#94A3B8', marginTop: 2 }}>Tourist friendly notation</div>
-        </div>
-
-        <div style={{ background: '#FFFFFF', padding: '16px 18px', borderRadius: 14, border: '1.5px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 800, textTransform: 'uppercase' }}>Commercial Terms</div>
+          <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 800, textTransform: 'uppercase' }}>Commercial Advance Policy</div>
           <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A', marginTop: 4 }}>
-            {advancePercent}% Advance • {gstPercent}% GST
+            35% Advance Lock
           </div>
-          <div style={{ fontSize: '0.74rem', color: '#94A3B8', marginTop: 2 }}>With {agencyMargin}% agency margin</div>
+          <Link
+            href="/profile"
+            style={{ fontSize: '0.74rem', color: '#059669', marginTop: 2, display: 'inline-block', fontWeight: 700, textDecoration: 'none' }}
+          >
+            Manage in Admin Profile →
+          </Link>
         </div>
 
         <div style={{ background: '#FFFFFF', padding: '16px 18px', borderRadius: 14, border: '1.5px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
@@ -409,10 +360,8 @@ export default function CustomerSettingsPage() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, borderBottom: '2px solid #E2E8F0', marginBottom: 24, flexWrap: 'wrap' }}>
         {[
-          { key: 'format' as const, label: 'Duration Format & Notation', icon: Calendar },
           { key: 'inclusions' as const, label: 'Dynamic Inclusions Engine', icon: CheckCircle2 },
-          { key: 'commercial' as const, label: 'Advance & Tax Policy', icon: Percent },
-          { key: 'banking' as const, label: 'Bank Details & Voucher Lock', icon: CreditCard },
+          { key: 'banking' as const, label: 'Official Bank Details & Voucher Lock', icon: CreditCard },
         ].map((tab) => {
           const isActive = activeTab === tab.key;
           const Icon = tab.icon;
@@ -444,81 +393,7 @@ export default function CustomerSettingsPage() {
         })}
       </div>
 
-      {/* 1. TAB: DURATION FORMAT */}
-      {activeTab === 'format' && (
-        <div style={{ background: '#FFFFFF', borderRadius: 16, border: '1px solid #E2E8F0', padding: 26, boxShadow: '0 4px 14px rgba(0,0,0,0.02)' }}>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: '0 0 6px' }}>
-            Trip Duration & Days/Nights Display Format
-          </h3>
-          <p style={{ fontSize: '0.84rem', color: '#64748B', margin: '0 0 22px' }}>
-            Choose whether to show Days first or Nights first on the Customer Portal. Both are supported with complete clarity.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginBottom: 28 }}>
-            {/* Option A */}
-            <div
-              onClick={() => handleSaveFormat('DAYS_FIRST')}
-              style={{
-                border: durationFormat === 'DAYS_FIRST' ? '2.5px solid #059669' : '1.5px solid #E2E8F0',
-                background: durationFormat === 'DAYS_FIRST' ? '#F0FDF4' : '#FFFFFF',
-                borderRadius: 14,
-                padding: '20px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0F172A' }}>
-                  8 Days / 7 Nights (8D / 7N)
-                </span>
-                {durationFormat === 'DAYS_FIRST' && (
-                  <span style={{ background: '#059669', color: '#FFFFFF', padding: '3px 8px', borderRadius: 6, fontSize: '0.72rem', fontWeight: 800 }}>
-                    ACTIVE
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: '0.80rem', color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                <strong>Recommended for Indian leisure travelers.</strong> Emphasizes total days of holiday and sightseeing, followed by hotel room nights.
-              </p>
-              <div style={{ marginTop: 12, fontSize: '0.74rem', color: '#059669', fontWeight: 700 }}>
-                Displays: "8 Days / 7 Nights (7N/8D)"
-              </div>
-            </div>
-
-            {/* Option B */}
-            <div
-              onClick={() => handleSaveFormat('NIGHTS_FIRST')}
-              style={{
-                border: durationFormat === 'NIGHTS_FIRST' ? '2.5px solid #059669' : '1.5px solid #E2E8F0',
-                background: durationFormat === 'NIGHTS_FIRST' ? '#F0FDF4' : '#FFFFFF',
-                borderRadius: 14,
-                padding: '20px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0F172A' }}>
-                  7 Nights / 8 Days (7N / 8D)
-                </span>
-                {durationFormat === 'NIGHTS_FIRST' && (
-                  <span style={{ background: '#059669', color: '#FFFFFF', padding: '3px 8px', borderRadius: 6, fontSize: '0.72rem', fontWeight: 800 }}>
-                    ACTIVE
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: '0.80rem', color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                <strong>Standard hospitality & airline notation.</strong> Emphasizes hotel room billings first, followed by travel days.
-              </p>
-              <div style={{ marginTop: 12, fontSize: '0.74rem', color: '#059669', fontWeight: 700 }}>
-                Displays: "7N / 8D (8 Days Total)"
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. TAB: INCLUSIONS & EXCLUSIONS ENGINE */}
+      {/* 1. TAB: INCLUSIONS & EXCLUSIONS ENGINE */}
       {activeTab === 'inclusions' && (
         <div style={{ background: '#FFFFFF', borderRadius: 16, border: '1px solid #E2E8F0', padding: 24, boxShadow: '0 4px 18px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
@@ -969,100 +844,7 @@ export default function CustomerSettingsPage() {
         </div>
       )}
 
-      {/* 3. TAB: ADVANCE & COMMERCIAL POLICY */}
-      {activeTab === 'commercial' && (
-        <div style={{ background: '#FFFFFF', borderRadius: 16, border: '1px solid #E2E8F0', padding: 26, boxShadow: '0 4px 14px rgba(0,0,0,0.02)' }}>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: '0 0 6px' }}>
-            Storefront Commercial & Advance Policies
-          </h3>
-          <p style={{ fontSize: '0.84rem', color: '#64748B', margin: '0 0 22px' }}>
-            Configure default advance required to lock room allotment, agency markup, and applicable GST rate.
-          </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18, marginBottom: 24 }}>
-            <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 12, border: '1px solid #E2E8F0' }}>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 8 }}>
-                Advance Required to Lock Booking
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="number"
-                  min={10}
-                  max={50}
-                  value={advancePercent}
-                  onChange={(e) => setAdvancePercent(Number(e.target.value))}
-                  style={{ width: 80, padding: '8px 10px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: '1rem', fontWeight: 800 }}
-                />
-                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>% of Total Quotation</span>
-              </div>
-              <div style={{ fontSize: '0.74rem', color: '#64748B', marginTop: 8 }}>
-                Calculated on customer booking card (default: 25%).
-              </div>
-            </div>
-
-            <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 12, border: '1px solid #E2E8F0' }}>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 8 }}>
-                Agency Margin
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="number"
-                  min={0}
-                  max={30}
-                  value={agencyMargin}
-                  onChange={(e) => setAgencyMargin(Number(e.target.value))}
-                  style={{ width: 80, padding: '8px 10px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: '1rem', fontWeight: 800 }}
-                />
-                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>% Markup</span>
-              </div>
-              <div style={{ fontSize: '0.74rem', color: '#64748B', marginTop: 8 }}>
-                Directly added to net hotel & transport cost.
-              </div>
-            </div>
-
-            <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 12, border: '1px solid #E2E8F0' }}>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 8 }}>
-                GST Rate
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="number"
-                  min={0}
-                  max={18}
-                  value={gstPercent}
-                  onChange={(e) => setGstPercent(Number(e.target.value))}
-                  style={{ width: 80, padding: '8px 10px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: '1rem', fontWeight: 800 }}
-                />
-                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>% Tour GST</span>
-              </div>
-              <div style={{ fontSize: '0.74rem', color: '#64748B', marginTop: 8 }}>
-                Statutory 5% GST on tour package services.
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleSavePolicies}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              background: '#059669',
-              color: '#FFFFFF',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: 8,
-              fontSize: '0.84rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            <Save size={15} />
-            <span>Save Policies</span>
-          </button>
-        </div>
-      )}
 
       {/* 4. TAB: BANK DETAILS */}
       {activeTab === 'banking' && (

@@ -528,7 +528,7 @@ export default function DashboardPage() {
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
           >
             <Clock className={`w-3.5 h-3.5 ${dashboardTab === 'operations' ? 'text-teal-200' : 'text-teal-600'}`} />
-            <span>Daily Operations</span>
+            <span>Daily Activity</span>
             {dueFollowUps.length > 0 && (
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${dashboardTab === 'operations' ? 'bg-amber-400 text-slate-900' : 'bg-amber-500 text-white'}`}>
                 {dueFollowUps.length} Due

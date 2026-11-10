@@ -26,21 +26,13 @@ import {
   Printer,
 } from 'lucide-react';
 import { QuotationPublicDto, MEAL_PLAN_LABELS, MealPlan, AgencySettingsDto } from '@chirag/types';
-import { agencySettingsApi } from '@/lib/api';
+import { agencySettingsApi, getPublicApiUrl } from '@/lib/api';
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { sanitizeDisplayName } from '@/lib/labels';
-import { resolvePublicQuoteUrl } from '@/lib/publicQuoteUrl';
 
 export default function CustomerQuotationPage() {
   const params = useParams();
   const token = params?.token as string;
-
-  useEffect(() => {
-    if (token) {
-      const urlInfo = resolvePublicQuoteUrl(token);
-      window.location.replace(urlInfo.url || `http://localhost:3000/quote/${token}`);
-    }
-  }, [token]);
 
   const [quote, setQuote] = useState<QuotationPublicDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +59,7 @@ export default function CustomerQuotationPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/proxy/quotations/public/${token}`);
+      const res = await fetch(`${getPublicApiUrl()}/quotations/public/${token}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error?.message || 'Quotation not found or link has expired');
@@ -95,7 +87,7 @@ export default function CustomerQuotationPage() {
     setAccepting(true);
     setAcceptError(null);
     try {
-      const res = await fetch(`/api/proxy/quotations/public/${token}/accept`, {
+      const res = await fetch(`${getPublicApiUrl()}/quotations/public/${token}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agreedToTerms: true }),
@@ -127,7 +119,7 @@ export default function CustomerQuotationPage() {
     setModifying(true);
     setModError(null);
     try {
-      const res = await fetch(`/api/proxy/quotations/public/${token}/request-changes`, {
+      const res = await fetch(`${getPublicApiUrl()}/quotations/public/${token}/request-changes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: modMessage.trim() }),
@@ -570,10 +562,10 @@ export default function CustomerQuotationPage() {
                   <div className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
                     UPI / Instant QR Payment
                   </div>
-                  <div><strong>UPI ID:</strong> {agencySettings?.upiId || '9978655529@upi'}</div>
-                  <div><strong>Google Pay / PhonePe:</strong> {agencySettings?.upiNumber || '+91 99786 55529'}</div>
-                  <div><strong>Payment Schedule:</strong> {agencySettings?.advancePercentage ?? 25}% Advance to Lock Allotments</div>
-                  <div><strong>Terms:</strong> {agencySettings?.paymentTerms || '75% on Arrival / Prior to Hotel Check-in'}</div>
+                  <div><strong>UPI ID:</strong> {agencySettings?.upiId || '8866006640@upi'}</div>
+                  <div><strong>Google Pay / PhonePe:</strong> {agencySettings?.upiNumber || '+91 88660 06640'}</div>
+                  <div><strong>Payment Schedule:</strong> {agencySettings?.advancePercentage ?? 35}% Advance to Lock Allotments</div>
+                  <div><strong>Terms:</strong> {agencySettings?.paymentTerms || '35% Advance to Lock Allotments • Balance 65% on Arrival / Prior to Hotel Check-in'}</div>
                 </div>
               </div>
 
@@ -660,7 +652,7 @@ export default function CustomerQuotationPage() {
                       className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-sm transition-all flex items-center justify-center gap-2 text-sm text-center"
                     >
                       <MessageSquare className="w-4 h-4" />
-                      Chat on WhatsApp (+91 99786 55529)
+                      Chat on WhatsApp (+91 88660 06640)
                     </a>
 
                     <button

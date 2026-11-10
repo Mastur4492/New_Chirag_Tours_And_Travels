@@ -37,7 +37,7 @@ const envSchema = z.object({
   WHATSAPP_API_TOKEN: z.string().optional(),
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
   WHATSAPP_VERIFY_TOKEN: z.string().default('chirag_travels_webhook_secret_2026'),
-  WHATSAPP_BUSINESS_MOBILE: z.string().default('+919978655529'),
+  WHATSAPP_BUSINESS_MOBILE: z.string().default('+918866006640'),
   GEMINI_API_KEY: z.string().optional(),
   AI_MODEL_NAME: z.string().default('gemini-3.5-flash'),
 });
@@ -73,7 +73,7 @@ try {
     WHATSAPP_API_TOKEN: undefined,
     WHATSAPP_PHONE_NUMBER_ID: undefined,
     WHATSAPP_VERIFY_TOKEN: 'chirag_travels_webhook_secret_2026',
-    WHATSAPP_BUSINESS_MOBILE: '+919978655529',
+    WHATSAPP_BUSINESS_MOBILE: '+918866006640',
     AI_MODEL_NAME: 'gemini-3.5-flash',
   };
 }

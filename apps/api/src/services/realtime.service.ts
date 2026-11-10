@@ -142,8 +142,8 @@ export class RealtimeService {
     if (payload.recipientRole) {
       if (payload.recipientRole === 'ALL') return true;
       if (payload.recipientRole === client.role) return true;
-      // Admins receive all operational and financial updates
-      if (client.role === 'ADMIN') return true;
+      // Admins receive operational and financial broadcast events, but NEVER agent-targeted notifications
+      if (client.role === 'ADMIN' && payload.type !== 'NOTIFICATION') return true;
       return false;
     }
 

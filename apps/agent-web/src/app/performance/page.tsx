@@ -131,10 +131,10 @@ export default function AgentPerformancePage() {
               }}
             >
               <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                Discount Authorization Cap
+                B2B Pricing Model
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-emerald)', fontFamily: 'var(--font-display)' }}>
-                {agentProfile.maxDiscountPercent ?? 5}%
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-emerald)', fontFamily: 'var(--font-display)' }}>
+                Wholesale Net (Autonomous)
               </div>
             </div>
           </div>

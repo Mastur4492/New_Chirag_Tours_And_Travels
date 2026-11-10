@@ -33,6 +33,7 @@ import {
 import { apiRequest } from '@/lib/api';
 import { Pagination } from '@/components/Pagination';
 import { sanitizeDisplayName } from '@/lib/labels';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 const MEAL_PLANS: MealPlan[] = ['RO', 'CP', 'MAP', 'AP'];
 const VEHICLE_CATEGORIES: VehicleCategory[] = [
@@ -66,6 +67,7 @@ export default function PackagesPage() {
   const [durationNights, setDurationNights] = useState(4);
   const [durationDays, setDurationDays] = useState(5);
   const [startingPrice, setStartingPrice] = useState<number>(18999);
+  const [b2bStartingPrice, setB2bStartingPrice] = useState<number>(16500);
   const [overview, setOverview] = useState('');
   const [defaultMealPlan, setDefaultMealPlan] = useState<MealPlan>('MAP');
   const [defaultVehicle, setDefaultVehicle] = useState<VehicleCategory>('SEDAN');
@@ -96,6 +98,7 @@ export default function PackagesPage() {
   const [editDurationNights, setEditDurationNights] = useState(4);
   const [editDurationDays, setEditDurationDays] = useState(5);
   const [editStartingPrice, setEditStartingPrice] = useState<number>(0);
+  const [editB2bStartingPrice, setEditB2bStartingPrice] = useState<number>(0);
   const [editOverview, setEditOverview] = useState('');
   const [editDefaultMealPlan, setEditDefaultMealPlan] = useState<MealPlan>('MAP');
   const [editDefaultVehicle, setEditDefaultVehicle] = useState<VehicleCategory>('SEDAN');
@@ -249,6 +252,7 @@ export default function PackagesPage() {
           durationNights: Number(durationNights),
           durationDays: Number(durationDays),
           startingPrice: Number(startingPrice),
+          b2bStartingPrice: Number(b2bStartingPrice),
           overview: overview.trim() || undefined,
           defaultMealPlan,
           defaultVehicleCategory: defaultVehicle,
@@ -278,6 +282,7 @@ export default function PackagesPage() {
     setEditDurationNights(pkg.durationNights);
     setEditDurationDays(pkg.durationDays);
     setEditStartingPrice(pkg.startingPrice || 0);
+    setEditB2bStartingPrice(pkg.b2bStartingPrice || Math.round((pkg.startingPrice || 0) * 0.88));
     setEditOverview(pkg.overview || '');
     setEditDefaultMealPlan(pkg.defaultMealPlan || 'MAP');
     setEditDefaultVehicle(pkg.defaultVehicleCategory || 'SEDAN');
@@ -320,6 +325,7 @@ export default function PackagesPage() {
           durationNights: Number(editDurationNights),
           durationDays: Number(editDurationDays),
           startingPrice: Number(editStartingPrice),
+          b2bStartingPrice: Number(editB2bStartingPrice),
           overview: editOverview.trim() || undefined,
           defaultMealPlan: editDefaultMealPlan,
           defaultVehicleCategory: editDefaultVehicle,
@@ -421,19 +427,23 @@ export default function PackagesPage() {
               />
             </div>
 
-            <select
-              className="form-select"
-              style={{ flex: '0 1 200px', height: '38px', fontSize: '13.5px' }}
-              value={destFilter}
-              onChange={(e) => setDestFilter(e.target.value)}
-            >
-              <option value="">All Destinations</option>
-              {destinations.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {sanitizeDisplayName(d.name)} ({d.region})
-                </option>
-              ))}
-            </select>
+            <div style={{ flex: '0 1 230px' }}>
+              <SearchableSelect
+                options={[
+                  { value: '', label: 'All Destinations' },
+                  ...destinations.map((d) => ({
+                    value: d.id,
+                    label: sanitizeDisplayName(d.name),
+                    subLabel: d.region,
+                  })),
+                ]}
+                value={destFilter}
+                onChange={(val) => setDestFilter(val)}
+                placeholder="All Destinations"
+                searchPlaceholder="Search destination (type letter to jump)..."
+                clearable
+              />
+            </div>
 
             <select
               className="form-select"
@@ -549,7 +559,7 @@ export default function PackagesPage() {
                     <th>Destination</th>
                     <th>Duration</th>
                     <th>Meal & Vehicle Defaults</th>
-                    <th>Starting Price</th>
+                    <th>Dual Rate Sheet</th>
                     <th>Itinerary Days</th>
                     <th>Status</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
@@ -596,26 +606,32 @@ export default function PackagesPage() {
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '4px' }}>
-                            <span className="badge badge-regular">{pkg.defaultMealPlan || 'MAP'}</span>
+                            <span className="badge badge-regular">{pkg.defaultMealPlan === 'RO' ? 'EP' : (pkg.defaultMealPlan || 'MAP')}</span>
                             <span className="badge badge-peak">{pkg.defaultVehicleCategory || 'SEDAN'}</span>
                           </div>
                         </td>
                         <td>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              background: '#ecfdf5',
-                              color: '#047857',
-                              border: '1px solid #a7f3d0',
-                              padding: '3px 10px',
-                              borderRadius: '8px',
-                              fontSize: '13px',
-                              fontWeight: 800,
-                            }}
-                          >
-                            ₹{pkg.startingPrice ? pkg.startingPrice.toLocaleString('en-IN') : 'N/A'}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 800, color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '1px 5px', borderRadius: '4px' }}>
+                                B2C MRP
+                              </span>
+                              <strong style={{ fontSize: '13px', color: '#0f172a' }}>
+                                ₹{pkg.startingPrice ? pkg.startingPrice.toLocaleString('en-IN') : 'N/A'}
+                              </strong>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 800, color: '#0369a1', background: '#f0f9ff', border: '1px solid #bae6fd', padding: '1px 5px', borderRadius: '4px' }}>
+                                B2B NET
+                              </span>
+                              <strong style={{ fontSize: '12px', color: '#0369a1' }}>
+                                ₹{(pkg.b2bStartingPrice || Math.round((pkg.startingPrice || 0) * 0.88)).toLocaleString('en-IN')}
+                              </strong>
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#15803d', fontWeight: 600 }}>
+                              Margin: ₹{Math.max(0, (pkg.startingPrice || 0) - (pkg.b2bStartingPrice || Math.round((pkg.startingPrice || 0) * 0.88))).toLocaleString('en-IN')}
+                            </div>
+                          </div>
                         </td>
                         <td>
                           <button
@@ -701,10 +717,13 @@ export default function PackagesPage() {
                     </div>
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '8px 0 12px 0' }}>
-                      <span className="badge badge-regular">{pkg.defaultMealPlan || 'MAP'}</span>
+                      <span className="badge badge-regular">{pkg.defaultMealPlan === 'RO' ? 'EP' : (pkg.defaultMealPlan || 'MAP')}</span>
                       <span className="badge badge-peak">{pkg.defaultVehicleCategory || 'SEDAN'}</span>
-                      <span style={{ fontSize: '12px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
-                        From ₹{pkg.startingPrice ? pkg.startingPrice.toLocaleString('en-IN') : 'N/A'}
+                      <span style={{ fontSize: '11.5px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                        B2C MRP: ₹{pkg.startingPrice ? pkg.startingPrice.toLocaleString('en-IN') : 'N/A'}
+                      </span>
+                      <span style={{ fontSize: '11.5px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                        B2B Net: ₹{(pkg.b2bStartingPrice || Math.round((pkg.startingPrice || 0) * 0.88)).toLocaleString('en-IN')}
                       </span>
                       <span style={{ fontSize: '12px', color: '#64748b', padding: '2px 6px' }}>
                         {pkg.dayWiseItinerary?.length || 0} Days Itinerary
@@ -818,19 +837,18 @@ export default function PackagesPage() {
                     </div>
                     <div className="form-group">
                       <label className="form-label">Primary Destination *</label>
-                      <select
+                      <SearchableSelect
                         id="pkg-select-destination"
-                        className="form-select"
-                        required
+                        options={destinations.map((d) => ({
+                          value: d.id,
+                          label: sanitizeDisplayName(d.name),
+                          subLabel: `${d.region} • ${d.state}`,
+                        }))}
                         value={destinationId}
-                        onChange={(e) => setDestinationId(e.target.value)}
-                      >
-                        {destinations.map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {sanitizeDisplayName(d.name)} ({d.region})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => setDestinationId(val)}
+                        placeholder="Select destination..."
+                        searchPlaceholder="Type destination name or state..."
+                      />
                     </div>
                   </div>
 
@@ -860,15 +878,35 @@ export default function PackagesPage() {
                       />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Starting Price (₹)</label>
+                      <label className="form-label">Customer MRP Starting Price (₹)</label>
                       <input
                         id="pkg-input-price"
                         type="number"
                         min="0"
                         className="form-input"
                         value={startingPrice}
-                        onChange={(e) => setStartingPrice(Number(e.target.value))}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setStartingPrice(val);
+                          if (!b2bStartingPrice || b2bStartingPrice === 16500) {
+                            setB2bStartingPrice(Math.round(val * 0.88));
+                          }
+                        }}
                       />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ color: '#0369a1' }}>B2B Agent Wholesale Net (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="form-input"
+                        value={b2bStartingPrice}
+                        onChange={(e) => setB2bStartingPrice(Number(e.target.value))}
+                        placeholder="Fixed net for B2B agents"
+                      />
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
+                        Agent Margin: ₹{Math.max(0, startingPrice - b2bStartingPrice).toLocaleString('en-IN')}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -887,7 +925,7 @@ export default function PackagesPage() {
                         onChange={(e) => setDefaultMealPlan(e.target.value as MealPlan)}
                       >
                         {MEAL_PLANS.map((m) => (
-                          <option key={m} value={m}>{m}</option>
+                          <option key={m} value={m}>{m === 'RO' ? 'EP' : m}</option>
                         ))}
                       </select>
                     </div>
@@ -1070,18 +1108,18 @@ export default function PackagesPage() {
                     </div>
                     <div className="form-group">
                       <label className="form-label">Primary Destination *</label>
-                      <select
-                        className="form-select"
-                        required
+                      <SearchableSelect
+                        options={destinations.map((d) => ({
+                          value: d.id,
+                          label: `${sanitizeDisplayName(d.name)} (${d.region})`,
+                          subLabel: d.region,
+                        }))}
                         value={editDestinationId}
-                        onChange={(e) => setEditDestinationId(e.target.value)}
-                      >
-                        {destinations.map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {sanitizeDisplayName(d.name)} ({d.region})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => setEditDestinationId(val)}
+                        placeholder="Choose Destination..."
+                        searchPlaceholder="Search destination (type letter to jump)..."
+                        required
+                      />
                     </div>
                   </div>
 
@@ -1109,7 +1147,7 @@ export default function PackagesPage() {
                       />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Starting Price (₹)</label>
+                      <label className="form-label">Customer MRP Starting Price (₹)</label>
                       <input
                         type="number"
                         min="0"
@@ -1117,6 +1155,20 @@ export default function PackagesPage() {
                         value={editStartingPrice}
                         onChange={(e) => setEditStartingPrice(Number(e.target.value))}
                       />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ color: '#0369a1' }}>B2B Agent Wholesale Net (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="form-input"
+                        value={editB2bStartingPrice}
+                        onChange={(e) => setEditB2bStartingPrice(Number(e.target.value))}
+                        placeholder="Fixed net for B2B agents"
+                      />
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
+                        Agent Margin: ₹{Math.max(0, editStartingPrice - editB2bStartingPrice).toLocaleString('en-IN')}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1135,7 +1187,7 @@ export default function PackagesPage() {
                         onChange={(e) => setEditDefaultMealPlan(e.target.value as MealPlan)}
                       >
                         {MEAL_PLANS.map((m) => (
-                          <option key={m} value={m}>{m}</option>
+                          <option key={m} value={m}>{m === 'RO' ? 'EP' : m}</option>
                         ))}
                       </select>
                     </div>
@@ -1296,9 +1348,13 @@ export default function PackagesPage() {
                         'Destination'
                     )}
                   </strong>{' '}
-                  • Starting from{' '}
+                  • B2C MRP:{' '}
                   <strong style={{ color: '#047857' }}>
                     ₹{viewingPackage.startingPrice ? viewingPackage.startingPrice.toLocaleString('en-IN') : 'N/A'}
+                  </strong>{' '}
+                  • B2B Wholesale Net:{' '}
+                  <strong style={{ color: '#0369a1' }}>
+                    ₹{(viewingPackage.b2bStartingPrice || Math.round((viewingPackage.startingPrice || 0) * 0.88)).toLocaleString('en-IN')}
                   </strong>
                 </p>
               </div>
@@ -1321,7 +1377,7 @@ export default function PackagesPage() {
                 <div style={{ flex: 1, background: '#f0fdfa', border: '1px solid #ccfbf1', borderRadius: '8px', padding: '10px 14px' }}>
                   <div style={{ fontSize: '11px', color: '#0f766e', fontWeight: 700, textTransform: 'uppercase' }}>Default Meal Plan</div>
                   <div style={{ fontSize: '14px', fontWeight: 800, color: '#134e4a', marginTop: '2px' }}>
-                    {viewingPackage.defaultMealPlan || 'MAP (Breakfast & Dinner)'}
+                    {viewingPackage.defaultMealPlan === 'RO' ? 'EP (Room Only)' : (viewingPackage.defaultMealPlan || 'MAP (Breakfast & Dinner)')}
                   </div>
                 </div>
                 <div style={{ flex: 1, background: '#f0fdfa', border: '1px solid #ccfbf1', borderRadius: '8px', padding: '10px 14px' }}>

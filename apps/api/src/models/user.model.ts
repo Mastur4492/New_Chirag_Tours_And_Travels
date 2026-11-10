@@ -19,10 +19,12 @@ const AgentProfileSchema = new Schema<AgentProfile>(
   {
     agencyName: { type: String, trim: true },
     city: { type: String, trim: true },
-    maxDiscountPercent: { type: Number, default: 5, min: 0, max: 50 },
-    maxMarkupPercent: { type: Number, default: 20, min: 0, max: 100 },
-    canApproveFinalPrice: { type: Boolean, default: false },
-    commissionRatePercent: { type: Number, min: 0, max: 50 },
+    maxDiscountPercent: { type: Number, default: 100, min: 0, max: 100 },
+    maxMarkupPercent: { type: Number, default: 100, min: 0, max: 100 },
+    canApproveFinalPrice: { type: Boolean, default: true },
+    commissionRatePercent: { type: Number, min: 0, max: 100 },
+    rateSheetTier: { type: String, default: 'Standard Wholesale B2B' },
+    pricingModel: { type: String, default: 'WHOLESALE_NET' },
   },
   { _id: false }
 );

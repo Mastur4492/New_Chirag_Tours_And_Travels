@@ -1,8 +1,9 @@
-export type MealPlan = 'RO' | 'CP' | 'MAP' | 'AP';
-export type MealPlanInput = MealPlan | 'EP';
+export type MealPlan = 'EP' | 'CP' | 'MAP' | 'AP' | 'RO';
+export type MealPlanInput = MealPlan;
 
 export const MEAL_PLAN_LABELS: Record<MealPlan, string> = {
-  RO: 'RO / EP (Room Only / European Plan)',
+  EP: 'EP (European Plan - Room Only)',
+  RO: 'EP (European Plan - Room Only)',
   CP: 'CP (Continental Plan - Breakfast)',
   MAP: 'MAP (Modified American Plan - Breakfast & Dinner)',
   AP: 'AP (American Plan - All Meals)',
@@ -34,6 +35,7 @@ export interface RoomCategoryDto {
   maxChildren: number;
   extraBedSupported: boolean;
   maxExtraBeds: number;
+  extraBedPricePerNight?: number;
   allowedMealPlans: MealPlan[];
   pricePerNight?: number;
   totalRooms?: number;
@@ -105,6 +107,7 @@ export interface CreateRoomCategoryInput {
   maxChildren?: number;
   extraBedSupported?: boolean;
   maxExtraBeds?: number;
+  extraBedPricePerNight?: number;
   allowedMealPlans?: MealPlan[];
   pricePerNight?: number;
   totalRooms?: number;
@@ -118,6 +121,7 @@ export interface UpdateRoomCategoryInput {
   maxChildren?: number;
   extraBedSupported?: boolean;
   maxExtraBeds?: number;
+  extraBedPricePerNight?: number;
   allowedMealPlans?: MealPlan[];
   pricePerNight?: number;
   totalRooms?: number;

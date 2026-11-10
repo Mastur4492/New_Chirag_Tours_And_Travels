@@ -42,6 +42,7 @@ export const createRoomCategorySchema = z.object({
   maxChildren: z.number().int().min(0).max(10).default(2),
   extraBedSupported: z.boolean().default(true),
   maxExtraBeds: z.number().int().min(0).max(5).default(1),
+  extraBedPricePerNight: z.number().min(0, 'Extra bed price must be non-negative').default(1200).optional(),
   allowedMealPlans: z.array(mealPlanSchema).default(['RO', 'CP', 'MAP', 'AP']),
   pricePerNight: z.number().min(0, 'Price per night must be non-negative').optional(),
   totalRooms: z.number().int().min(0).optional(),

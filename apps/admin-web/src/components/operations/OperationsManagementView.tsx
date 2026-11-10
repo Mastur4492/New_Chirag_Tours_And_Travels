@@ -53,6 +53,7 @@ import {
 } from '@/lib/labels';
 import { HotelVoucherModal } from './HotelVoucherModal';
 import { TransportDutySlipModal } from './TransportDutySlipModal';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 interface OperationsManagementViewProps {
   bookingId: string;
@@ -1422,18 +1423,22 @@ export function OperationsManagementView({
                 <label className="font-semibold text-slate-700 block mb-1">
                   Select Tour Cab / Vehicle <span className="text-rose-500">*</span>
                 </label>
-                <select
+                <SearchableSelect
+                  options={[
+                    { value: '', label: '-- Choose Available Vehicle --' },
+                    ...vehicles.map((v) => ({
+                      value: v.id,
+                      label: `${v.model} (${v.registrationNumber})`,
+                      subLabel: `${v.category} • Capacity: ${v.seatingCapacity} Pax`,
+                      badge: v.status,
+                    })),
+                  ]}
                   value={selectedVehicleId}
-                  onChange={(e) => setSelectedVehicleId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="">-- Choose Available Vehicle --</option>
-                  {vehicles.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.model} ({v.registrationNumber}) • {v.category} • Capacity: {v.seatingCapacity} Pax • [{v.status}]
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedVehicleId(val)}
+                  placeholder="-- Choose Available Vehicle --"
+                  searchPlaceholder="Search vehicle model, reg or type..."
+                  required
+                />
               </div>
 
               {/* Driver Selection */}
@@ -1441,18 +1446,22 @@ export function OperationsManagementView({
                 <label className="font-semibold text-slate-700 block mb-1">
                   Select Chauffeur / Driver <span className="text-rose-500">*</span>
                 </label>
-                <select
+                <SearchableSelect
+                  options={[
+                    { value: '', label: '-- Choose Verified Driver --' },
+                    ...drivers.map((d) => ({
+                      value: d.id,
+                      label: d.fullName,
+                      subLabel: `Mobile: ${d.mobile} • DL: ${d.licenseNumber}`,
+                      badge: d.status,
+                    })),
+                  ]}
                   value={selectedDriverId}
-                  onChange={(e) => setSelectedDriverId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="">-- Choose Verified Driver --</option>
-                  {drivers.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.fullName} ({d.mobile}) • DL: {d.licenseNumber} • [{d.status}]
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedDriverId(val)}
+                  placeholder="-- Choose Verified Driver --"
+                  searchPlaceholder="Search driver name or phone..."
+                  required
+                />
               </div>
 
               {/* Pickup & Drop Details */}

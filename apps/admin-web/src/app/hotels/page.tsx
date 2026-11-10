@@ -28,6 +28,7 @@ import { apiRequest } from '@/lib/api';
 import { Pagination } from '@/components/Pagination';
 import { sanitizeDisplayName } from '@/lib/labels';
 import { ImageUploadWidget } from '@/components/ImageUploadWidget';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 const PROPERTY_TYPES: HotelPropertyType[] = [
   'HOTEL',
@@ -104,6 +105,7 @@ export default function HotelsPage() {
   const [allowedPlans, setAllowedPlans] = useState<MealPlan[]>(['RO', 'CP', 'MAP', 'AP']);
   const [totalRooms, setTotalRooms] = useState<number>(10);
   const [pricePerNight, setPricePerNight] = useState<number>(4500);
+  const [extraBedPricePerNight, setExtraBedPricePerNight] = useState<number>(1200);
   const [submittingRoom, setSubmittingRoom] = useState(false);
   const [roomError, setRoomError] = useState<string | null>(null);
 
@@ -319,6 +321,7 @@ export default function HotelsPage() {
     setAllowedPlans(['RO', 'CP', 'MAP', 'AP']);
     setTotalRooms(10);
     setPricePerNight(4500);
+    setExtraBedPricePerNight(1200);
     setRoomError(null);
     setIsRoomFormOpen(true);
   };
@@ -334,6 +337,7 @@ export default function HotelsPage() {
     setAllowedPlans(room.allowedMealPlans || ['RO', 'CP', 'MAP', 'AP']);
     setTotalRooms(room.totalRooms || 10);
     setPricePerNight(room.pricePerNight || 4500);
+    setExtraBedPricePerNight(room.extraBedPricePerNight ?? 1200);
     setRoomError(null);
     setIsRoomFormOpen(true);
   };
@@ -356,6 +360,7 @@ export default function HotelsPage() {
             maxChildren: Number(maxChildren),
             extraBedSupported,
             maxExtraBeds: Number(maxExtraBeds),
+            extraBedPricePerNight: Number(extraBedPricePerNight),
             allowedMealPlans: allowedPlans,
             pricePerNight: Number(pricePerNight),
             totalRooms: totalRooms ? Number(totalRooms) : undefined,
@@ -372,6 +377,7 @@ export default function HotelsPage() {
             maxChildren: Number(maxChildren),
             extraBedSupported,
             maxExtraBeds: Number(maxExtraBeds),
+            extraBedPricePerNight: Number(extraBedPricePerNight),
             allowedMealPlans: allowedPlans,
             pricePerNight: Number(pricePerNight),
             totalRooms: totalRooms ? Number(totalRooms) : undefined,
@@ -490,19 +496,23 @@ export default function HotelsPage() {
             )}
           </div>
 
-          <select
-            className="select-filter"
-            style={{ flex: '0 1 180px' }}
-            value={destFilter}
-            onChange={(e) => setDestFilter(e.target.value)}
-          >
-            <option value="">All Destinations</option>
-            {destinations.map((d) => (
-              <option key={d.id} value={d.id}>
-                {sanitizeDisplayName(d.name)}
-              </option>
-            ))}
-          </select>
+          <div style={{ flex: '0 1 200px' }}>
+            <SearchableSelect
+              options={[
+                { value: '', label: 'All Destinations' },
+                ...destinations.map((d) => ({
+                  value: d.id,
+                  label: sanitizeDisplayName(d.name),
+                  subLabel: d.region,
+                })),
+              ]}
+              value={destFilter}
+              onChange={(val) => setDestFilter(val)}
+              placeholder="All Destinations"
+              searchPlaceholder="Search destination (type letter to jump)..."
+              clearable
+            />
+          </div>
 
           <select
             className="select-filter"
@@ -911,20 +921,19 @@ export default function HotelsPage() {
                     <label className="form-label" style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
                       Destination *
                     </label>
-                    <select
+                    <SearchableSelect
                       id="hotel-select-destination"
-                      className="form-select"
-                      required
-                      style={{ width: '100%' }}
+                      options={destinations.map((d) => ({
+                        value: d.id,
+                        label: `${sanitizeDisplayName(d.name)} (${d.region})`,
+                        subLabel: d.region,
+                      }))}
                       value={destinationId}
-                      onChange={(e) => setDestinationId(e.target.value)}
-                    >
-                      {destinations.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {sanitizeDisplayName(d.name)} ({d.region})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setDestinationId(val)}
+                      placeholder="Choose Destination..."
+                      searchPlaceholder="Search destination (type letter to jump)..."
+                      required
+                    />
                   </div>
                 </div>
 
@@ -1231,18 +1240,35 @@ export default function HotelsPage() {
                         <span style={{ fontSize: '13px', color: '#0f172a', fontWeight: 600 }}>Extra Bed Supported</span>
                       </label>
                       {extraBedSupported && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>Max Extra Beds:</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="5"
-                            className="form-input"
-                            style={{ width: '70px', padding: '4px 8px' }}
-                            value={maxExtraBeds}
-                            onChange={(e) => setMaxExtraBeds(Number(e.target.value))}
-                          />
-                        </div>
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>Max Extra Beds:</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="5"
+                              className="form-input"
+                              style={{ width: '70px', padding: '4px 8px' }}
+                              value={maxExtraBeds}
+                              onChange={(e) => setMaxExtraBeds(Number(e.target.value))}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <label style={{ fontSize: '12px', fontWeight: 700, color: '#047857' }}>
+                              Extra Bed Price / Night (₹):
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="100"
+                              className="form-input"
+                              style={{ width: '120px', padding: '4px 8px', fontWeight: 700, color: '#047857' }}
+                              value={extraBedPricePerNight}
+                              onChange={(e) => setExtraBedPricePerNight(Number(e.target.value))}
+                              placeholder="1200"
+                            />
+                          </div>
+                        </>
                       )}
                     </div>
 
@@ -1262,7 +1288,7 @@ export default function HotelsPage() {
                               style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', padding: '4px 10px' }}
                             >
                               {active && <Check size={12} />}
-                              <span>{mp}</span>
+                              <span>{mp === 'RO' ? 'EP' : mp}</span>
                             </button>
                           );
                         })}
@@ -1337,18 +1363,23 @@ export default function HotelsPage() {
                           </td>
                           <td>
                             {room.extraBedSupported ? (
-                              <span style={{ color: '#0f766e', fontSize: '12px', fontWeight: 600 }}>
-                                Up to {room.maxExtraBeds}
-                              </span>
+                              <div>
+                                <span style={{ color: '#0f766e', fontSize: '12px', fontWeight: 700 }}>
+                                  Up to {room.maxExtraBeds} bed(s)
+                                </span>
+                                <div style={{ fontSize: '11px', color: '#047857', fontWeight: 600, marginTop: '2px' }}>
+                                  ₹{(room.extraBedPricePerNight ?? 1200).toLocaleString('en-IN')}/night
+                                </div>
+                              </div>
                             ) : (
-                              <span style={{ color: '#94a3b8', fontSize: '12px' }}>None</span>
+                              <span style={{ color: '#94a3b8', fontSize: '12px' }}>Not Supported</span>
                             )}
                           </td>
                           <td>
                             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                               {(room.allowedMealPlans || []).map((mp) => (
                                 <span key={mp} className="badge badge-regular" style={{ fontSize: '10.5px', padding: '1px 6px' }}>
-                                  {mp}
+                                  {mp === 'RO' ? 'EP' : mp}
                                 </span>
                               ))}
                             </div>

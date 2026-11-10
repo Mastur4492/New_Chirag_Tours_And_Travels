@@ -46,6 +46,7 @@ import {
   sanitizeDisplayName,
 } from '@/lib/labels';
 import { InfoBadge } from '@/components/InfoBadge';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 interface HotelStayFormItem {
   id: string; // client temporary id
@@ -141,6 +142,42 @@ function QuotationBuilderContent() {
   // Submission State
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Memoized Searchable Options
+  const leadOptions = useMemo(() => {
+    return [
+      { value: '', label: '-- Select Assigned Lead --' },
+      ...leads.map((l) => ({
+        value: l.id,
+        label: `${l.leadNumber} · ${sanitizeDisplayName(l.customerName)}`,
+        subLabel: `${l.customerMobile || 'No mobile'} • ${l.destinationName || 'Tour Lead'}`,
+        badge: l.status,
+      })),
+    ];
+  }, [leads]);
+
+  const destinationOptions = useMemo(() => {
+    return [
+      { value: '', label: '-- Select Destination --' },
+      ...destinations.map((d) => ({
+        value: d.id,
+        label: `${d.name} (${d.state})`,
+        subLabel: `${d.region} Circuit`,
+      })),
+    ];
+  }, [destinations]);
+
+  const packageOptions = useMemo(() => {
+    return [
+      { value: '', label: '-- Custom Customization (No Package) --' },
+      ...packages.map((p) => ({
+        value: p.id,
+        label: `${p.title}`,
+        subLabel: `${p.durationNights}N / ${p.durationDays}D Circuit`,
+        badge: `From ₹${p.startingPrice ? p.startingPrice.toLocaleString('en-IN') : 'N/A'}`,
+      })),
+    ];
+  }, [packages]);
 
   // Initial Data Load
   useEffect(() => {
@@ -617,7 +654,8 @@ function QuotationBuilderContent() {
 
   const effectiveDiscountPercent =
     calculatedSummary?.discountPercent ?? (discountType === 'PERCENT' ? discountPercent : 0);
-  const isDiscountOverCap = effectiveDiscountPercent > maxDiscountPercent;
+  const isAutonomous = agentUser?.agentProfile?.pricingModel !== 'COMMISSION_BASED';
+  const isDiscountOverCap = !isAutonomous && effectiveDiscountPercent > maxDiscountPercent;
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', paddingBottom: 60 }}>
@@ -666,22 +704,15 @@ function QuotationBuilderContent() {
               <label className="label" style={{ fontWeight: 600, display: 'block', marginBottom: 6 }}>
                 Enquiry / Lead <span style={{ color: '#be123c' }}>*</span>
               </label>
-              <select
-                required
+              <SearchableSelect
+                options={leadOptions}
                 value={selectedLeadId}
-                onChange={(e) => handleLeadChange(e.target.value)}
-                className="input"
-                style={{ width: '100%' }}
-              >
-                <option value="">-- Select Assigned Lead --</option>
-                {leads.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.leadNumber} · {sanitizeDisplayName(l.customerName)} ({l.customerMobile || 'No mobile'})
-                  </option>
-                ))}
-              </select>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Shows enquiries currently assigned to your travel desk.
+                onChange={(val) => handleLeadChange(val)}
+                placeholder="-- Select Assigned Lead --"
+                searchPlaceholder="Search lead name, ID, or mobile..."
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                Shows enquiries currently assigned to your travel desk. Type to filter instantly.
               </span>
             </div>
 
@@ -690,20 +721,13 @@ function QuotationBuilderContent() {
               <label className="label" style={{ fontWeight: 600, display: 'block', marginBottom: 6 }}>
                 Destination <span style={{ color: '#be123c' }}>*</span>
               </label>
-              <select
-                required
+              <SearchableSelect
+                options={destinationOptions}
                 value={selectedDestinationId}
-                onChange={(e) => setSelectedDestinationId(e.target.value)}
-                className="input"
-                style={{ width: '100%' }}
-              >
-                <option value="">-- Select Destination --</option>
-                {destinations.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name} ({d.state})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedDestinationId(val)}
+                placeholder="-- Select Destination --"
+                searchPlaceholder="Search destination or state..."
+              />
             </div>
 
             {/* Optional Tour Package */}
@@ -711,20 +735,14 @@ function QuotationBuilderContent() {
               <label className="label" style={{ fontWeight: 600, display: 'block', marginBottom: 6 }}>
                 Package Blueprint (Optional)
               </label>
-              <select
+              <SearchableSelect
+                options={packageOptions}
                 value={selectedPackageId}
-                onChange={(e) => setSelectedPackageId(e.target.value)}
-                className="input"
-                style={{ width: '100%' }}
+                onChange={(val) => setSelectedPackageId(val)}
+                placeholder="-- Custom Customization (No Package) --"
+                searchPlaceholder="Search package title or duration..."
                 disabled={packages.length === 0}
-              >
-                <option value="">-- Custom Customization (No Package) --</option>
-                {packages.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title} ({p.durationNights}N / {p.durationDays}D)
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
         </div>
@@ -877,77 +895,69 @@ function QuotationBuilderContent() {
                     {/* Hotel */}
                     <div>
                       <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Hotel Property</label>
-                      <select
+                      <SearchableSelect
+                        options={hotels.map((h) => {
+                          const details = [h.city, h.starRating ? `${h.starRating}★` : null].filter(Boolean).join(' • ');
+                          return {
+                            value: h.id,
+                            label: h.name,
+                            subLabel: details,
+                            badge: h.propertyType,
+                          };
+                        })}
                         value={item.hotelId}
-                        onChange={(e) => {
-                          const hId = e.target.value;
+                        onChange={(hId) => {
                           setHotelItems((prev) =>
                             prev.map((it) => (it.id === item.id ? { ...it, hotelId: hId } : it))
                           );
                           fetchRoomCategories(item.id, hId);
                         }}
-                        className="input"
-                        style={{ width: '100%', fontSize: '0.85rem' }}
-                      >
-                        {hotels.map((h) => {
-                          const details = [h.city, h.starRating ? `${h.starRating}★` : null].filter(Boolean).join(' • ');
-                          return (
-                            <option key={h.id} value={h.id}>
-                              {h.name}{details ? ` (${details})` : ''}
-                            </option>
-                          );
-                        })}
-                      </select>
+                        placeholder="Select hotel..."
+                        searchPlaceholder="Type hotel name or city..."
+                      />
                     </div>
 
                     {/* Room Category */}
                     <div>
                       <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Room Category</label>
-                      <select
+                      <SearchableSelect
+                        options={(item.availableRooms || []).map((r) => ({
+                          value: r.id,
+                          label: r.name,
+                          subLabel: `Base Occupancy: ${r.baseOccupancy || 2}${r.pricePerNight ? ` • ₹${r.pricePerNight}/nt` : ''}`,
+                          badge: r.extraBedSupported ? '+Extra Bed' : undefined,
+                        }))}
                         value={item.roomCategoryId}
-                        onChange={(e) => {
-                          const rId = e.target.value;
+                        onChange={(rId) => {
                           setHotelItems((prev) =>
                             prev.map((it) => (it.id === item.id ? { ...it, roomCategoryId: rId } : it))
                           );
                         }}
-                        className="input"
-                        style={{ width: '100%', fontSize: '0.85rem' }}
                         disabled={item.loadingRooms || (item.availableRooms || []).length === 0}
-                      >
-                        {item.loadingRooms ? (
-                          <option>Loading rooms...</option>
-                        ) : (item.availableRooms || []).length === 0 ? (
-                          <option>No room categories</option>
-                        ) : (
-                          (item.availableRooms || []).map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name}
-                            </option>
-                          ))
-                        )}
-                      </select>
+                        placeholder={item.loadingRooms ? 'Loading rooms...' : (item.availableRooms || []).length === 0 ? 'No rooms available' : 'Select room...'}
+                        searchPlaceholder="Search room category..."
+                      />
                     </div>
 
                     {/* Meal Plan */}
                     <div>
                       <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Meal Plan</label>
-                      <select
+                      <SearchableSelect
+                        options={[
+                          { value: 'EP', label: 'EP Plan (Room Only)', subLabel: 'No Meals Included' },
+                          { value: 'CP', label: 'CP Plan (Breakfast)', subLabel: 'Daily Breakfast Included' },
+                          { value: 'MAP', label: 'MAP Plan (Breakfast + Dinner)', subLabel: 'Daily Breakfast & Dinner' },
+                          { value: 'AP', label: 'AP Plan (All Meals)', subLabel: 'Daily Breakfast, Lunch & Dinner' },
+                        ]}
                         value={item.mealPlan}
-                        onChange={(e) => {
-                          const mp = e.target.value as MealPlan;
+                        onChange={(mp) => {
                           setHotelItems((prev) =>
-                            prev.map((it) => (it.id === item.id ? { ...it, mealPlan: mp } : it))
+                            prev.map((it) => (it.id === item.id ? { ...it, mealPlan: mp as MealPlan } : it))
                           );
                         }}
-                        className="input"
-                        style={{ width: '100%', fontSize: '0.85rem' }}
-                      >
-                        <option value="EP">EP (Room Only)</option>
-                        <option value="CP">CP (Breakfast Included)</option>
-                        <option value="MAP">MAP (Breakfast + Dinner)</option>
-                        <option value="AP">AP (All Meals)</option>
-                      </select>
+                        placeholder="Select meal plan..."
+                        searchPlaceholder="Search EP, CP, MAP, AP..."
+                      />
                     </div>
 
                     {/* Number of Rooms */}
@@ -1023,10 +1033,14 @@ function QuotationBuilderContent() {
                     {/* Tariff / Vehicle */}
                     <div>
                       <label className="label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Transport Tariff</label>
-                      <select
+                      <SearchableSelect
+                        options={tariffs.map((t) => ({
+                          value: t.id,
+                          label: `${t.circuitName ? `${t.circuitName} · ` : ''}${t.vehicleCategory}`,
+                          subLabel: `₹${t.standardSellingRate} / ${t.tariffBasis}`,
+                        }))}
                         value={item.tariffId}
-                        onChange={(e) => {
-                          const tId = e.target.value;
+                        onChange={(tId) => {
                           const t = tariffs.find((x) => x.id === tId);
                           setTransportItems((prev) =>
                             prev.map((it) =>
@@ -1040,15 +1054,9 @@ function QuotationBuilderContent() {
                             )
                           );
                         }}
-                        className="input"
-                        style={{ width: '100%', fontSize: '0.85rem' }}
-                      >
-                        {tariffs.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.circuitName ? `${t.circuitName} · ` : ''}{t.vehicleCategory} · {t.tariffBasis} (₹{t.standardSellingRate})
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Select transport tariff..."
+                        searchPlaceholder="Search cab or circuit..."
+                      />
                     </div>
 
                     {/* Days */}
@@ -1249,8 +1257,8 @@ function QuotationBuilderContent() {
                     onChange={(e) => setDiscountPercent(Number(e.target.value))}
                     style={{ width: '100%', accentColor: isDiscountOverCap ? '#ef4444' : 'var(--primary)' }}
                   />
-                  <div style={{ fontSize: '0.75rem', color: isDiscountOverCap ? '#b91c1c' : 'var(--text-muted)', marginTop: 4 }}>
-                    Authorized Cap: <strong>{maxDiscountPercent}%</strong>
+                  <div style={{ fontSize: '0.75rem', color: isDiscountOverCap ? '#b91c1c' : '#059669', marginTop: 4, fontWeight: 600 }}>
+                    {isAutonomous ? '💎 Wholesale Net Autonomy: 100% Agent Pricing Freedom' : `Authorized Cap: ${maxDiscountPercent}%`}
                   </div>
                 </>
               ) : (
@@ -1264,8 +1272,10 @@ function QuotationBuilderContent() {
                     className="input"
                     style={{ width: '100%', padding: '8px 12px', fontWeight: 700 }}
                   />
-                  <div style={{ fontSize: '0.75rem', color: isDiscountOverCap ? '#b91c1c' : 'var(--text-muted)', marginTop: 4 }}>
-                    Effective Discount: {calculatedSummary?.discountPercent ? `${calculatedSummary.discountPercent}%` : '0%'} (Cap: {maxDiscountPercent}%)
+                  <div style={{ fontSize: '0.75rem', color: isDiscountOverCap ? '#b91c1c' : '#059669', marginTop: 4, fontWeight: 600 }}>
+                    {isAutonomous
+                      ? `Effective Client Discount: ${calculatedSummary?.discountPercent ? `${calculatedSummary.discountPercent}%` : '0%'} (Full Autonomy)`
+                      : `Effective Discount: ${calculatedSummary?.discountPercent ? `${calculatedSummary.discountPercent}%` : '0%'} (Cap: ${maxDiscountPercent}%)`}
                   </div>
                 </>
               )}

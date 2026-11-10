@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { leadsApi, customersApi, inventoryApi } from '@/lib/api';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 export default function AgentLeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -736,19 +737,18 @@ export default function AgentLeadsPage() {
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: 4 }}>
                     Destination *
                   </label>
-                  <select
-                    required
+                  <SearchableSelect
+                    options={destinations.map((d) => ({
+                      value: d.id,
+                      label: `${d.name} (${d.country || d.region || 'India'})`,
+                      subLabel: d.country,
+                    }))}
                     value={intakeForm.destinationId}
-                    onChange={(e) => setIntakeForm({ ...intakeForm, destinationId: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.88rem', background: '#ffffff' }}
-                  >
-                    <option value="">Select Destination</option>
-                    {destinations.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setIntakeForm({ ...intakeForm, destinationId: val })}
+                    placeholder="Select Destination"
+                    searchPlaceholder="Search destination (type letter to jump)..."
+                    required
+                  />
                 </div>
 
                 <div>

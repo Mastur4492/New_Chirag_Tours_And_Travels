@@ -17,7 +17,7 @@ export async function seedTransport(): Promise<void> {
     vendor = await VehicleVendorModel.create({
       businessName: 'Chirag Fleet & Chauffeur Services',
       contactPerson: 'Faisal Bikanerwala',
-      phone: '+919978655529',
+      phone: '+918866006640',
       email: 'transport@chiragtravels.com',
       city: 'Srinagar',
       state: 'Jammu & Kashmir',

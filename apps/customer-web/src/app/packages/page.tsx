@@ -8,6 +8,7 @@ import { DestinationDto, TourPackageDto } from '@chirag/types';
 import { EnquiryModal } from '@/components/EnquiryModal';
 
 import { formatDisplayTitle, formatINR, getDestinationStyle } from '@/lib/utils';
+import { SearchableSelect } from '@/components/SearchableSelect';
 
 export default function PackagesCatalogPage() {
   const [packages, setPackages] = useState<TourPackageDto[]>([]);
@@ -113,19 +114,22 @@ export default function PackagesCatalogPage() {
             />
           </div>
 
-          <div style={{ minWidth: 220 }}>
-            <select
-              className="form-select"
+          <div style={{ minWidth: 230 }}>
+            <SearchableSelect
+              options={[
+                { value: '', label: 'All Destinations' },
+                ...destinations.map((d) => ({
+                  value: d.id,
+                  label: `${d.name} (${d.country})`,
+                  subLabel: d.country,
+                })),
+              ]}
               value={selectedDestId}
-              onChange={(e) => setSelectedDestId(e.target.value)}
-            >
-              <option value="">All Destinations</option>
-              {destinations.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name} ({d.country})
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedDestId(val)}
+              placeholder="All Destinations"
+              searchPlaceholder="Search destination (type letter to jump)..."
+              clearable
+            />
           </div>
 
           {(search || selectedDestId) && (

@@ -5,6 +5,23 @@ const API_BASE_URL =
     ? '/api/proxy'
     : process.env.API_URL || 'http://localhost:5000/api/v1';
 
+export function getApiBaseUrl(): string {
+  return API_BASE_URL;
+}
+
+export function getPublicApiUrl(): string {
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname.includes('vercel.app')) {
+      return 'https://newchirag-api.onrender.com/api/v1';
+    }
+    return '/api/proxy';
+  }
+  return process.env?.API_URL || 'http://localhost:5000/api/v1';
+}
+
 // Token storage keys
 const AUTH_TOKEN_KEY = 'chirag_admin_token';
 const USER_ROLE_KEY = 'chirag_user_role';

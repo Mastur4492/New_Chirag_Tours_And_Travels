@@ -46,7 +46,7 @@ export class WhatsAppService {
   constructor() {
     this.apiToken = env.WHATSAPP_API_TOKEN;
     this.phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID;
-    this.businessMobile = env.WHATSAPP_BUSINESS_MOBILE || '+919978655529';
+    this.businessMobile = env.WHATSAPP_BUSINESS_MOBILE || '+918866006640';
     this.customerWebUrl = process.env.CUSTOMER_WEB_URL || 'http://localhost:3000';
     this.isConfigured = Boolean(this.apiToken && this.phoneNumberId);
 
@@ -69,7 +69,7 @@ export class WhatsAppService {
       `📋 *Quotation Reference:* ${payload.quotationNumber}\n` +
       `💰 *Total Package Cost:* ₹${payload.totalAmount.toLocaleString('en-IN')}\n\n` +
       `🔗 *View Your Interactive Proposal & PDF:* \n${quoteUrl}\n\n` +
-      `Need custom changes or special arrangements? Reply directly to this message or call Faisal Bikanerwala at *+91 99786 55529*.\n` +
+      `Need custom changes or special arrangements? Reply directly to this message or call Faisal Bikanerwala at *+91 88660 06640 / +91 70430 46833*.\n` +
       `_New Chirag Tours & Travels — Luxury Tailor-Made Holidays_`;
 
     return this.dispatchMessage(payload.customerMobile, message);
@@ -88,7 +88,7 @@ export class WhatsAppService {
       `💳 *Advance Received:* ₹${payload.advancePaid.toLocaleString('en-IN')}\n` +
       `⚖️ *Balance Due:* ₹${balanceDue.toLocaleString('en-IN')}\n\n` +
       `Our operations desk will dispatch your vehicle registration & chauffeur details 24 hours prior to departure.\n\n` +
-      `Support Helpline: *+91 99786 55529* (Faisal Bikanerwala). Have a wonderful holiday!`;
+      `Support Helpline: *+91 88660 06640 / +91 70430 46833* (Faisal Bikanerwala). Have a wonderful holiday!`;
 
     return this.dispatchMessage(payload.customerMobile, message);
   }
@@ -166,21 +166,21 @@ export class WhatsAppService {
           `1️⃣ Type *PACKAGES* to browse our top luxury circuits\n` +
           `2️⃣ Type *QUOTE <Reference>* to check your travel quote status\n` +
           `3️⃣ Type *AGENT* to speak directly with Faisal Bikanerwala\n\n` +
-          `Direct Helpline: *+91 99786 55529*`;
+          `Direct Helpline: *+91 88660 06640 / +91 70430 46833*`;
       } else if (upper.startsWith('QUOTE')) {
         const parts = upper.split(/\s+/);
         const ref = parts[1] || 'your reference';
         reply =
           `We have received your quotation request for *${ref}*. Our holiday specialist is reviewing room availability and vehicle tariffs. We will message you the finalized proposal shortly!\n\n` +
-          `Helpline: *+91 99786 55529*`;
+          `Helpline: *+91 88660 06640 / +91 70430 46833*`;
       } else if (upper.includes('CALL') || upper.includes('AGENT') || upper.includes('HELP')) {
         reply =
           `Our Senior Tour Specialist *Faisal Bikanerwala* has been notified and will call you on ${fromMobile} within 15 minutes.\n\n` +
-          `Direct Desk: *+91 99786 55529*\nOffice: Danilimda, Ahmedabad, Gujarat.`;
+          `Direct Desk: *+91 88660 06640 / +91 70430 46833*\nOffice: Danilimda, Ahmedabad, Gujarat.`;
       } else {
         reply =
           `Thank you for contacting *New Chirag Tours & Travels*! We have logged your request: "${textBody}".\n` +
-          `A travel manager will connect with you shortly. Urgent assistance: *+91 99786 55529*.`;
+          `A travel manager will connect with you shortly. Urgent assistance: *+91 88660 06640 / +91 70430 46833*.`;
       }
 
       // Dispatch auto-reply back to the customer

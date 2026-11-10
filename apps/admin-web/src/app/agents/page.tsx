@@ -38,6 +38,8 @@ import { Pagination } from '@/components/Pagination';
 interface AgentProfile {
   agencyName?: string;
   city?: string;
+  rateSheetTier?: string;
+  pricingModel?: string;
   commissionRate?: number;
   commissionRatePercent?: number;
   maxDiscountPercent?: number;
@@ -66,7 +68,7 @@ interface NewAgentForm {
   password: string;
   agencyName: string;
   city: string;
-  commissionRate: number;
+  rateSheetTier: string;
 }
 
 export default function AgentsPage() {
@@ -93,7 +95,7 @@ export default function AgentsPage() {
     password: string;
     agencyName: string;
     city: string;
-    commissionRate: number;
+    rateSheetTier: string;
   } | null>(null);
   const [copiedCredential, setCopiedCredential] = useState(false);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
@@ -110,9 +112,11 @@ export default function AgentsPage() {
 
   // Edit Permissions Modal State
   const [editingPermissionsAgent, setEditingPermissionsAgent] = useState<AgentUser | null>(null);
-  const [permMaxDiscount, setPermMaxDiscount] = useState(5);
-  const [permMaxMarkup, setPermMaxMarkup] = useState(20);
-  const [permCanApproveFinalPrice, setPermCanApproveFinalPrice] = useState(false);
+  const [permRateSheetTier, setPermRateSheetTier] = useState('Standard Wholesale B2B');
+  const [permAutonomy, setPermAutonomy] = useState(true);
+  const [permMaxDiscount, setPermMaxDiscount] = useState(100);
+  const [permMaxMarkup, setPermMaxMarkup] = useState(100);
+  const [permCanApproveFinalPrice, setPermCanApproveFinalPrice] = useState(true);
   const [permCommissionRate, setPermCommissionRate] = useState<number | undefined>(5);
 
   // Status Change Confirmation Modal State
@@ -139,7 +143,7 @@ export default function AgentsPage() {
     password: '',
     agencyName: '',
     city: 'Ahmedabad',
-    commissionRate: 5,
+    rateSheetTier: 'Standard Wholesale B2B',
   });
 
   const loadAgents = async () => {
@@ -206,7 +210,12 @@ export default function AgentsPage() {
         agentProfile: {
           agencyName: form.agencyName.trim() || `${form.name.trim()} Travels`,
           city: form.city.trim() || 'Ahmedabad',
-          commissionRatePercent: Number(form.commissionRate) || 5,
+          rateSheetTier: form.rateSheetTier || 'Standard Wholesale B2B',
+          pricingModel: 'WHOLESALE_NET',
+          maxDiscountPercent: 100,
+          maxMarkupPercent: 100,
+          canApproveFinalPrice: true,
+          commissionRatePercent: 0,
         },
       };
 
@@ -222,7 +231,7 @@ export default function AgentsPage() {
         password: form.password,
         agencyName: form.agencyName || `${form.name} Travels`,
         city: form.city,
-        commissionRate: Number(form.commissionRate) || 5,
+        rateSheetTier: form.rateSheetTier || 'Standard Wholesale B2B',
       });
 
       setIsCreateModalOpen(false);
@@ -233,7 +242,7 @@ export default function AgentsPage() {
         password: '',
         agencyName: '',
         city: 'Ahmedabad',
-        commissionRate: 5,
+        rateSheetTier: 'Standard Wholesale B2B',
       });
 
       setToastMessage(`Agent "${form.name}" created successfully`);
@@ -290,10 +299,13 @@ export default function AgentsPage() {
   // Open Edit Permissions Modal
   const openEditPermissions = (agent: AgentUser) => {
     setEditingPermissionsAgent(agent);
-    setPermMaxDiscount(agent.agentProfile?.maxDiscountPercent ?? 5);
-    setPermMaxMarkup(agent.agentProfile?.maxMarkupPercent ?? 20);
-    setPermCanApproveFinalPrice(agent.agentProfile?.canApproveFinalPrice ?? false);
-    setPermCommissionRate(agent.agentProfile?.commissionRatePercent ?? agent.agentProfile?.commissionRate ?? 5);
+    setPermRateSheetTier(agent.agentProfile?.rateSheetTier || 'Standard Wholesale B2B');
+    const hasAutonomy = (agent.agentProfile?.maxDiscountPercent ?? 100) >= 100;
+    setPermAutonomy(hasAutonomy);
+    setPermMaxDiscount(agent.agentProfile?.maxDiscountPercent ?? 100);
+    setPermMaxMarkup(agent.agentProfile?.maxMarkupPercent ?? 100);
+    setPermCanApproveFinalPrice(agent.agentProfile?.canApproveFinalPrice ?? true);
+    setPermCommissionRate(agent.agentProfile?.commissionRatePercent ?? 0);
     setFormError(null);
   };
 
@@ -310,14 +322,16 @@ export default function AgentsPage() {
       await apiRequest(`users/agents/${agentId}/permissions`, {
         method: 'PATCH',
         body: JSON.stringify({
-          maxDiscountPercent: Number(permMaxDiscount),
-          maxMarkupPercent: Number(permMaxMarkup),
-          canApproveFinalPrice: Boolean(permCanApproveFinalPrice),
-          commissionRatePercent: Number(permCommissionRate),
+          rateSheetTier: permRateSheetTier,
+          pricingModel: 'WHOLESALE_NET',
+          maxDiscountPercent: permAutonomy ? 100 : Number(permMaxDiscount),
+          maxMarkupPercent: permAutonomy ? 100 : Number(permMaxMarkup),
+          canApproveFinalPrice: permAutonomy ? true : Boolean(permCanApproveFinalPrice),
+          commissionRatePercent: 0,
         }),
       });
 
-      setToastMessage(`Pricing permissions updated for ${editingPermissionsAgent.fullName || editingPermissionsAgent.name}`);
+      setToastMessage(`B2B Rate Sheet & Autonomy updated for ${editingPermissionsAgent.fullName || editingPermissionsAgent.name}`);
       setEditingPermissionsAgent(null);
       loadAgents();
     } catch (err: any) {
@@ -542,11 +556,11 @@ ${COMPANY_BRANDING.address}
         </div>
       )}
 
-      {/* Commercial Settlement Advisory Banner */}
-      <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-        <Info size={18} color="#b45309" style={{ flexShrink: 0, marginTop: '2px' }} />
-        <div style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.5 }}>
-          <strong>Policy Note for Faisal Bikanerwala (Owner):</strong> Commission rates and approval limits set here govern portal quotation discounting. The commercial settlement basis (whether commission is calculated as gross margin percentage, net markup deduction, or tracked via a separate settlement ledger) remains pending formal confirmation. No ad-hoc ledger deductions will be automated until approved.
+      {/* Dual Rate Sheet & Wholesale Net Advisory Banner */}
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+        <Sparkles size={18} color="#059669" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <div style={{ fontSize: '13px', color: '#166534', lineHeight: 1.5 }}>
+          <strong>Dual Rate Sheet Architecture (Wholesale B2B):</strong> New Chirag provides net wholesale rate cards to verified B2B Travel Agents with company profit and margins safely locked in. Agents enjoy <strong>100% commercial pricing autonomy</strong> on their portal — they can freely apply custom client markups or grant customer discounts without arbitrary approval locks.
         </div>
       </div>
 
@@ -574,12 +588,12 @@ ${COMPANY_BRANDING.address}
         </div>
 
         <div style={{ background: '#ffffff', borderRadius: '14px', padding: '18px 20px', border: '1.5px solid var(--border-subtle)', boxShadow: 'var(--shadow-xs)' }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Avg Standard Commission</div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: '#2563eb', marginTop: '4px' }}>
-            5.0%
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Pricing Architecture</div>
+          <div style={{ fontSize: '20px', fontWeight: 800, color: '#0284c7', marginTop: '4px' }}>
+            Wholesale Net B2B
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Individual limits managed per agent
+          <div style={{ fontSize: '12px', color: '#059669', marginTop: '4px', fontWeight: 700 }}>
+            ✓ 100% Agent Pricing Freedom
           </div>
         </div>
 
@@ -643,7 +657,7 @@ ${COMPANY_BRANDING.address}
                   <th style={{ padding: '12px 18px', fontWeight: 700 }}>Agent & Agency</th>
                   <th style={{ padding: '12px 18px', fontWeight: 700 }}>Contact & Login ID</th>
                   <th style={{ padding: '12px 18px', fontWeight: 700 }}>City / Region</th>
-                  <th style={{ padding: '12px 18px', fontWeight: 700 }}>Commission & Limits</th>
+                  <th style={{ padding: '12px 18px', fontWeight: 700 }}>B2B Rate Sheet & Autonomy</th>
                   <th style={{ padding: '12px 18px', fontWeight: 700 }}>Status</th>
                   <th style={{ padding: '12px 18px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -718,7 +732,7 @@ ${COMPANY_BRANDING.address}
                     <th style={{ padding: '12px 18px', fontWeight: 700 }}>Agent & Agency</th>
                     <th style={{ padding: '12px 18px', fontWeight: 700 }}>Contact & Login ID</th>
                     <th style={{ padding: '12px 18px', fontWeight: 700 }}>City / Region</th>
-                    <th style={{ padding: '12px 18px', fontWeight: 700 }}>Commission & Limits</th>
+                    <th style={{ padding: '12px 18px', fontWeight: 700 }}>B2B Rate Sheet & Autonomy</th>
                     <th style={{ padding: '12px 18px', fontWeight: 700 }}>Status</th>
                     <th style={{ padding: '12px 18px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
                   </tr>
@@ -802,11 +816,11 @@ ${COMPANY_BRANDING.address}
                         <td style={{ padding: '14px 18px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '6px', background: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: 700, width: 'fit-content' }}>
-                              <Percent size={11} />
-                              {agent.agentProfile?.commissionRatePercent ?? agent.agentProfile?.commissionRate ?? 5}% Commission
+                              <Building2 size={11} />
+                              {agent.agentProfile?.rateSheetTier || 'Standard Wholesale B2B'}
                             </span>
-                            <div style={{ fontSize: '11px', color: '#64748b' }}>
-                              Discount Max: {agent.agentProfile?.maxDiscountPercent ?? 5}% • Markup Max: {agent.agentProfile?.maxMarkupPercent ?? 20}%
+                            <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>
+                              ✓ Full Pricing Autonomy (Uncapped Client Discount)
                             </div>
                           </div>
                         </td>
@@ -938,10 +952,10 @@ ${COMPANY_BRANDING.address}
                         <span>{agent.agentProfile?.city || 'Gujarat'}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Percent size={12} color="#1d4ed8" />
-                        <span>Commission: {agent.agentProfile?.commissionRatePercent ?? 5}%</span>
+                        <Building2 size={12} color="#0284c7" />
+                        <span style={{ fontWeight: 700, color: '#0369a1' }}>{agent.agentProfile?.rateSheetTier || 'Standard Wholesale B2B'}</span>
                         <span>•</span>
-                        <span>Max Disc: {agent.agentProfile?.maxDiscountPercent ?? 5}%</span>
+                        <span style={{ color: '#059669', fontWeight: 700 }}>Autonomous Pricing</span>
                       </div>
                     </div>
 
@@ -1131,18 +1145,22 @@ ${COMPANY_BRANDING.address}
 
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontSize: '13px', fontWeight: 700 }}>
-                    Standard Commission (%) <span style={{ color: '#dc2626' }}>*</span>
+                    B2B Rate Sheet Tier <span style={{ color: '#dc2626' }}>*</span>
                   </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="50"
-                    required
-                    className="form-input"
-                    value={form.commissionRate}
-                    onChange={(e) => setForm({ ...form, commissionRate: Number(e.target.value) })}
-                  />
+                  <select
+                    className="form-select"
+                    value={form.rateSheetTier}
+                    onChange={(e) => setForm({ ...form, rateSheetTier: e.target.value })}
+                  >
+                    <option value="Standard Wholesale B2B">Standard Wholesale B2B Net</option>
+                    <option value="Gold Partner Net Rates">Gold Partner Net Rates</option>
+                    <option value="VIP Wholesaler Net Rates">VIP Wholesaler Net Rates</option>
+                  </select>
                 </div>
+              </div>
+
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '10px 14px', fontSize: '12px', color: '#166534', lineHeight: 1.5 }}>
+                <strong>💎 Wholesale Net Rate Sheet:</strong> New Chirag's profit is locked in wholesale rates. Agent receives net partner pricing and has 100% freedom to add client markup or discount on their portal.
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
@@ -1354,33 +1372,33 @@ ${COMPANY_BRANDING.address}
               </div>
 
               {/* Pricing Permissions Section */}
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '16px' }}>
-                <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1d4ed8', textTransform: 'uppercase', marginBottom: '10px' }}>
-                  Quotation & Pricing Authorization
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '10px' }}>
+                  B2B Wholesale Net Rate Sheet & Autonomy
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <div style={{ fontSize: '11.5px', color: '#1e40af' }}>Max Discount Permitted:</div>
-                    <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a' }}>
-                      {viewingAgent.agentProfile?.maxDiscountPercent ?? 5}%
+                    <div style={{ fontSize: '11.5px', color: '#15803d' }}>Rate Sheet Tier:</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#14532d' }}>
+                      {viewingAgent.agentProfile?.rateSheetTier || 'Standard Wholesale B2B'}
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11.5px', color: '#1e40af' }}>Max Markup Allowed:</div>
-                    <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a' }}>
-                      {viewingAgent.agentProfile?.maxMarkupPercent ?? 20}%
+                    <div style={{ fontSize: '11.5px', color: '#15803d' }}>Pricing Architecture:</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#14532d' }}>
+                      Wholesale Net B2B
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11.5px', color: '#1e40af' }}>Final Price Approval Rights:</div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: viewingAgent.agentProfile?.canApproveFinalPrice ? '#059669' : '#dc2626' }}>
-                      {viewingAgent.agentProfile?.canApproveFinalPrice ? 'Yes (Can Approve)' : 'No (Requires Admin)'}
+                    <div style={{ fontSize: '11.5px', color: '#15803d' }}>Client Pricing Freedom:</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#059669' }}>
+                      100% Autonomous
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11.5px', color: '#1e40af' }}>Standard Commission:</div>
-                    <div style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a' }}>
-                      {viewingAgent.agentProfile?.commissionRatePercent ?? viewingAgent.agentProfile?.commissionRate ?? 5}%
+                    <div style={{ fontSize: '11.5px', color: '#15803d' }}>Company Margin Status:</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#059669' }}>
+                      Locked in Wholesale Net
                     </div>
                   </div>
                 </div>
@@ -1519,10 +1537,10 @@ ${COMPANY_BRANDING.address}
             <div className="modal-header" style={{ padding: '18px 24px', background: '#f8fafc', borderBottom: '1.5px solid var(--border-subtle)' }}>
               <div>
                 <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                  Pricing Permissions & Limits
+                  B2B Rate Sheet & Pricing Autonomy
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                  Control discount caps and approval limits for {editingPermissionsAgent.fullName || editingPermissionsAgent.name}
+                  Assign Wholesale Net Rate Tier and configure client pricing autonomy for {editingPermissionsAgent.fullName || editingPermissionsAgent.name}
                 </p>
               </div>
               <button onClick={() => setEditingPermissionsAgent(null)} className="btn-icon">
@@ -1538,71 +1556,73 @@ ${COMPANY_BRANDING.address}
                 </div>
               )}
 
-              <div className="form-row" style={{ margin: 0 }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '13px', fontWeight: 700 }}>
-                    Max Discount Permitted (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="50"
-                    required
-                    className="form-input"
-                    value={permMaxDiscount}
-                    onChange={(e) => setPermMaxDiscount(Number(e.target.value))}
-                  />
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Allowed without Admin approval</span>
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '13px', fontWeight: 700 }}>
-                    Max Markup Allowed (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    required
-                    className="form-input"
-                    value={permMaxMarkup}
-                    onChange={(e) => setPermMaxMarkup(Number(e.target.value))}
-                  />
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Cap on B2B customer markup</span>
-                </div>
-              </div>
-
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontSize: '13px', fontWeight: 700 }}>
-                  Standard Commission Rate (%)
+                  Assigned B2B Rate Sheet Tier
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="50"
-                  className="form-input"
-                  value={permCommissionRate ?? 5}
-                  onChange={(e) => setPermCommissionRate(Number(e.target.value))}
-                />
+                <select
+                  className="form-select"
+                  value={permRateSheetTier}
+                  onChange={(e) => setPermRateSheetTier(e.target.value)}
+                >
+                  <option value="Standard Wholesale B2B">Standard Wholesale B2B Net</option>
+                  <option value="Gold Partner Net Rates">Gold Partner Net Rates</option>
+                  <option value="VIP Wholesaler Net Rates">VIP Wholesaler Net Rates</option>
+                </select>
+                <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Governs the net wholesale rate cards accessible to this partner</span>
               </div>
 
-              <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ background: '#f0fdf4', padding: '14px 16px', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0 }}>
                   <input
                     type="checkbox"
-                    checked={permCanApproveFinalPrice}
-                    onChange={(e) => setPermCanApproveFinalPrice(e.target.checked)}
+                    checked={permAutonomy}
+                    onChange={(e) => setPermAutonomy(e.target.checked)}
                   />
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
-                      Can Approve Final Proposal Price
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#166534' }}>
+                      100% Agent Pricing Freedom (Recommended)
                     </div>
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                      If disabled, quotes requiring discounts beyond limit require Faisal / Admin signoff.
+                    <div style={{ fontSize: '12px', color: '#15803d' }}>
+                      New Chirag's profit is locked in the wholesale net rate card. The agent has complete autonomy to set client selling prices, apply customer markups, or offer discounts without admin approval locks.
                     </div>
                   </div>
                 </label>
               </div>
+
+              {!permAutonomy && (
+                <div className="form-row" style={{ margin: 0 }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '13px', fontWeight: 700 }}>
+                      Custom Max Discount Cap (%)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      required
+                      className="form-input"
+                      value={permMaxDiscount}
+                      onChange={(e) => setPermMaxDiscount(Number(e.target.value))}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '13px', fontWeight: 700 }}>
+                      Custom Max Markup Cap (%)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      required
+                      className="form-input"
+                      value={permMaxMarkup}
+                      onChange={(e) => setPermMaxMarkup(Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
                 <button
@@ -1614,7 +1634,7 @@ ${COMPANY_BRANDING.address}
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? 'Updating...' : 'Save Permissions'}
+                  {isSubmitting ? 'Updating...' : 'Save B2B Settings'}
                 </button>
               </div>
             </form>

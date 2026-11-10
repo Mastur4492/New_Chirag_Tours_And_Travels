@@ -144,7 +144,7 @@ export default function CustomerQuotationPage() {
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>Proposal Unavailable</h2>
           <p style={{ fontSize: '0.9rem', color: '#475569', marginTop: 8 }}>{error || 'This proposal link may have expired or has been revised.'}</p>
           <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #f1f5f9', fontSize: '0.8rem', color: '#64748b' }}>
-            For assistance, contact Faisal Bikanerwala at <strong>+91 99786 55529</strong>.
+            For assistance, contact Faisal Bikanerwala at <strong>+91 88660 06640 / +91 70430 46833</strong>.
           </div>
         </div>
       </div>
@@ -599,10 +599,10 @@ export default function CustomerQuotationPage() {
                 UPI & Payment Schedule
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: '#334155' }}>
-                <div><strong>UPI ID:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#059669' }}>{agencySettings?.upiId || '9978655529@upi'}</span></div>
-                <div><strong>GPay / PhonePe:</strong> <span style={{ fontWeight: 800 }}>{agencySettings?.upiNumber || '+91 99786 55529'}</span></div>
-                <div><strong>{agencySettings?.advancePercentage ?? 25}% Advance:</strong> Locks hotel allotments & vehicle confirmation</div>
-                <div><strong>Payment Policy:</strong> {agencySettings?.paymentTerms || 'Balance payable upon arrival / prior to hotel check-in'}</div>
+                <div><strong>UPI ID:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#059669' }}>{agencySettings?.upiId || '8866006640@upi'}</span></div>
+                <div><strong>GPay / PhonePe:</strong> <span style={{ fontWeight: 800 }}>{agencySettings?.upiNumber || '+91 88660 06640'}</span></div>
+                <div><strong>{agencySettings?.advancePercentage ?? 35}% Advance:</strong> Locks hotel allotments & vehicle confirmation</div>
+                <div><strong>Payment Policy:</strong> {agencySettings?.paymentTerms || '35% Advance to Lock Allotments • Balance 65% on Arrival / Prior to Hotel Check-in'}</div>
               </div>
             </div>
           </div>

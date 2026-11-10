@@ -117,7 +117,7 @@ class EmailService {
             </div>
           </div>
           <div class="footer">
-            Sent to ${this.adminEmail} • Owner Desk: Faisal Bikanerwala (+91 99786 55529)<br>
+            Sent to ${this.adminEmail} • Owner Desk: Faisal Bikanerwala (+91 88660 06640 / +91 70430 46833)<br>
             Danilimda, Ahmedabad, Gujarat
           </div>
         </div>

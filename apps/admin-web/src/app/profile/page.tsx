@@ -27,7 +27,7 @@ import {
   X,
   CheckCircle,
 } from 'lucide-react';
-import { authApi, agencySettingsApi, getUserInfo, setUserSession } from '@/lib/api';
+import { authApi, agencySettingsApi, getUserInfo, setUserSession, clearClientCache } from '@/lib/api';
 import { COMPANY_BRANDING } from '@/lib/branding';
 import { AgencySettingsDto } from '@chirag/types';
 
@@ -58,8 +58,10 @@ export default function AdminProfilePage() {
     agencyName: 'New Chirag Tours & Travels',
     founderName: 'Faisal Bikanerwala',
     tagline: 'Ahmedabad Travel Desk • Customized Holidays & Tour Packages',
-    supportPhone: '+919978655529',
-    supportPhoneDisplay: '+91 99786 55529',
+    supportPhone: '+918866006640',
+    supportPhoneDisplay: '+91 88660 06640',
+    altPhone: '+917043046833',
+    altPhoneDisplay: '+91 70430 46833',
     supportEmail: 'newchiragtoursandtravels@gmail.com',
     operatingHours: 'Daily 10:00 AM – 8:30 PM',
     headOfficeAddress:
@@ -67,17 +69,17 @@ export default function AdminProfilePage() {
     city: 'Ahmedabad',
     state: 'Gujarat',
     pincode: '382405',
-    websiteUrl: 'http://localhost:3000',
+    websiteUrl: 'https://newchirag.com',
     bankName: 'HDFC Bank Ltd',
     accountHolderName: 'NEW CHIRAG TOURS AND TRAVELS',
     accountNumber: '50200084920194',
     ifscCode: 'HDFC0001842',
     branchName: 'Danilimda Branch, Ahmedabad',
     accountType: 'Current Account',
-    upiId: '9978655529@upi',
-    upiNumber: '+91 99786 55529',
-    advancePercentage: 25,
-    paymentTerms: '25% Advance to Lock Allotments • Balance 75% on Arrival / Prior to Hotel Check-in',
+    upiId: '8866006640@upi',
+    upiNumber: '+91 88660 06640',
+    advancePercentage: 35,
+    paymentTerms: '35% Advance to Lock Allotments • Balance 65% on Arrival / Prior to Hotel Check-in',
   });
 
   const [isEditingAgency, setIsEditingAgency] = useState(false);
@@ -233,6 +235,7 @@ export default function AdminProfilePage() {
       };
 
       const updated = await agencySettingsApi.update(payload);
+      clearClientCache();
       setAgencySettings(updated);
       setAgencyForm(updated);
       setIsEditingAgency(false);
@@ -251,6 +254,9 @@ export default function AdminProfilePage() {
     setBankError(null);
     setBankSuccess(null);
     try {
+      const advanceVal = Number(bankForm.advancePercentage ?? agencySettings.advancePercentage ?? 35);
+      const balanceVal = 100 - advanceVal;
+      const terms = bankForm.paymentTerms?.trim() || `${advanceVal}% Advance to Lock Allotments • Balance ${balanceVal}% on Arrival / Prior to Hotel Check-in`;
       const payload: Partial<AgencySettingsDto> = {
         bankName: bankForm.bankName?.trim() || agencySettings.bankName,
         accountHolderName: bankForm.accountHolderName?.trim() || agencySettings.accountHolderName,
@@ -260,11 +266,12 @@ export default function AdminProfilePage() {
         accountType: bankForm.accountType || agencySettings.accountType,
         upiId: bankForm.upiId?.trim() || agencySettings.upiId,
         upiNumber: bankForm.upiNumber?.trim() || agencySettings.upiNumber,
-        advancePercentage: Number(bankForm.advancePercentage ?? agencySettings.advancePercentage),
-        paymentTerms: bankForm.paymentTerms?.trim() || agencySettings.paymentTerms,
+        advancePercentage: advanceVal,
+        paymentTerms: terms,
       };
 
       const updated = await agencySettingsApi.update(payload);
+      clearClientCache();
       setAgencySettings(updated);
       setBankForm(updated);
       setIsEditingBank(false);
@@ -807,7 +814,7 @@ export default function AdminProfilePage() {
                   value={agencyForm.supportPhoneDisplay || ''}
                   onChange={(e) => setAgencyForm({ ...agencyForm, supportPhoneDisplay: e.target.value, supportPhone: e.target.value.replace(/\s+/g, '') })}
                   required
-                  placeholder="+91 99786 55529"
+                  placeholder="+91 88660 06640"
                   style={{ width: '100%', padding: '8px 12px', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '13px' }}
                 />
               </div>
@@ -1175,7 +1182,7 @@ export default function AdminProfilePage() {
                   value={bankForm.upiId || ''}
                   onChange={(e) => setBankForm({ ...bankForm, upiId: e.target.value })}
                   required
-                  placeholder="e.g. 9978655529@upi"
+                  placeholder="e.g. 8866006640@upi"
                   style={{ width: '100%', padding: '8px 12px', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '13px' }}
                 />
               </div>
@@ -1189,7 +1196,7 @@ export default function AdminProfilePage() {
                   value={bankForm.upiNumber || ''}
                   onChange={(e) => setBankForm({ ...bankForm, upiNumber: e.target.value })}
                   required
-                  placeholder="e.g. +91 99786 55529"
+                  placeholder="e.g. +91 88660 06640"
                   style={{ width: '100%', padding: '8px 12px', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '13px' }}
                 />
               </div>
@@ -1202,8 +1209,16 @@ export default function AdminProfilePage() {
                   type="number"
                   min="0"
                   max="100"
-                  value={bankForm.advancePercentage ?? 25}
-                  onChange={(e) => setBankForm({ ...bankForm, advancePercentage: Number(e.target.value) })}
+                  value={bankForm.advancePercentage ?? 35}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const bal = Math.max(0, 100 - val);
+                    setBankForm({
+                      ...bankForm,
+                      advancePercentage: val,
+                      paymentTerms: `${val}% Advance to Lock Allotments • Balance ${bal}% on Arrival / Prior to Hotel Check-in`,
+                    });
+                  }}
                   required
                   style={{ width: '100%', padding: '8px 12px', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '13px' }}
                 />
@@ -1218,7 +1233,7 @@ export default function AdminProfilePage() {
                   value={bankForm.paymentTerms || ''}
                   onChange={(e) => setBankForm({ ...bankForm, paymentTerms: e.target.value })}
                   required
-                  placeholder="25% Advance to Lock Allotments • Balance 75% on Arrival / Prior to Hotel Check-in"
+                  placeholder="35% Advance to Lock Allotments • Balance 65% on Arrival / Prior to Hotel Check-in"
                   style={{ width: '100%', padding: '8px 12px', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '13px', resize: 'vertical' }}
                 />
               </div>

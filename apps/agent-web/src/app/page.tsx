@@ -155,8 +155,8 @@ export default function AgentDeskDashboard() {
                 }}
               >
                 <ShieldCheck size={14} style={{ color: '#2dd4bf' }} />
-                <span style={{ color: '#94a3b8' }}>Max Allowed Discount:</span>
-                <strong style={{ color: '#2dd4bf' }}>{agentProfile.maxDiscountPercent ?? 5}%</strong>
+                <span style={{ color: '#94a3b8' }}>Pricing Model:</span>
+                <strong style={{ color: '#2dd4bf' }}>Wholesale Net B2B (Full Autonomy)</strong>
               </div>
 
               <div

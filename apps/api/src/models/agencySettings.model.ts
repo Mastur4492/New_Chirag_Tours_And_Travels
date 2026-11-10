@@ -7,6 +7,8 @@ export interface IAgencySettingsDocument extends Document {
   tagline: string;
   supportPhone: string;
   supportPhoneDisplay: string;
+  altPhone?: string;
+  altPhoneDisplay?: string;
   supportEmail: string;
   operatingHours: string;
   headOfficeAddress: string;
@@ -53,12 +55,22 @@ const AgencySettingsSchema = new Schema<IAgencySettingsDocument>(
     },
     supportPhone: {
       type: String,
-      default: '+919978655529',
+      default: '+918866006640',
       trim: true,
     },
     supportPhoneDisplay: {
       type: String,
-      default: '+91 99786 55529',
+      default: '+91 88660 06640',
+      trim: true,
+    },
+    altPhone: {
+      type: String,
+      default: '+917043046833',
+      trim: true,
+    },
+    altPhoneDisplay: {
+      type: String,
+      default: '+91 70430 46833',
       trim: true,
     },
     supportEmail: {
@@ -134,12 +146,12 @@ const AgencySettingsSchema = new Schema<IAgencySettingsDocument>(
     // UPI & Payment Terms
     upiId: {
       type: String,
-      default: '9978655529@upi',
+      default: '8866006640@upi',
       trim: true,
     },
     upiNumber: {
       type: String,
-      default: '+91 99786 55529',
+      default: '+91 88660 06640',
       trim: true,
     },
     advancePercentage: {
@@ -167,6 +179,8 @@ AgencySettingsSchema.methods.toDto = function (): AgencySettingsDto {
     tagline: this.tagline,
     supportPhone: this.supportPhone,
     supportPhoneDisplay: this.supportPhoneDisplay,
+    altPhone: this.altPhone,
+    altPhoneDisplay: this.altPhoneDisplay,
     supportEmail: this.supportEmail,
     operatingHours: this.operatingHours,
     headOfficeAddress: this.headOfficeAddress,

@@ -831,15 +831,15 @@ export default function CustomerFacingQuotationPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, color: '#334155' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '6px 10px', borderRadius: 8, border: '1px solid #CBD5E1' }}>
                   <span style={{ color: '#64748B', fontSize: '0.78rem' }}>UPI ID:</span>
-                  <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '0.94rem', color: '#047857' }}>{agencySettings?.upiId || '9978655529@upi'}</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '0.94rem', color: '#047857' }}>{agencySettings?.upiId || '8866006640@upi'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '6px 10px', borderRadius: 8, border: '1px solid #CBD5E1' }}>
                   <span style={{ color: '#64748B', fontSize: '0.78rem' }}>PhonePe / GPay:</span>
-                  <strong style={{ fontWeight: 900, color: '#0F172A' }}>{agencySettings?.upiNumber || '+91 99786 55529'}</strong>
+                  <strong style={{ fontWeight: 900, color: '#0F172A' }}>{agencySettings?.upiNumber || '+91 88660 06640'}</strong>
                 </div>
                 <div style={{ padding: '8px 10px', borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', marginTop: 4 }}>
                   <div style={{ fontWeight: 800, color: '#065F46', fontSize: '0.82rem' }}>
-                    {agencySettings?.advancePercentage ?? 25}% Advance Token Deposit:
+                    {agencySettings?.advancePercentage ?? 35}% Advance Token Deposit:
                   </div>
                   <div style={{ fontSize: '0.78rem', color: '#047857', marginTop: 2 }}>
                     Locks hotel inventory, room categories, and driver duty schedules immediately.

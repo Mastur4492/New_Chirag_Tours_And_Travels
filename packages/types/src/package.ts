@@ -29,6 +29,7 @@ export interface TourPackageDto {
   defaultMealPlan?: MealPlan;
   defaultVehicleCategory?: VehicleCategory;
   startingPrice?: number;
+  b2bStartingPrice?: number;
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
@@ -51,6 +52,7 @@ export interface CreateTourPackageInput {
   defaultMealPlan?: MealPlan;
   defaultVehicleCategory?: VehicleCategory;
   startingPrice?: number;
+  b2bStartingPrice?: number;
   isPublished?: boolean;
 }
 
@@ -71,5 +73,6 @@ export interface UpdateTourPackageInput {
   defaultMealPlan?: MealPlan;
   defaultVehicleCategory?: VehicleCategory;
   startingPrice?: number;
+  b2bStartingPrice?: number;
   isPublished?: boolean;
 }

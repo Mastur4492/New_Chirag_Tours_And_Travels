@@ -15,6 +15,8 @@ export interface RealtimeMessage {
   data?: any;
   scopeId?: string;
   timestamp?: string;
+  recipientUserId?: string;
+  recipientRole?: string;
 }
 
 export interface UseRealtimeSyncOptions {

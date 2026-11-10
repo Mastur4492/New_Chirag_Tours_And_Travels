@@ -40,7 +40,7 @@ import {
   QuotationVersionDto,
   MealPlan,
 } from '@chirag/types';
-import { quotationsApi, getAgentUser } from '@/lib/api';
+import { quotationsApi, getAgentUser, getApiBaseUrl, getPublicApiUrl } from '@/lib/api';
 import {
   QUOTATION_STATUS_CONFIG,
   MEAL_PLAN_LABELS,
@@ -112,7 +112,8 @@ export default function QuotationsPage() {
 
   // Agent policy info
   const agentUser = getAgentUser();
-  const maxDiscountPercent = agentUser?.agentProfile?.maxDiscountPercent ?? 5;
+  const isAutonomous = agentUser?.agentProfile?.pricingModel !== 'COMMISSION_BASED';
+  const maxDiscountPercent = agentUser?.agentProfile?.maxDiscountPercent ?? (isAutonomous ? 100 : 5);
 
   const loadQuotations = async (background = false) => {
     if (!background) setLoading(true);
@@ -1369,7 +1370,7 @@ export default function QuotationsPage() {
                     )}
                   </div>
                 </div>
-                {reviseDiscountType === 'PERCENT' && reviseDiscount > maxDiscountPercent && (
+                {!isAutonomous && reviseDiscountType === 'PERCENT' && reviseDiscount > maxDiscountPercent && (
                   <div style={{ padding: '8px 10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, color: '#b45309', fontSize: '0.78rem', marginTop: 10 }}>
                     ⚠️ <strong>Notice:</strong> Your discount of {reviseDiscount}% exceeds your contract cap of {maxDiscountPercent}%. This revision will be submitted as <strong>PENDING ADMIN APPROVAL</strong>.
                   </div>
@@ -1521,7 +1522,7 @@ export default function QuotationsPage() {
                     </a>
 
                     <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'}/quotations/public/${shareToken || shareQuote.shareableToken}/pdf`}
+                      href={`${getPublicApiUrl()}/quotations/public/${shareToken || shareQuote.shareableToken}/pdf`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-primary"

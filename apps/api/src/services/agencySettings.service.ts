@@ -16,8 +16,10 @@ export class AgencySettingsService {
         agencyName: 'New Chirag Tours & Travels',
         founderName: 'Faisal Bikanerwala',
         tagline: 'Ahmedabad Travel Desk • Customized Holidays & Tour Packages',
-        supportPhone: '+919978655529',
-        supportPhoneDisplay: '+91 99786 55529',
+        supportPhone: '+918866006640',
+        supportPhoneDisplay: '+91 88660 06640',
+        altPhone: '+917043046833',
+        altPhoneDisplay: '+91 70430 46833',
         supportEmail: 'newchiragtoursandtravels@gmail.com',
         operatingHours: 'Daily 10:00 AM – 8:30 PM',
         headOfficeAddress:
@@ -32,8 +34,8 @@ export class AgencySettingsService {
         ifscCode: 'HDFC0001842',
         branchName: 'Danilimda Branch, Ahmedabad',
         accountType: 'Current Account',
-        upiId: '9978655529@upi',
-        upiNumber: '+91 99786 55529',
+        upiId: '8866006640@upi',
+        upiNumber: '+91 88660 06640',
         advancePercentage: 25,
         paymentTerms: '25% Advance to Lock Allotments • Balance 75% on Arrival / Prior to Hotel Check-in',
       });

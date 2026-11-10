@@ -5,10 +5,12 @@ export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 export interface AgentProfile {
   agencyName?: string;
   city?: string;
-  maxDiscountPercent: number; // Default 5%
-  maxMarkupPercent: number; // Default 20%
-  canApproveFinalPrice: boolean; // Default false
+  maxDiscountPercent?: number; // Default 100% (autonomous)
+  maxMarkupPercent?: number; // Default 100%
+  canApproveFinalPrice?: boolean; // Default true
   commissionRatePercent?: number;
+  rateSheetTier?: 'STANDARD_B2B' | 'VIP_PARTNER' | 'DIRECT_NET' | string;
+  pricingModel?: 'B2B_NET_RATES' | 'WHOLESALE_NET' | string;
 }
 
 export interface UserDto {
@@ -41,10 +43,12 @@ export interface CreateAgentInput {
 }
 
 export interface UpdateAgentPermissionsInput {
-  maxDiscountPercent: number;
-  maxMarkupPercent: number;
-  canApproveFinalPrice: boolean;
+  maxDiscountPercent?: number;
+  maxMarkupPercent?: number;
+  canApproveFinalPrice?: boolean;
   commissionRatePercent?: number;
+  rateSheetTier?: string;
+  pricingModel?: string;
 }
 
 export interface UpdateAgentProfileInput {

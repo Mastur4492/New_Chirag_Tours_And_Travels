@@ -81,7 +81,7 @@ const BANK_DETAILS = {
   accountName: 'NEW CHIRAG TOURS AND TRAVELS',
   accountNumber: '50200084920194',
   ifsc: 'HDFC0001842',
-  upiId: '9978655529@upi',
+  upiId: '8866006640@upi',
 };
 
 const ALL_STATES: CustomerStateCircuit[] = [
@@ -294,6 +294,7 @@ export default function HomePage() {
   const [transportTariffs, setTransportTariffs] = useState<any[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
   const [dynamicBankDetails, setDynamicBankDetails] = useState(BANK_DETAILS);
+  const [advancePercentage, setAdvancePercentage] = useState<number>(35);
 
   // Step 1: Filter & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -305,6 +306,8 @@ export default function HomePage() {
   const [durationNights, setDurationNights] = useState<number>(5);
   const [adults, setAdults] = useState<number>(2);
   const [children, setChildren] = useState<number>(0);
+  const [roomsCount, setRoomsCount] = useState<number>(1);
+  const [extraBeds, setExtraBeds] = useState<number>(0);
   const [hotelTier, setHotelTier] = useState<string>('DELUXE');
   const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -318,7 +321,7 @@ export default function HomePage() {
     d.setDate(d.getDate() + 14);
     return formatDateForInput(d);
   });
-  const [mealPlan, setMealPlan] = useState<'MAP' | 'CP'>('MAP');
+  const [mealPlan, setMealPlan] = useState<'EP' | 'CP' | 'MAP' | 'AP'>('MAP');
 
   // Reactively calculate checkOutDate from checkInDate + durationNights
   const checkOutDate = useMemo(() => {
@@ -434,13 +437,16 @@ export default function HomePage() {
           .then((res) => res.json())
           .then((json) => {
             if (json.success && json.data) {
+              if (json.data.advancePercentage) {
+                setAdvancePercentage(Number(json.data.advancePercentage));
+              }
               setDynamicBankDetails({
                 bankName: json.data.bankName || 'HDFC Bank Ltd',
                 branch: json.data.branchName || 'Danilimda Branch, Ahmedabad',
                 accountName: json.data.accountHolderName || 'NEW CHIRAG TOURS AND TRAVELS',
                 accountNumber: json.data.accountNumber || '50200084920194',
                 ifsc: json.data.ifscCode || 'HDFC0001842',
-                upiId: json.data.upiId || '9978655529@upi',
+                upiId: json.data.upiId || '8866006640@upi',
               });
             }
           })
@@ -573,7 +579,9 @@ export default function HomePage() {
                 maxAdults: 3,
                 maxChildren: 2,
                 extraBedSupported: true,
-                allowedMealPlans: 'CP MAP',
+                maxExtraBeds: 1,
+                extraBedPricePerNight: 1200,
+                allowedMealPlans: 'EP CP MAP AP',
                 pricePerNight: h.starRating >= 5 ? 7500 : h.starRating === 3 ? 3500 : 4800,
               },
             ]
@@ -584,7 +592,9 @@ export default function HomePage() {
           maxAdults: rc.maxAdults || 3,
           maxChildren: rc.maxChildren || 2,
           extraBedSupported: rc.extraBedSupported !== false,
-          allowedMealPlans: rc.allowedMealPlans || 'CP MAP',
+          maxExtraBeds: rc.maxExtraBeds || 1,
+          extraBedPricePerNight: rc.extraBedPricePerNight ?? 1200,
+          allowedMealPlans: rc.allowedMealPlans || 'EP CP MAP AP',
           pricePerNight: rc.pricePerNight && rc.pricePerNight > 0
             ? rc.pricePerNight
             : (h.starRating >= 5 ? 7500 : h.starRating === 3 ? 3500 : 4800),
@@ -601,7 +611,9 @@ export default function HomePage() {
         maxAdults: 3,
         maxChildren: 2,
         extraBedSupported: true,
-        allowedMealPlans: 'CP MAP',
+        maxExtraBeds: 1,
+        extraBedPricePerNight: 1200,
+        allowedMealPlans: 'EP CP MAP AP',
         pricePerNight: idx === 0 ? h.startingPrice : Math.round(h.startingPrice * 1.35),
       })),
     }));
@@ -639,7 +651,9 @@ export default function HomePage() {
         maxAdults: 3,
         maxChildren: 2,
         extraBedSupported: true,
-        allowedMealPlans: 'CP MAP',
+        maxExtraBeds: 1,
+        extraBedPricePerNight: 1200,
+        allowedMealPlans: 'EP CP MAP AP',
         pricePerNight: defaultPrice,
       },
     ];
@@ -708,7 +722,7 @@ export default function HomePage() {
             perDayCost,
             bestFor,
             hasAC: veh.hasAC !== false,
-            registrationNumber: veh.registrationNumber,
+            registrationNumber: '',
             isFromAdmin: true,
           };
         });
@@ -809,9 +823,43 @@ export default function HomePage() {
     const next = adults + delta;
     if (next >= 1 && next <= 20) {
       setAdults(next);
+      // Auto-balance recommended rooms and extra beds
+      if (next <= 2) {
+        setRoomsCount(1);
+        setExtraBeds(0);
+      } else if (next === 3) {
+        setRoomsCount(1);
+        setExtraBeds(1);
+      } else if (next === 4) {
+        setRoomsCount(2);
+        setExtraBeds(0);
+      } else if (next === 5) {
+        setRoomsCount(2);
+        setExtraBeds(1);
+      } else {
+        setRoomsCount(Math.ceil(next / 2));
+        setExtraBeds(next % 2);
+      }
       if (next + children > 4 && vehicleTier === 'SEDAN') {
         setVehicleTier('SUV');
       }
+    }
+  };
+
+  const handleRoomsChange = (delta: number) => {
+    const next = roomsCount + delta;
+    if (next >= 1 && next <= 15) {
+      setRoomsCount(next);
+      if (extraBeds > next * 2) {
+        setExtraBeds(next * 2);
+      }
+    }
+  };
+
+  const handleExtraBedsChange = (delta: number) => {
+    const next = extraBeds + delta;
+    if (next >= 0 && next <= roomsCount * 2) {
+      setExtraBeds(next);
     }
   };
 
@@ -834,14 +882,24 @@ export default function HomePage() {
 
   const calculation = useMemo(() => {
     const days = durationNights + 1;
-    const roomsCount = Math.max(1, Math.ceil(adults / 2));
 
     // Room rate directly chosen by customer from Admin-configured Room Categories
     const baseHotelRate = selectedRoom?.pricePerNight ?? (selectedHotel?.starRating >= 5 ? 7500 : selectedHotel?.starRating === 3 ? 3500 : 4800);
-    const effectiveHotelRate = mealPlan === 'CP' ? Math.round(baseHotelRate * 0.9) : baseHotelRate;
-    const vehicleRatePerDay = selectedVehicle?.perDayCost ?? (VEHICLE_TIER_RATES[vehicleTier]?.perDayCost || 4000);
+    const effectiveHotelRate =
+      mealPlan === 'EP'
+        ? Math.round(baseHotelRate * 0.8)
+        : mealPlan === 'CP'
+        ? Math.round(baseHotelRate * 0.9)
+        : mealPlan === 'AP'
+        ? Math.round(baseHotelRate * 1.15)
+        : baseHotelRate;
 
-    const totalHotelCost = durationNights * roomsCount * effectiveHotelRate;
+    const extraBedRate = selectedRoom?.extraBedPricePerNight ?? 1200;
+    const totalRoomBaseCost = durationNights * roomsCount * effectiveHotelRate;
+    const totalExtraBedCost = durationNights * extraBeds * extraBedRate;
+    const totalHotelCost = totalRoomBaseCost + totalExtraBedCost;
+
+    const vehicleRatePerDay = selectedVehicle?.perDayCost ?? (VEHICLE_TIER_RATES[vehicleTier]?.perDayCost || 4000);
     const totalVehicleCost = days * vehicleRatePerDay;
     const subtotal = totalHotelCost + totalVehicleCost;
 
@@ -852,10 +910,15 @@ export default function HomePage() {
 
     const effectiveTravelers = adults + (children > 0 ? children * 0.5 : 0);
     const perPersonPrice = Math.round(finalTotal / (effectiveTravelers || 1));
-    const advancePayable = Math.round(finalTotal * 0.25);
+    const advanceRate = (advancePercentage || 35) / 100;
+    const advancePayable = Math.round(finalTotal * advanceRate);
 
     return {
       roomsCount,
+      extraBedsCount: extraBeds,
+      extraBedRate,
+      totalExtraBedCost,
+      totalRoomBaseCost,
       days,
       baseHotelRate,
       effectiveHotelRate,
@@ -867,8 +930,9 @@ export default function HomePage() {
       finalTotal,
       perPersonPrice,
       advancePayable,
+      advancePercentage: advancePercentage || 35,
     };
-  }, [durationNights, adults, children, selectedRoom, selectedHotel, selectedVehicle, vehicleTier, mealPlan]);
+  }, [durationNights, adults, children, roomsCount, extraBeds, selectedRoom, selectedHotel, selectedVehicle, vehicleTier, mealPlan, advancePercentage]);
 
   // Dynamically align package itinerary with user-selected duration (e.g. 7N = 8 Days)
   const effectiveItinerary = useMemo(() => {
@@ -977,15 +1041,26 @@ export default function HomePage() {
     // 1. Dynamic Hotel & Stay
     const hotelName = selectedHotel ? selectedHotel.name : `${activeStateObj?.shortName || 'Destination'} Handpicked Hotel`;
     const roomName = selectedRoom ? selectedRoom.name : 'Standard Deluxe Room';
+    const extraBedNote = calculation.extraBedsCount > 0 ? ` + ${calculation.extraBedsCount} Extra Bed(s)` : '';
     list.push(
-      `${durationNights} Nights Stay at ${hotelName} (${roomName}) for ${adults} Adults${children > 0 ? `, ${children} Children` : ''} (${calculation.roomsCount} Room${calculation.roomsCount > 1 ? 's' : ''})`
+      `${durationNights} Nights Stay at ${hotelName} (${roomName}) for ${adults} Adults${children > 0 ? `, ${children} Children` : ''} (${calculation.roomsCount} Room${calculation.roomsCount > 1 ? 's' : ''}${extraBedNote})`
     );
 
+    if (calculation.extraBedsCount > 0) {
+      list.push(
+        `Extra Bed: ${calculation.extraBedsCount} Rollaway Bed(s) / Mattress with fresh linen & pillows included (@ ₹${calculation.extraBedRate}/night)`
+      );
+    }
+
     // 2. Dynamic Meal Plan
-    if (mealPlan === 'MAP') {
+    if (mealPlan === 'AP') {
+      list.push('AP Meal Plan: Daily Buffet Breakfast, Lunch & Dinner Included');
+    } else if (mealPlan === 'MAP') {
       list.push('MAP Meal Plan: Daily Buffet Breakfast & Dinner Included');
-    } else {
+    } else if (mealPlan === 'CP') {
       list.push('CP Meal Plan: Daily Buffet Breakfast Included');
+    } else {
+      list.push('EP Meal Plan: European Plan (Room Only - No Meals Included)');
     }
 
     // 3. Dynamic Transport
@@ -1074,7 +1149,14 @@ export default function HomePage() {
     const hotelDesc = selectedHotel ? `${selectedHotel.name} (${selectedHotel.starRating}★)` : (HOTEL_TIER_RATES[hotelTier]?.label || 'Deluxe Hotel');
     const roomDesc = selectedRoom ? `${selectedRoom.name} @ ${formatINR(selectedRoom.pricePerNight)}/night` : 'Deluxe Room';
     const vehicle = selectedVehicle ? `${selectedVehicle.label} (${formatINR(selectedVehicle.perDayCost)}/day)` : (VEHICLE_TIER_RATES[vehicleTier]?.label || 'Private Cab');
-    const mealText = mealPlan === 'MAP' ? 'Daily Breakfast + Dinner Included (MAP)' : 'Daily Breakfast Included (CP)';
+    const mealText =
+      mealPlan === 'AP'
+        ? 'Daily Breakfast, Lunch & Dinner Included (AP)'
+        : mealPlan === 'MAP'
+        ? 'Daily Breakfast + Dinner Included (MAP)'
+        : mealPlan === 'CP'
+        ? 'Daily Breakfast Included (CP)'
+        : 'Room Only (EP)';
 
     return `*NEW CHIRAG TOURS & TRAVELS*
 _Official Customized Holiday Quotation_
@@ -1100,7 +1182,7 @@ _Official Customized Holiday Quotation_
 • Total Package: *${formatINR(calculation.finalTotal)}* (All-Inclusive)
 • Approx Per Person: *${formatINR(calculation.perPersonPrice)}* / person
 • 5% GST Included: ${formatINR(calculation.gstAmount)}
-• 25% Advance to Lock Allotment: *${formatINR(calculation.advancePayable)}*
+• ${advancePercentage || 35}% Advance to Lock Allotment: *${formatINR(calculation.advancePayable)}*
 ----------------------------------------
 ✓ 100% Rate & Room Allotment Guarantee
 ✓ Zero Hidden Costs • Verified Direct Operator
@@ -1111,7 +1193,7 @@ I customized this holiday quotation on your website for *${cleanDest}*.
 Please check the room allotment & cab availability and send the confirmed proposal!`;
   }, [activeStateObj, selectedStateName, durationNights, calculation, adults, children, selectedHotel, selectedRoom, selectedVehicle, hotelTier, vehicleTier, checkInDate, checkOutDate, mealPlan]);
 
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=919978655529&text=${encodeURIComponent(whatsappMessage)}`;
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=${COMPANY_BRANDING.phoneRaw}&text=${encodeURIComponent(whatsappMessage)}`;
 
   const handleSubmitEnquiry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1163,10 +1245,18 @@ Please check the room allotment & cab availability and send the confirmed propos
 Destination: ${formatDisplayTitle(selectedStateName)}
 Package Circuit: ${activePackage ? activePackage.title : 'Custom Independent Circuit'}
 Trip Dates: ${formatDateDisplay(checkInDate)} to ${formatDateDisplay(checkOutDate)} (${durationNights} Nights / ${calculation.days} Days)
-Travelers: ${adults} Adults, ${children} Children (${calculation.roomsCount} Rooms)
+Travelers: ${adults} Adults, ${children} Children (${calculation.roomsCount} Rooms${extraBeds > 0 ? ` + ${extraBeds} Extra Bed` : ''})
 Hotel: ${selectedHotel ? `${selectedHotel.name} (${selectedHotel.starRating}★, ${selectedHotel.city})` : (HOTEL_TIER_RATES[hotelTier]?.label || 'Deluxe Hotel')}
-Room Type: ${selectedRoom ? `${selectedRoom.name} (Admin Rate: ${formatINR(selectedRoom.pricePerNight)}/night)` : 'Deluxe Room'}
-Meal Plan: ${mealPlan === 'MAP' ? 'MAP (Daily Breakfast + Dinner)' : 'CP (Daily Breakfast Only)'}
+Room Type: ${selectedRoom ? `${selectedRoom.name} (Admin Rate: ${formatINR(selectedRoom.pricePerNight)}/night)` : 'Deluxe Room'}${extraBeds > 0 ? ` + ${extraBeds} Extra Bed (@ ${formatINR(calculation.extraBedRate)}/night)` : ''}
+Meal Plan: ${
+  mealPlan === 'AP'
+    ? 'AP (Daily Breakfast, Lunch & Dinner)'
+    : mealPlan === 'MAP'
+    ? 'MAP (Daily Breakfast + Dinner)'
+    : mealPlan === 'CP'
+    ? 'CP (Daily Breakfast Only)'
+    : 'EP (Room Only)'
+}
 Vehicle: ${selectedVehicle ? `${selectedVehicle.label} (Admin Fleet Rate: ${formatINR(selectedVehicle.perDayCost)}/day)` : (VEHICLE_TIER_RATES[vehicleTier]?.label || 'Dedicated Cab')}
 Estimated Total: ${formatINR(calculation.finalTotal)}`;
 
@@ -1248,6 +1338,11 @@ Estimated Total: ${formatINR(calculation.finalTotal)}`;
         dynamicCircuitExclusions={dynamicCircuitExclusions}
         adults={adults}
         children={children}
+        roomsCount={roomsCount}
+        handleRoomsChange={handleRoomsChange}
+        extraBeds={extraBeds}
+        handleExtraBedsChange={handleExtraBedsChange}
+        extraBedRate={calculation.extraBedRate}
         handleAdultsChange={handleAdultsChange}
         handleChildrenChange={handleChildrenChange}
         hotelStarFilter={hotelStarFilter}

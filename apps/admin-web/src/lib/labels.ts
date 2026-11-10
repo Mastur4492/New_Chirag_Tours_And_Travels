@@ -155,10 +155,15 @@ export const QUOTATION_STATUS_CONFIG: Record<
   },
 };
 
-export const MEAL_PLAN_CONFIG: Record<MealPlan, { short: string; label: string; desc: string }> = {
+export const MEAL_PLAN_CONFIG: Record<string, { short: string; label: string; desc: string }> = {
+  EP: {
+    short: 'EP',
+    label: 'European Plan (Room Only)',
+    desc: 'Room accommodation only, no meals included',
+  },
   RO: {
-    short: 'RO',
-    label: 'Room Only',
+    short: 'EP',
+    label: 'European Plan (Room Only)',
     desc: 'Room accommodation only, no meals included',
   },
   CP: {

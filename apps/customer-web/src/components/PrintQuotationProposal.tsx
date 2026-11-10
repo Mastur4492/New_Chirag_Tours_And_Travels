@@ -12,12 +12,16 @@ export interface PrintQuotationProposalProps {
     days: number;
     roomsCount: number;
     effectiveHotelRate: number;
+    extraBedsCount?: number;
+    extraBedRate?: number;
+    totalExtraBedCost?: number;
     totalHotelCost: number;
     totalVehicleCost: number;
     agencyMargin: number;
     gstAmount: number;
     finalTotal: number;
     advancePayable: number;
+    advancePercentage?: number;
   };
   adults: number;
   children: number;
@@ -94,7 +98,7 @@ export function PrintQuotationProposal({
               AHMEDABAD • VERIFIED TRAVEL DESK • EST. 1990
             </div>
             <div style={{ fontSize: '8pt', color: '#475569' }}>
-              Shop No 3, Al-Rehman Plaza, Danilimda Cross Road, Ahmedabad | +91 99786 55529
+              Shop No 3, Al-Rehman Plaza, Danilimda Cross Road, Ahmedabad | +91 88660 06640 / +91 70430 46833
             </div>
           </div>
         </div>
@@ -154,8 +158,13 @@ export function PrintQuotationProposal({
             <td style={{ padding: '8px 10px' }}>
               <div><strong>{selectedHotel?.name || 'Verified Partner Hotel'}</strong> ({selectedHotel?.starRating || 4}★ {selectedHotel?.city || ''})</div>
               <div style={{ fontSize: '8pt', color: '#64748B' }}>
-                Room: {selectedRoom?.name || 'Deluxe Room'} ({calculation.roomsCount} Room, {durationNights} Nights, {mealPlan} Plan @ {formatINR(calculation.effectiveHotelRate)}/room/night)
+                Room: {selectedRoom?.name || 'Deluxe Room'} ({calculation.roomsCount} Room{(calculation.roomsCount || 1) > 1 ? 's' : ''}{(calculation.extraBedsCount || 0) > 0 ? ` + ${calculation.extraBedsCount} Extra Bed(s)` : ''}, {durationNights} Nights, {mealPlan} Plan @ {formatINR(calculation.effectiveHotelRate)}/room/night)
               </div>
+              {(calculation.extraBedsCount || 0) > 0 && (
+                <div style={{ fontSize: '7.5pt', color: '#047857', marginTop: 2 }}>
+                  + {calculation.extraBedsCount} Extra Bed(s) @ {formatINR(calculation.extraBedRate || 1200)}/night = {formatINR((calculation.extraBedsCount || 0) * (calculation.extraBedRate || 1200) * durationNights)}
+                </div>
+              )}
             </td>
             <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatINR(calculation.totalHotelCost)}</td>
           </tr>
@@ -188,7 +197,7 @@ export function PrintQuotationProposal({
         <div style={{ fontSize: '8pt', color: '#334155', lineHeight: 1.5 }}>
           Bank: <strong>{bankDetails.bankName}</strong> | Branch: <strong>{bankDetails.branch}</strong> | Account: <strong>{bankDetails.accountNumber}</strong><br />
           IFSC: <strong>{bankDetails.ifsc}</strong> | Account Name: <strong>{bankDetails.accountName}</strong> | UPI: <strong>{bankDetails.upiId}</strong><br />
-          Advance payable to lock bookings: <strong>{formatINR(calculation.advancePayable)}</strong> (25%). Balance payable on hotel check-in.
+          Advance payable to lock bookings: <strong>{formatINR(calculation.advancePayable)}</strong> ({calculation.advancePercentage || 35}%). Balance payable on hotel check-in.
         </div>
       </div>
 

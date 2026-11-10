@@ -9,6 +9,7 @@ export interface IRoomCategoryDocument extends Document {
   maxChildren: number;
   extraBedSupported: boolean;
   maxExtraBeds: number;
+  extraBedPricePerNight?: number;
   allowedMealPlans: MealPlan[];
   pricePerNight?: number;
   totalRooms?: number;
@@ -70,6 +71,11 @@ const RoomCategorySchema = new Schema<IRoomCategoryDocument>(
       min: 0,
       default: 0,
     },
+    extraBedPricePerNight: {
+      type: Number,
+      min: 0,
+      default: 1200,
+    },
     totalRooms: {
       type: Number,
       min: 0,
@@ -101,6 +107,7 @@ RoomCategorySchema.methods.toDto = function (): RoomCategoryDto {
     maxExtraBeds: this.maxExtraBeds,
     allowedMealPlans: this.allowedMealPlans,
     pricePerNight: this.pricePerNight || 0,
+    extraBedPricePerNight: this.extraBedPricePerNight ?? 1200,
     totalRooms: this.totalRooms,
     isActive: this.isActive,
     createdAt: (this.createdAt instanceof Date ? this.createdAt : new Date()).toISOString(),

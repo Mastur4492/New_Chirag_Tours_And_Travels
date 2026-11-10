@@ -55,6 +55,11 @@ interface TripCustomizerProps {
   dynamicCircuitExclusions: string[];
   adults: number;
   children: number;
+  roomsCount: number;
+  handleRoomsChange: (delta: number) => void;
+  extraBeds: number;
+  handleExtraBedsChange: (delta: number) => void;
+  extraBedRate: number;
   handleAdultsChange: (delta: number) => void;
   handleChildrenChange: (delta: number) => void;
   hotelStarFilter: 'all' | 3 | 4 | 5;
@@ -66,8 +71,8 @@ interface TripCustomizerProps {
   handleSelectHotel: (hotelId: string) => void;
   setSelectedHotelId: (hotelId: string) => void;
   setSelectedRoomId: (roomId: string) => void;
-  mealPlan: 'MAP' | 'CP';
-  setMealPlan: (mp: 'MAP' | 'CP') => void;
+  mealPlan: 'EP' | 'CP' | 'MAP' | 'AP';
+  setMealPlan: (mp: 'EP' | 'CP' | 'MAP' | 'AP') => void;
   liveVehicles: any[];
   selectedVehicle: any;
   setSelectedVehicleId: (vehId: string) => void;
@@ -105,6 +110,11 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
   dynamicCircuitExclusions,
   adults,
   children,
+  roomsCount,
+  handleRoomsChange,
+  extraBeds,
+  handleExtraBedsChange,
+  extraBedRate,
   handleAdultsChange,
   handleChildrenChange,
   hotelStarFilter,
@@ -370,7 +380,7 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                       lineHeight: 1.4,
                     }}
                   >
-                    Itemized cost breakdown, official PDF download, and 25% advance allotment guarantee.
+                    Itemized cost breakdown, official PDF download, and 35% advance allotment guarantee.
                   </div>
                 </div>
               </div>
@@ -1303,8 +1313,8 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: 12,
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                    gap: 10,
                     marginBottom: 10,
                   }}
                 >
@@ -1445,6 +1455,160 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  <div
+                    style={{
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: 12,
+                      padding: '10px 14px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.78rem',
+                        color: '#64748B',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Hotel Rooms
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: 4,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '1.2rem',
+                          fontWeight: 900,
+                          color: '#0F172A',
+                        }}
+                      >
+                        {roomsCount}
+                      </span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleRoomsChange(-1)}
+                          disabled={roomsCount <= 1}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Minus size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRoomsChange(1)}
+                          disabled={roomsCount >= 15}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Plus size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: extraBeds > 0 ? '#ECFDF5' : '#F8FAFC',
+                      border: extraBeds > 0 ? '1.5px solid #10B981' : '1px solid #E2E8F0',
+                      borderRadius: 12,
+                      padding: '10px 14px',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.78rem',
+                        color: extraBeds > 0 ? '#047857' : '#64748B',
+                        fontWeight: 700,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span>Extra Bed(s)</span>
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          background: extraBeds > 0 ? '#059669' : '#E2E8F0',
+                          color: extraBeds > 0 ? '#FFFFFF' : '#475569',
+                          padding: '1px 5px',
+                          borderRadius: 4,
+                          fontWeight: 700,
+                        }}
+                      >
+                        ₹{extraBedRate}/nt
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: 4,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '1.2rem',
+                          fontWeight: 900,
+                          color: extraBeds > 0 ? '#047857' : '#0F172A',
+                        }}
+                      >
+                        {extraBeds}
+                      </span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleExtraBedsChange(-1)}
+                          disabled={extraBeds <= 0}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Minus size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleExtraBedsChange(1)}
+                          disabled={extraBeds >= roomsCount * 2}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Plus size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div
@@ -1462,7 +1626,7 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                 >
                   <Info size={15} color="#059669" />
                   <span>
-                    Auto-allotted <strong>{calculation.roomsCount} Double Room(s)</strong>. Kids under 5 stay complimentary in parent&apos;s bed.
+                    <strong>{roomsCount} Room(s){extraBeds > 0 ? ` + ${extraBeds} Extra Bed(s)` : ''}</strong> allotted for {adults} Adults{children > 0 ? ` & ${children} Children` : ''}. Extra mattress/bed is charged @ {formatINR(extraBedRate)}/night.
                   </span>
                 </div>
               </div>
@@ -2068,7 +2232,7 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                                             }}
                                           >
                                             Base {room.baseOccupancy || 2} Pax · Max {room.maxAdults} Adults
-                                            {room.extraBedSupported ? ' · Extra bed' : ''}
+                                            {room.extraBedSupported ? ` · Extra Bed: ₹${room.extraBedPricePerNight ?? 1200}/nt` : ''}
                                           </div>
                                         </div>
                                       </div>
@@ -2178,6 +2342,110 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                       );
                     })
                   )}
+                </div>
+
+                {/* Extra Bed Add-on Card */}
+                <div
+                  style={{
+                    marginTop: 12,
+                    background: extraBeds > 0 ? '#ECFDF5' : '#F8FAFC',
+                    border: extraBeds > 0 ? '1.5px solid #059669' : '1.5px solid #E2E8F0',
+                    borderRadius: 12,
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '1.1rem' }}>🛏️</span>
+                      <span style={{ fontWeight: 800, fontSize: '0.90rem', color: extraBeds > 0 ? '#065F46' : '#0F172A' }}>
+                        Extra Bed / Mattress
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          background: extraBeds > 0 ? '#059669' : '#E2E8F0',
+                          color: extraBeds > 0 ? '#FFFFFF' : '#475569',
+                          padding: '2px 8px',
+                          borderRadius: 9999,
+                          fontWeight: 700,
+                        }}
+                      >
+                        +{formatINR(extraBedRate)} / night
+                      </span>
+                      {extraBeds > 0 && (
+                        <span
+                          style={{
+                            fontSize: '0.70rem',
+                            color: '#059669',
+                            fontWeight: 700,
+                          }}
+                        >
+                          (Total: {formatINR(extraBeds * extraBedRate * durationNights)} for {durationNights} nights)
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748B', marginTop: 4 }}>
+                      Full rollaway bed or floor mattress with fresh bedsheets, duvet & pillows for third adult or child.
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleExtraBedsChange(-1)}
+                      disabled={extraBeds <= 0}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        border: '1px solid #CBD5E1',
+                        background: '#FFFFFF',
+                        cursor: extraBeds <= 0 ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: extraBeds <= 0 ? '#94A3B8' : '#0F172A',
+                      }}
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span
+                      style={{
+                        fontSize: '1.15rem',
+                        fontWeight: 900,
+                        color: extraBeds > 0 ? '#059669' : '#0F172A',
+                        minWidth: 24,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {extraBeds}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleExtraBedsChange(1)}
+                      disabled={extraBeds >= roomsCount * 2}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        border: '1px solid #CBD5E1',
+                        background: '#FFFFFF',
+                        cursor: extraBeds >= roomsCount * 2 ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: extraBeds >= roomsCount * 2 ? '#94A3B8' : '#0F172A',
+                      }}
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -2293,21 +2561,6 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                               >
                                 {veh.label}
                               </span>
-                              {veh.registrationNumber && (
-                                <code
-                                  style={{
-                                    fontSize: '0.68rem',
-                                    background: '#F1F5F9',
-                                    color: '#475569',
-                                    padding: '1px 6px',
-                                    borderRadius: 4,
-                                    fontWeight: 700,
-                                    border: '1px solid #CBD5E1',
-                                  }}
-                                >
-                                  {veh.registrationNumber}
-                                </code>
-                              )}
                               {isRecommended && (
                                 <span
                                   style={{
@@ -2381,6 +2634,25 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                     );
                   })}
                 </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginTop: 8,
+                    fontSize: '0.74rem',
+                    color: '#64748B',
+                    background: '#F8FAFC',
+                    padding: '7px 10px',
+                    borderRadius: 6,
+                    border: '1px solid #E2E8F0',
+                  }}
+                >
+                  <ShieldCheck size={14} color="#059669" style={{ flexShrink: 0 }} />
+                  <span>
+                    <strong>Vehicle & Chauffeur:</strong> Dedicated commercial cab guaranteed. Vehicle registration number and chauffeur details are allocated upon booking confirmation prior to departure.
+                  </span>
+                </div>
               </div>
 
               {/* Meal Plan Preference */}
@@ -2396,26 +2668,26 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                 >
                   Meal Plan Included:
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                   <button
                     type="button"
-                    onClick={() => setMealPlan('MAP')}
+                    onClick={() => setMealPlan('EP')}
                     style={{
-                      padding: '10px 14px',
+                      padding: '10px 12px',
                       borderRadius: 10,
                       border:
-                        mealPlan === 'MAP' ? '2px solid #059669' : '1px solid #E2E8F0',
-                      background: mealPlan === 'MAP' ? '#ECFDF5' : '#FFFFFF',
-                      color: mealPlan === 'MAP' ? '#047857' : '#475569',
+                        mealPlan === 'EP' ? '2px solid #059669' : '1px solid #E2E8F0',
+                      background: mealPlan === 'EP' ? '#ECFDF5' : '#FFFFFF',
+                      color: mealPlan === 'EP' ? '#047857' : '#475569',
                       fontWeight: 700,
                       fontSize: '0.84rem',
                       cursor: 'pointer',
                       textAlign: 'left',
                     }}
                   >
-                    <div>✓ MAP Plan (Recommended)</div>
+                    <div>{mealPlan === 'EP' ? '✓ ' : ''}EP Plan</div>
                     <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 2 }}>
-                      Daily Breakfast & Dinner
+                      Room Only (No Meals)
                     </div>
                   </button>
 
@@ -2423,7 +2695,7 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                     type="button"
                     onClick={() => setMealPlan('CP')}
                     style={{
-                      padding: '10px 14px',
+                      padding: '10px 12px',
                       borderRadius: 10,
                       border:
                         mealPlan === 'CP' ? '2px solid #059669' : '1px solid #E2E8F0',
@@ -2435,9 +2707,53 @@ export const TripCustomizer: React.FC<TripCustomizerProps> = ({
                       textAlign: 'left',
                     }}
                   >
-                    <div>CP Plan</div>
+                    <div>{mealPlan === 'CP' ? '✓ ' : ''}CP Plan</div>
                     <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 2 }}>
                       Daily Breakfast Only
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMealPlan('MAP')}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      border:
+                        mealPlan === 'MAP' ? '2px solid #059669' : '1px solid #E2E8F0',
+                      background: mealPlan === 'MAP' ? '#ECFDF5' : '#FFFFFF',
+                      color: mealPlan === 'MAP' ? '#047857' : '#475569',
+                      fontWeight: 700,
+                      fontSize: '0.84rem',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div>{mealPlan === 'MAP' ? '✓ ' : ''}MAP Plan (Recommended)</div>
+                    <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 2 }}>
+                      Daily Breakfast & Dinner
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMealPlan('AP')}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      border:
+                        mealPlan === 'AP' ? '2px solid #059669' : '1px solid #E2E8F0',
+                      background: mealPlan === 'AP' ? '#ECFDF5' : '#FFFFFF',
+                      color: mealPlan === 'AP' ? '#047857' : '#475569',
+                      fontWeight: 700,
+                      fontSize: '0.84rem',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div>{mealPlan === 'AP' ? '✓ ' : ''}AP Plan</div>
+                    <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 2 }}>
+                      Daily All Meals (Breakfast, Lunch & Dinner)
                     </div>
                   </button>
                 </div>
