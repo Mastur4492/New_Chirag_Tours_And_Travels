@@ -1,7 +1,7 @@
-# NEW CHIRAG TOURS & TRAVELS
+# NEW CHIRAG TOURS AND TRAVELS
 ## Production Architecture & System Design Document (Phase 0)
 
-**Project:** NEW CHIRAG TOURS & TRAVELS  
+**Project:** NEW CHIRAG TOURS AND TRAVELS  
 **Business Owner:** Faisal Bikanerwala  
 **Author:** Antigravity Engineering  
 **Version:** 1.0.0 (Production Architecture Baseline)  

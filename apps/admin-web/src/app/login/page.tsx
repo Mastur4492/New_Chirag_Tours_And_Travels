@@ -449,7 +449,7 @@ export default function LoginPage() {
         {/* Footer Info */}
         <div style={{ textAlign: 'center', fontSize: '12px', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <div>
-            New Chirag Tours & Travels • Managed by {COMPANY_BRANDING.owner}
+            New Chirag Tours and Travels • Managed by {COMPANY_BRANDING.owner}
           </div>
           <div style={{ color: '#64748b', fontSize: '11px' }}>
             {COMPANY_BRANDING.address}, {COMPANY_BRANDING.city}

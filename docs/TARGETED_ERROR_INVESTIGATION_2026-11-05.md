@@ -1,4 +1,4 @@
-# NEW CHIRAG TOURS & TRAVELS — TARGETED LIVE ERROR INVESTIGATION & DIAGNOSIS
+# NEW CHIRAG TOURS AND TRAVELS — TARGETED LIVE ERROR INVESTIGATION & DIAGNOSIS
 **Date of Investigation:** 5–6 November 2026  
 **Investigator Roles:** Principal Software Architect, Senior Full-Stack Engineer, Database Architect, QA Lead, Security Auditor  
 **Scope:** Live Error Reproduction, Root-Cause Diagnosis, Business Rule Verification, and Safe Remediation  
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary & Scope
 
-Following the comprehensive technical audit of the **New Chirag Tours & Travels** monorepo, this investigation targeted six specific areas of live runtime friction, business logic discrepancies, notification delivery, and database safety:
+Following the comprehensive technical audit of the **New Chirag Tours and Travels** monorepo, this investigation targeted six specific areas of live runtime friction, business logic discrepancies, notification delivery, and database safety:
 
 1. **Customer Proposal Viewing & Acceptance Flow:** End-to-end trace from customer link click to booking generation and admin alert.
 2. **Agent-Side Proposal Actions:** Verification against the core business rule: *The Agent creates and shares; the customer accepts; the Admin handles booking operations.*

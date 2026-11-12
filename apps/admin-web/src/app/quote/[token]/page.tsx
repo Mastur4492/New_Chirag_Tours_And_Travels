@@ -100,7 +100,7 @@ export default function CustomerQuotationPage() {
       setIsAcceptModalOpen(false);
       setFeedback({
         title: 'Quotation Accepted Successfully!',
-        message: 'Thank you for choosing New Chirag Tours & Travels. Your quotation acceptance has been recorded, and our team is preparing your booking reservation.',
+        message: 'Thank you for choosing New Chirag Tours and Travels. Your quotation acceptance has been recorded, and our team is preparing your booking reservation.',
         type: 'success',
       });
     } catch (err: any) {
@@ -160,7 +160,7 @@ export default function CustomerQuotationPage() {
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
         <div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4" />
         <h2 className="text-xl font-bold text-slate-800">Retrieving Your Travel Quotation...</h2>
-        <p className="text-sm text-slate-500 mt-1">Connecting to New Chirag Tours & Travels Secure Portal</p>
+        <p className="text-sm text-slate-500 mt-1">Connecting to New Chirag Tours and Travels Secure Portal</p>
       </div>
     );
   }
@@ -187,7 +187,7 @@ export default function CustomerQuotationPage() {
   const isExpired = quote.status === 'EXPIRED';
 
   const companyInfo = quote.companyInfo || {
-    name: 'New Chirag Tours & Travels',
+    name: 'New Chirag Tours and Travels',
     owner: 'Faisal Bikanerwala',
   };
 
@@ -576,7 +576,7 @@ export default function CustomerQuotationPage() {
                 </div>
                 <div className="text-left sm:text-right flex-shrink-0">
                   <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                    For New Chirag Tours & Travels
+                    For New Chirag Tours and Travels
                   </div>
                   <div className="text-base font-extrabold text-emerald-700 mt-1">
                     {COMPANY_BRANDING.owner}
@@ -645,7 +645,7 @@ export default function CustomerQuotationPage() {
 
                     <a
                       href={`https://wa.me/91${COMPANY_BRANDING.phoneRaw}?text=${encodeURIComponent(
-                        `Hi New Chirag Tours & Travels, I have reviewed quotation ${quote.quoteNumber} for ${sanitizeDisplayName(quote.destinationName) || 'Holiday Package'} (${quote.durationNights} Nights). Please assist with booking.`
+                        `Hi New Chirag Tours and Travels, I have reviewed quotation ${quote.quoteNumber} for ${sanitizeDisplayName(quote.destinationName) || 'Holiday Package'} (${quote.durationNights} Nights). Please assist with booking.`
                       )}`}
                       target="_blank"
                       rel="noreferrer"
@@ -671,7 +671,7 @@ export default function CustomerQuotationPage() {
                     </div>
                     <a
                       href={`https://wa.me/91${COMPANY_BRANDING.phoneRaw}?text=${encodeURIComponent(
-                        `Hi New Chirag Tours & Travels, I have accepted quotation ${quote.quoteNumber} for ${sanitizeDisplayName(quote.destinationName) || 'Holiday Package'}. Please share payment details and vouchers.`
+                        `Hi New Chirag Tours and Travels, I have accepted quotation ${quote.quoteNumber} for ${sanitizeDisplayName(quote.destinationName) || 'Holiday Package'}. Please share payment details and vouchers.`
                       )}`}
                       target="_blank"
                       rel="noreferrer"

@@ -1486,7 +1486,7 @@ export default function QuotationsPage() {
                   )}
                   <a
                     href={`https://wa.me/${shareQuote.customerMobile ? shareQuote.customerMobile.replace(/\D/g, '') : ''}?text=${encodeURIComponent(
-                      `Hello ${sanitizeDisplayName(shareQuote.customerName)},\n\nHere is your customized holiday proposal for ${shareQuote.destinationName || 'your upcoming trip'} from New Chirag Tours & Travels (${shareQuote.durationNights} Nights / ${shareQuote.durationDays} Days):\n\nProposal Link: ${urlInfo.url}\nTotal Package Price: ${formatCurrency(shareQuote.pricingSummary?.finalSellingPrice)}\nValid Until: ${formatDate(shareQuote.validUntil)}\n\nPlease review your day-wise itinerary, accommodations, and terms. You can accept directly or let us know if any adjustments are desired!\n\nWarm regards,\nNew Chirag Tours & Travels`
+                      `Hello ${sanitizeDisplayName(shareQuote.customerName)},\n\nHere is your customized holiday proposal for ${shareQuote.destinationName || 'your upcoming trip'} from New Chirag Tours and Travels (${shareQuote.durationNights} Nights / ${shareQuote.durationDays} Days):\n\nProposal Link: ${urlInfo.url}\nTotal Package Price: ${formatCurrency(shareQuote.pricingSummary?.finalSellingPrice)}\nValid Until: ${formatDate(shareQuote.validUntil)}\n\nPlease review your day-wise itinerary, accommodations, and terms. You can accept directly or let us know if any adjustments are desired!\n\nWarm regards,\nNew Chirag Tours and Travels`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"

@@ -70,7 +70,7 @@ export class WhatsAppService {
       `💰 *Total Package Cost:* ₹${payload.totalAmount.toLocaleString('en-IN')}\n\n` +
       `🔗 *View Your Interactive Proposal & PDF:* \n${quoteUrl}\n\n` +
       `Need custom changes or special arrangements? Reply directly to this message or call Faisal Bikanerwala at *+91 88660 06640 / +91 70430 46833*.\n` +
-      `_New Chirag Tours & Travels — Luxury Tailor-Made Holidays_`;
+      `_New Chirag Tours and Travels — Luxury Tailor-Made Holidays_`;
 
     return this.dispatchMessage(payload.customerMobile, message);
   }
@@ -81,7 +81,7 @@ export class WhatsAppService {
   async sendBookingConfirmation(payload: WhatsAppBookingPayload): Promise<{ success: boolean; messageId?: string }> {
     const balanceDue = Math.max(0, payload.totalAmount - payload.advancePaid);
     const message =
-      `🎉 *Booking Confirmed!* Welcome aboard *New Chirag Tours & Travels*.\n\n` +
+      `🎉 *Booking Confirmed!* Welcome aboard *New Chirag Tours and Travels*.\n\n` +
       `🎫 *Booking Reference:* ${payload.bookingNumber}\n` +
       `📍 *Destination:* ${payload.destinationName}\n` +
       `🗓️ *Travel Date:* ${payload.travelDate}\n` +
@@ -118,7 +118,7 @@ export class WhatsAppService {
       (payload.travelDate ? `🗓️ *Dates:* ${payload.travelDate}\n` : '') +
       (payload.specialRequirements ? `📝 *Requirements:* ${payload.specialRequirements}\n` : '') +
       `\n👉 Open Agent CRM to quote & connect with the traveler.\n` +
-      `_New Chirag Tours & Travels Internal Dispatch Desk_`;
+      `_New Chirag Tours and Travels Internal Dispatch Desk_`;
 
     return this.dispatchMessage(payload.agentMobile, message);
   }
@@ -161,7 +161,7 @@ export class WhatsAppService {
 
       if (upper === 'HI' || upper === 'HELLO' || upper === 'HEY' || upper === 'NAMASTE') {
         reply =
-          `Hello! Welcome to *New Chirag Tours & Travels*.\n\n` +
+          `Hello! Welcome to *New Chirag Tours and Travels*.\n\n` +
           `How can we assist you today?\n` +
           `1️⃣ Type *PACKAGES* to browse our top luxury circuits\n` +
           `2️⃣ Type *QUOTE <Reference>* to check your travel quote status\n` +
@@ -179,7 +179,7 @@ export class WhatsAppService {
           `Direct Desk: *+91 88660 06640 / +91 70430 46833*\nOffice: Danilimda, Ahmedabad, Gujarat.`;
       } else {
         reply =
-          `Thank you for contacting *New Chirag Tours & Travels*! We have logged your request: "${textBody}".\n` +
+          `Thank you for contacting *New Chirag Tours and Travels*! We have logged your request: "${textBody}".\n` +
           `A travel manager will connect with you shortly. Urgent assistance: *+91 88660 06640 / +91 70430 46833*.`;
       }
 

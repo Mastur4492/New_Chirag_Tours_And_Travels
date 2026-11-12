@@ -326,7 +326,7 @@ export function AgentLayout({ children }: AgentLayoutProps) {
 
             <div>
               <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary)' }}>
-                New Chirag Tours & Travels
+                New Chirag Tours and Travels
               </span>
               <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
                 Partner Agent Workspace

@@ -1,4 +1,4 @@
-# NEW CHIRAG TOURS & TRAVELS — PRODUCTION RELIABILITY MILESTONE REPORT
+# NEW CHIRAG TOURS AND TRAVELS — PRODUCTION RELIABILITY MILESTONE REPORT
 **Milestone Date:** 6 November 2026  
 **Author / Investigator:** Principal Software Architect & QA Lead  
 **Scope:** Database-Safe Integration Testing, Quotation Acceptance Reliability, and Role-Based Authorization Regression  
@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-This milestone report documents the implementation and rigorous empirical verification of three foundational reliability pillars across the **New Chirag Tours & Travels** monorepo:
+This milestone report documents the implementation and rigorous empirical verification of three foundational reliability pillars across the **New Chirag Tours and Travels** monorepo:
 
 1. **Database-Safe Integration Testing:** Strict isolation of all live integration test suites from the local development database (`chirag_travels`), elimination of Mongoose connection race conditions via deterministic Vitest sequential execution (`fileParallelism: false`), and runtime connection interceptors.
 2. **Customer Quotation Acceptance Reliability:** End-to-end verification and hardening of public proposal acceptance, atomic booking generation (`NCT-BK-YYYY-XXXXX`), idempotent replay deduplication, crash recovery, and side-effect reconciliation.

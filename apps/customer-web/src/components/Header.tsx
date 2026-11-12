@@ -59,7 +59,7 @@ export function Header() {
             <a
               href={`tel:${COMPANY_BRANDING.phoneRaw}`}
               className="btn-header-call"
-              title="Direct Call to New Chirag Tours & Travels"
+              title="Direct Call to New Chirag Tours and Travels"
             >
               <Phone size={14} color="#34D399" />
               <span className="btn-call-text">{COMPANY_BRANDING.phoneDisplay}</span>

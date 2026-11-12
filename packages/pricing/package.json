@@ -2,7 +2,7 @@
   "name": "@chirag/pricing",
   "version": "1.0.0",
   "private": true,
-  "description": "Deterministic pricing and quotation calculation engine for New Chirag Tours & Travels",
+  "description": "Deterministic pricing and quotation calculation engine for New Chirag Tours and Travels",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {

@@ -2,7 +2,7 @@
   "name": "new-chirag-tours-and-travels",
   "version": "1.0.0",
   "private": true,
-  "description": "Production-grade travel management platform for New Chirag Tours & Travels (Owner: Faisal Bikanerwala)",
+  "description": "Production-grade travel management platform for New Chirag Tours and Travels (Owner: Faisal Bikanerwala)",
   "workspaces": [
     "apps/*",
     "packages/*"

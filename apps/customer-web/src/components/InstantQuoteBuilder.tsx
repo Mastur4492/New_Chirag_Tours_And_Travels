@@ -329,7 +329,7 @@ export function InstantQuoteBuilder() {
     const hotel = HOTEL_TIER_RATES[hotelTier]?.label;
     const vehicle = VEHICLE_TIER_RATES[vehicleTier]?.label;
 
-    return `*NEW CHIRAG TOURS & TRAVELS*
+    return `*NEW CHIRAG TOURS AND TRAVELS*
 _Custom Tour Quotation & Estimate_
 ----------------------------------------
 
@@ -1486,7 +1486,7 @@ Tentative Month: ${travelMonth}`;
               Frequently Asked Questions & Peace-of-Mind
             </h3>
             <p style={{ color: '#64748B', fontSize: '0.94rem', margin: 0 }}>
-              Everything you need to know about booking with New Chirag Tours & Travels
+              Everything you need to know about booking with New Chirag Tours and Travels
             </p>
           </div>
 

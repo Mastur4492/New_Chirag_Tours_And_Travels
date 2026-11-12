@@ -89,11 +89,11 @@ export function PrintQuotationProposal({
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <img
             src="/branding/nc-logo.jpg"
-            alt="New Chirag Tours & Travels"
+            alt="New Chirag Tours and Travels"
             style={{ width: 85, height: 'auto', maxHeight: 60, objectFit: 'contain' }}
           />
           <div>
-            <div style={{ fontSize: '20pt', fontWeight: 900, color: '#062317' }}>New Chirag Tours & Travels</div>
+            <div style={{ fontSize: '20pt', fontWeight: 900, color: '#062317' }}>New Chirag Tours and Travels</div>
             <div style={{ fontSize: '9pt', color: '#059669', fontWeight: 700, letterSpacing: '0.06em' }}>
               AHMEDABAD • VERIFIED TRAVEL DESK • EST. 1990
             </div>
@@ -210,7 +210,7 @@ export function PrintQuotationProposal({
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '10pt', fontWeight: 900, color: '#062317' }}>Faisal Bikanerwala</div>
           <div style={{ fontSize: '8pt', color: '#059669', fontWeight: 700 }}>Managing Director & Founder</div>
-          <div style={{ fontSize: '8pt', color: '#64748B' }}>New Chirag Tours & Travels, Ahmedabad</div>
+          <div style={{ fontSize: '8pt', color: '#64748B' }}>New Chirag Tours and Travels, Ahmedabad</div>
         </div>
       </div>
     </div>

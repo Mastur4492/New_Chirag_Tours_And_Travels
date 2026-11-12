@@ -23,7 +23,7 @@ class EmailService {
 
   constructor() {
     this.adminEmail = process.env.COMPANY_EMAIL || 'newchiragtoursandtravels@gmail.com';
-    this.companyName = process.env.COMPANY_NAME || 'New Chirag Tours & Travels';
+    this.companyName = process.env.COMPANY_NAME || 'New Chirag Tours and Travels';
     this.adminWebUrl = process.env.ADMIN_WEB_URL || 'http://localhost:3001';
 
     // Configure SMTP if provided in environment

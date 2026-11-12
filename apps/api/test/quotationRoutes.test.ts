@@ -294,7 +294,7 @@ describe('Phase 3: Quotation HTTP Endpoints & Route Security', () => {
         numberOfChildren: 0,
         validUntil: '2026-11-15T00:00:00.000Z',
         companyInfo: {
-          name: 'New Chirag Tours & Travels',
+          name: 'New Chirag Tours and Travels',
           owner: 'Faisal Bikanerwala',
         },
         inclusions: ['Hotel stay', 'Daily breakfast'],

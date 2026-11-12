@@ -19,14 +19,30 @@ export interface CompanyBrandingConfig {
  * Uses official owner-supplied assets and credentials.
  * Unconfirmed commercial details remain unconfigured until authorized.
  */
+/**
+ * Upgrades legacy ampersand agency names while preserving intentional casing.
+ */
+export function normalizeCompanyBrandName(rawName?: string | null): string {
+  const trimmed = rawName?.trim() || 'New Chirag Tours and Travels';
+  if (trimmed === 'NEW CHIRAG TOURS & TRAVELS') {
+    return 'NEW CHIRAG TOURS AND TRAVELS';
+  }
+  if (trimmed.toLowerCase() === 'new chirag tours & travels') {
+    return 'New Chirag Tours and Travels';
+  }
+  return trimmed;
+}
+
 export function getCompanyBrandingConfig(): CompanyBrandingConfig {
   const phone = process.env.COMPANY_PHONE?.trim();
   const email = process.env.COMPANY_EMAIL?.trim() || 'newchiragtoursandtravels@gmail.com';
   const address = process.env.COMPANY_ADDRESS?.trim();
   const gstin = process.env.COMPANY_GSTIN?.trim();
 
+  const name = normalizeCompanyBrandName(process.env.COMPANY_NAME);
+
   return {
-    name: process.env.COMPANY_NAME?.trim() || 'New Chirag Tours & Travels',
+    name,
     owner: process.env.COMPANY_OWNER?.trim() || 'Faisal Bikanerwala',
     phone: phone && phone.length > 0 ? phone : undefined,
     email: email && email.length > 0 ? email : undefined,

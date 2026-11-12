@@ -174,7 +174,7 @@ export default function DedicatedEnquiryPage() {
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
                   <a
                     href={`https://wa.me/${COMPANY_BRANDING.phoneRaw}?text=${encodeURIComponent(
-                      `Hello New Chirag Tours & Travels, I have submitted holiday enquiry ${successData.leadNumber} for ${successData.destinationName}.`
+                      `Hello New Chirag Tours and Travels, I have submitted holiday enquiry ${successData.leadNumber} for ${successData.destinationName}.`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"

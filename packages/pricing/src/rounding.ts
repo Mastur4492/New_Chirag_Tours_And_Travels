@@ -49,7 +49,7 @@ export function roundBankers(amount: number, decimals: number = 2): number {
 }
 
 /**
- * Canonical currency rounding function for New Chirag Tours & Travels.
+ * Canonical currency rounding function for New Chirag Tours and Travels.
  * Explicitly defined as Standard Commercial Half-Up Rounding to 2 decimal places.
  */
 export const roundCurrency = (amount: number): number => roundHalfUp(amount, 2);

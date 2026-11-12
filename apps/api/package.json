@@ -2,7 +2,7 @@
   "name": "@chirag/api",
   "version": "1.0.0",
   "private": true,
-  "description": "Central Express + TypeScript REST API for New Chirag Tours & Travels",
+  "description": "Central Express + TypeScript REST API for New Chirag Tours and Travels",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

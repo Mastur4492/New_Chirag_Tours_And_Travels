@@ -1,4 +1,5 @@
 import { AgencySettingsDto } from '@chirag/types';
+import { normalizeCompanyBrandName } from '../config/company.config';
 import { AgencySettingsModel } from '../models/agencySettings.model';
 import { logger } from '../utils/logger';
 import { realtimeService } from './realtime.service';
@@ -13,7 +14,7 @@ export class AgencySettingsService {
     if (!settings) {
       logger.info('AgencySettings document not found; seeding default agency & banking profile.');
       settings = await AgencySettingsModel.create({
-        agencyName: 'New Chirag Tours & Travels',
+        agencyName: 'New Chirag Tours and Travels',
         founderName: 'Faisal Bikanerwala',
         tagline: 'Ahmedabad Travel Desk • Customized Holidays & Tour Packages',
         supportPhone: '+918866006640',
@@ -39,6 +40,13 @@ export class AgencySettingsService {
         advancePercentage: 25,
         paymentTerms: '25% Advance to Lock Allotments • Balance 75% on Arrival / Prior to Hotel Check-in',
       });
+    }
+    const normalizedName = normalizeCompanyBrandName(settings.agencyName);
+    if (normalizedName !== settings.agencyName) {
+      settings.agencyName = normalizedName;
+      if (typeof settings.save === 'function') {
+        await settings.save().catch(() => {});
+      }
     }
     const updatedDto = settings.toDto();
     realtimeService.broadcast({
@@ -91,6 +99,8 @@ export class AgencySettingsService {
         (settings as any)[field] = data[field];
       }
     }
+
+    settings.agencyName = normalizeCompanyBrandName(settings.agencyName);
 
     await settings.save();
     logger.info('Agency & Banking settings successfully updated.', {

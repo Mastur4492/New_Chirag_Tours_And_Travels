@@ -1,8 +1,8 @@
 <div align="center">
 
-![New Chirag Tours & Travels](docs/assets/hero-banner.png)
+![New Chirag Tours and Travels](docs/assets/hero-banner.png)
 
-# NEW CHIRAG TOURS & TRAVELS
+# NEW CHIRAG TOURS AND TRAVELS
 ### Enterprise Multi-Portal Tour Operations, Quotation Lifecycle & Financial Ledger Platform
 
 [![Turborepo](https://img.shields.io/badge/Turborepo-Monorepo-ef4444?style=for-the-badge&logo=turborepo&logoColor=white)](https://turbo.build/)
@@ -44,7 +44,7 @@
 
 ## 1. Executive Overview & Vision
 
-**New Chirag Tours & Travels** is a purpose-built, full-lifecycle digital operating system designed specifically for Indian domestic circuits (Kashmir, Himachal, Rajasthan, Kerala, Goa, Andaman) and outbound operations.
+**New Chirag Tours and Travels** is a purpose-built, full-lifecycle digital operating system designed specifically for Indian domestic circuits (Kashmir, Himachal, Rajasthan, Kerala, Goa, Andaman) and outbound operations.
 
 ### Traditional Agency Pain Points vs Our Platform Solution:
 * ❌ **Scattered WhatsApp Chats:** Lead requirements get lost across personal phones.  
@@ -335,7 +335,7 @@ npm run build
 
 <div align="center">
 
-### New Chirag Tours & Travels Platform
+### New Chirag Tours and Travels Platform
 **Officially Licensed & Maintained by Faisal Bikanerwala**  
 *Shop No 3, Al-Rehman Plaza, nr. Nagori Complex, opp. Alishan Complex, Shakti Society, Danilimda, Ahmedabad, Gujarat 382405*  
 **Official Agency Line:** +91 88660 06640 / +91 70430 46833 • **Email:** newchiragtoursandtravels@gmail.com

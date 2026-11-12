@@ -130,7 +130,7 @@ function QuotationBuilderContent() {
     'Airfare / Train tickets to/from destination\nPersonal expenses, tips, and laundry\nEntry tickets to monuments, gardens, or Gondola rides\nTravel insurance'
   );
   const [termsText, setTermsText] = useState<string>(
-    '50% advance payment required upon proposal acceptance to block hotel and transport inventory.\nBalance 50% payable 7 days prior to travel date.\nSubject to standard cancellation policy of New Chirag Tours & Travels.'
+    '50% advance payment required upon proposal acceptance to block hotel and transport inventory.\nBalance 50% payable 7 days prior to travel date.\nSubject to standard cancellation policy of New Chirag Tours and Travels.'
   );
   const [agentNotes, setAgentNotes] = useState<string>('');
 

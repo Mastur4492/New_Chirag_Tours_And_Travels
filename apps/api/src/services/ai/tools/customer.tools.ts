@@ -17,7 +17,7 @@ const SearchDestinationsSchema = z.object({
 
 export const searchDestinationsTool: AiToolDefinition<z.infer<typeof SearchDestinationsSchema>> = {
   name: 'searchDestinations',
-  description: 'Search available holiday destinations, recommended nights, and top attractions at New Chirag Tours & Travels.',
+  description: 'Search available holiday destinations, recommended nights, and top attractions at New Chirag Tours and Travels.',
   schema: SearchDestinationsSchema,
   parametersJsonSchema: {
     type: 'object',
@@ -137,7 +137,7 @@ const CalculateTripPriceSchema = z.object({
 
 export const calculateTripPriceTool: AiToolDefinition<z.infer<typeof CalculateTripPriceSchema>> = {
   name: 'calculateTripPrice',
-  description: 'Calculate an accurate, all-inclusive tour quotation strictly synchronized with the New Chirag Tours & Travels Customer Portal pricing customizer.',
+  description: 'Calculate an accurate, all-inclusive tour quotation strictly synchronized with the New Chirag Tours and Travels Customer Portal pricing customizer.',
   schema: CalculateTripPriceSchema,
   parametersJsonSchema: {
     type: 'object',
@@ -362,7 +362,7 @@ const SubmitTripEnquirySchema = z.object({
 
 export const submitTripEnquiryTool: AiToolDefinition<z.infer<typeof SubmitTripEnquirySchema>> = {
   name: 'submitTripEnquiry',
-  description: 'Create an official trip enquiry for New Chirag Tours & Travels travel desk. A consultant will follow up on WhatsApp or phone.',
+  description: 'Create an official trip enquiry for New Chirag Tours and Travels travel desk. A consultant will follow up on WhatsApp or phone.',
   schema: SubmitTripEnquirySchema,
   parametersJsonSchema: {
     type: 'object',
@@ -408,7 +408,7 @@ export const submitTripEnquiryTool: AiToolDefinition<z.infer<typeof SubmitTripEn
       leadNumber: result.leadNumber,
       customerName: result.customerName,
       destinationName: result.destinationName,
-      message: `Enquiry #${result.leadNumber} successfully registered! Faisal Bikanerwala or a dedicated senior consultant from New Chirag Tours & Travels will connect on ${args.mobile} within 15-30 minutes.`,
+      message: `Enquiry #${result.leadNumber} successfully registered! Faisal Bikanerwala or a dedicated senior consultant from New Chirag Tours and Travels will connect on ${args.mobile} within 15-30 minutes.`,
     };
   },
 };

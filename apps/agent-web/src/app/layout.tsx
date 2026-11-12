@@ -9,8 +9,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'New Chirag Tours & Travels — Agent Travel Desk',
-  description: 'Official Travel Agent & Quotation Workspace — New Chirag Tours & Travels (Owner: Faisal Bikanerwala)',
+  title: 'New Chirag Tours and Travels — Agent Travel Desk',
+  description: 'Official Travel Agent & Quotation Workspace — New Chirag Tours and Travels (Owner: Faisal Bikanerwala)',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

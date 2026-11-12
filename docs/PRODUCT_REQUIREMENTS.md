@@ -1,7 +1,7 @@
-# NEW CHIRAG TOURS & TRAVELS
+# NEW CHIRAG TOURS AND TRAVELS
 ## Product Requirements Document (PRD) — Master Specification
 
-**Product Name:** NEW CHIRAG TOURS & TRAVELS  
+**Product Name:** NEW CHIRAG TOURS AND TRAVELS  
 **Business Owner:** Faisal Bikanerwala  
 **Document Version:** 1.0.0 (Phase 0 Baseline)  
 **Status:** Approved Architectural Foundation  
@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary & Vision
 
-**New Chirag Tours & Travels** is a next-generation, production-grade travel business platform designed and operated for Faisal Bikanerwala. It unifies the entire lifecycle of domestic (and future international) holiday package operations into an integrated system:
+**New Chirag Tours and Travels** is a next-generation, production-grade travel business platform designed and operated for Faisal Bikanerwala. It unifies the entire lifecycle of domestic (and future international) holiday package operations into an integrated system:
 $$\text{Travel Sales} + \text{Quotation Engine} + \text{Booking Management} + \text{CRM} + \text{Operations} + \text{Profit Governance}$$
 
 ### 1.1 The Core Business Problem
@@ -105,7 +105,7 @@ Pre-configured ready-to-sell itineraries:
 
 ## 5. Dynamic Seasonal Pricing Engine Requirements
 
-The seasonal pricing engine is a core requirement of New Chirag Tours & Travels. Peak seasons (Christmas/New Year in Goa, Tulip Festival in Kashmir, Diwali in Rajasthan) carry radically different supplier costs and retail markups.
+The seasonal pricing engine is a core requirement of New Chirag Tours and Travels. Peak seasons (Christmas/New Year in Goa, Tulip Festival in Kashmir, Diwali in Rajasthan) carry radically different supplier costs and retail markups.
 
 ### 5.1 Season Configuration
 - **Season Tiers:**

@@ -712,13 +712,13 @@ export class QuotationService {
     if (!quotation) {
       const superseded = await quotationRepository.findBySupersededTokenHash(tokenHash);
       if (superseded) {
-        throw AppError.badRequest('This quotation proposal has been updated with a newer version. Please contact New Chirag Tours & Travels for the latest proposal link.');
+        throw AppError.badRequest('This quotation proposal has been updated with a newer version. Please contact New Chirag Tours and Travels for the latest proposal link.');
       }
       throw AppError.notFound('Quotation link is invalid or has expired');
     }
 
     if (new Date() > new Date(quotation.validUntil)) {
-      throw AppError.badRequest('This quotation has expired. Please contact New Chirag Tours & Travels for an updated quote');
+      throw AppError.badRequest('This quotation has expired. Please contact New Chirag Tours and Travels for an updated quote');
     }
 
     return quotation.toPublicDto();

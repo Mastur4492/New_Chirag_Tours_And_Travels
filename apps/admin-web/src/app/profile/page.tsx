@@ -55,7 +55,7 @@ export default function AdminProfilePage() {
 
   // Agency Branding & Bank Settings State
   const [agencySettings, setAgencySettings] = useState<AgencySettingsDto>({
-    agencyName: 'New Chirag Tours & Travels',
+    agencyName: 'New Chirag Tours and Travels',
     founderName: 'Faisal Bikanerwala',
     tagline: 'Ahmedabad Travel Desk • Customized Holidays & Tour Packages',
     supportPhone: '+918866006640',

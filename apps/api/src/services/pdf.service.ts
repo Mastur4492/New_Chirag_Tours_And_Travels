@@ -397,7 +397,7 @@ export class PdfService {
     <table class="header-table">
       <tr>
         <td>
-          <div class="brand-title">${settings?.agencyName || 'New Chirag Tours & Travels'}</div>
+          <div class="brand-title">${settings?.agencyName || 'New Chirag Tours and Travels'}</div>
           <div class="brand-subtitle">${settings?.tagline || 'Luxury Tailor-Made Holidays & Expeditions'}</div>
         </td>
         <td class="company-meta">
@@ -472,10 +472,10 @@ export class PdfService {
 
     <!-- Footer -->
     <div class="footer-note">
-      This is an official computer-generated quotation proposal issued by ${settings?.agencyName || 'New Chirag Tours & Travels'}.<br>
+      This is an official computer-generated quotation proposal issued by ${settings?.agencyName || 'New Chirag Tours and Travels'}.<br>
       Rates are subject to room & vehicle availability at the time of final confirmation and advance token deposit.<br>
       Registered Office: ${settings?.headOfficeAddress || 'Shop No 3, Al-Rehman Plaza, nr. Nagori Complex, Danilimda, Ahmedabad, Gujarat 382405'}<br>
-      © ${new Date().getFullYear()} ${settings?.agencyName || 'New Chirag Tours & Travels'}. All rights reserved.
+      © ${new Date().getFullYear()} ${settings?.agencyName || 'New Chirag Tours and Travels'}. All rights reserved.
     </div>
   </div>
 

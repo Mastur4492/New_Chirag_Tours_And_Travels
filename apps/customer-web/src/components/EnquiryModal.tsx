@@ -170,7 +170,7 @@ export function EnquiryModal({
               {packageName ? `Enquire for ${packageName}` : destinationName ? `Plan Your ${destinationName} Holiday` : 'Custom Holiday Enquiry'}
             </h3>
             <p style={{ fontSize: '0.82rem', color: '#D1E2DA', margin: '6px 0 0 0' }}>
-              Direct travel desk of New Chirag Tours & Travels · Managed by {COMPANY_BRANDING.owner}
+              Direct travel desk of New Chirag Tours and Travels · Managed by {COMPANY_BRANDING.owner}
             </p>
           </div>
           <button
@@ -246,7 +246,7 @@ export function EnquiryModal({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 360, margin: '0 auto' }}>
                 <a
                   href={`https://wa.me/${COMPANY_BRANDING.phoneRaw}?text=${encodeURIComponent(
-                    `Hello New Chirag Tours & Travels desk, I have submitted an online holiday enquiry for ${successData.destinationName} with Reference ${successData.leadNumber}.`
+                    `Hello New Chirag Tours and Travels desk, I have submitted an online holiday enquiry for ${successData.destinationName} with Reference ${successData.leadNumber}.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

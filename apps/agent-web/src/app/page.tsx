@@ -76,7 +76,7 @@ export default function AgentDeskDashboard() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
               <div style={{ width: 50, height: 50, borderRadius: 12, background: '#ffffff', padding: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.35)', flexShrink: 0 }}>
-                <img src="/branding/nc-logo.jpg" alt="New Chirag Tours & Travels" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <img src="/branding/nc-logo.jpg" alt="New Chirag Tours and Travels" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
@@ -100,7 +100,7 @@ export default function AgentDeskDashboard() {
                     {agentProfile.city ? `${agentProfile.city} Station` : 'Central Agency Desk'}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.82rem', color: '#cbd5e1', fontWeight: 600 }}>New Chirag Tours & Travels • Ahmedabad</div>
+                <div style={{ fontSize: '0.82rem', color: '#cbd5e1', fontWeight: 600 }}>New Chirag Tours and Travels • Ahmedabad</div>
               </div>
             </div>
 

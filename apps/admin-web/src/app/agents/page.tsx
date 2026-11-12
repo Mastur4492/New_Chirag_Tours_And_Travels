@@ -458,7 +458,7 @@ export default function AgentsPage() {
       ? 'Your B2B Travel Agent account password has been reset by administration.'
       : 'Your authorized B2B Travel Agent account has been activated!';
 
-    return `*New Chirag Tours & Travels — B2B Partner Portal Notification* ✈️
+    return `*New Chirag Tours and Travels — B2B Partner Portal Notification* ✈️
 ━━━━━━━━━━━━━━━━━━━━
 Hello *${info.name}* ji (${info.agencyName || 'Partner'}),
 

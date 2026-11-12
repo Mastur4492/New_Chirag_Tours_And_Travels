@@ -379,7 +379,7 @@ export default function PackageDetailPage() {
 
                 <a
                   href={`https://wa.me/${COMPANY_BRANDING.phoneRaw}?text=${encodeURIComponent(
-                    `Hello New Chirag Tours & Travels, I am interested in "${pkg.title}" (${pkg.durationNights}N/${pkg.durationDays}D). Please share quotation details.`
+                    `Hello New Chirag Tours and Travels, I am interested in "${pkg.title}" (${pkg.durationNights}N/${pkg.durationDays}D). Please share quotation details.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

@@ -14,7 +14,7 @@ import {
 } from '@chirag/types';
 
 /**
- * NEW CHIRAG TOURS & TRAVELS — CENTRALIZED BUSINESS LABELS & HELPERS
+ * NEW CHIRAG TOURS AND TRAVELS — CENTRALIZED BUSINESS LABELS & HELPERS
  * 
  * Replaces technical enums and codes with human-readable labels for non-technical agency staff.
  */

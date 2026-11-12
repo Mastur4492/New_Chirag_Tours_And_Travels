@@ -112,7 +112,7 @@ export default function CustomerFacingQuotationPage() {
       setIsEditTravelerOpen(false);
       setFeedback({
         title: 'Traveler Details Updated Successfully!',
-        message: 'Your updated name, contact number, and address have been synced with New Chirag Tours & Travels operations desk.',
+        message: 'Your updated name, contact number, and address have been synced with New Chirag Tours and Travels operations desk.',
         type: 'success',
       });
     } catch (err: any) {
@@ -257,7 +257,7 @@ export default function CustomerFacingQuotationPage() {
       <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
         <div className="spinner" style={{ width: 44, height: 44, border: '4px solid #CBD5E1', borderTopColor: '#0B192C', borderRadius: '50%', marginBottom: 16 }} />
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>Retrieving Your Travel Proposal...</h2>
-        <p style={{ fontSize: '0.88rem', color: '#64748B', marginTop: 4 }}>Connecting to New Chirag Tours & Travels Secure Portal</p>
+        <p style={{ fontSize: '0.88rem', color: '#64748B', marginTop: 4 }}>Connecting to New Chirag Tours and Travels Secure Portal</p>
       </div>
     );
   }
@@ -319,7 +319,7 @@ export default function CustomerFacingQuotationPage() {
                 </span>
               </div>
               <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
-                Issued by New Chirag Tours & Travels • Verified property room locks & dedicated AC chauffeur
+                Issued by New Chirag Tours and Travels • Verified property room locks & dedicated AC chauffeur
               </div>
             </div>
           </div>
@@ -889,7 +889,7 @@ export default function CustomerFacingQuotationPage() {
 
               <div>
                 <div style={{ fontSize: '0.7rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 700 }}>
-                  For New Chirag Tours & Travels
+                  For New Chirag Tours and Travels
                 </div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#059669', marginTop: 2 }}>
                   {agencySettings?.founderName || COMPANY_BRANDING.owner}
@@ -1162,7 +1162,7 @@ export default function CustomerFacingQuotationPage() {
                 style={{ marginTop: 3, width: 18, height: 18, cursor: 'pointer', accentColor: '#059669' }}
               />
               <label htmlFor="terms" style={{ fontSize: '0.82rem', color: '#334155', cursor: 'pointer', lineHeight: 1.5 }}>
-                I agree that this submission creates a formal booking request with New Chirag Tours & Travels and understand that room allotments will be verified prior to final voucher dispatch.
+                I agree that this submission creates a formal booking request with New Chirag Tours and Travels and understand that room allotments will be verified prior to final voucher dispatch.
               </label>
             </div>
 

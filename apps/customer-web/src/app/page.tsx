@@ -1158,7 +1158,7 @@ export default function HomePage() {
         ? 'Daily Breakfast Included (CP)'
         : 'Room Only (EP)';
 
-    return `*NEW CHIRAG TOURS & TRAVELS*
+    return `*NEW CHIRAG TOURS AND TRAVELS*
 _Official Customized Holiday Quotation_
 ----------------------------------------
 

@@ -216,7 +216,7 @@ ${baseStyles}
     <div class="badge-wrapper">
       <div class="brand-crest">NCT</div>
       <div class="brand-text">
-        <h1>NEW CHIRAG TOURS & TRAVELS</h1>
+        <h1>NEW CHIRAG TOURS AND TRAVELS</h1>
         <p>Enterprise Travel Sales, Quotations, Operations & Ledger Platform</p>
       </div>
     </div>
@@ -767,7 +767,7 @@ ${baseStyles}
   </div>
 
   <div style="text-align: center; font-size: 11px; color: #64748b;">
-    New Chirag Tours & Travels • Operating System Architecture
+    New Chirag Tours and Travels • Operating System Architecture
   </div>
 </div>
 </body>

@@ -1,7 +1,7 @@
 {
   "name": "New Chirag Tours — Admin Portal",
   "short_name": "NC Admin",
-  "description": "Official Tour Booking, CRM & Quotation Admin Management Portal — New Chirag Tours & Travels",
+  "description": "Official Tour Booking, CRM & Quotation Admin Management Portal — New Chirag Tours and Travels",
   "start_url": "/",
   "id": "/admin-portal",
   "scope": "/",

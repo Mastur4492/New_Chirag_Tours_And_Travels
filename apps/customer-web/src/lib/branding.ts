@@ -1,5 +1,5 @@
 /**
- * NEW CHIRAG TOURS & TRAVELS — CENTRALIZED BRANDING & OFFICIAL DETAILS
+ * NEW CHIRAG TOURS AND TRAVELS — CENTRALIZED BRANDING & OFFICIAL DETAILS
  * 
  * Verified from the owner's Google Business Profile & official records.
  * Single source of truth for company identity, logos, address, and contact info.
@@ -45,7 +45,7 @@ export interface CompanyBranding {
 }
 
 export const COMPANY_BRANDING: CompanyBranding = {
-  name: 'New Chirag Tours & Travels',
+  name: 'New Chirag Tours and Travels',
   shortName: 'New Chirag',
   owner: 'Faisal Bikanerwala',
   role: 'Managing Director & Operations',

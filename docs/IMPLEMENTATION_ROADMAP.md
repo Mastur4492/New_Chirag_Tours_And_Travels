@@ -1,7 +1,7 @@
-# NEW CHIRAG TOURS & TRAVELS
+# NEW CHIRAG TOURS AND TRAVELS
 ## Implementation Roadmap & Milestone Guide
 
-**Product:** NEW CHIRAG TOURS & TRAVELS  
+**Product:** NEW CHIRAG TOURS AND TRAVELS  
 **Business Owner:** Faisal Bikanerwala  
 **Document Version:** 1.0.0 (Phase 0 Baseline)  
 **Status:** Approved for Phased Execution  

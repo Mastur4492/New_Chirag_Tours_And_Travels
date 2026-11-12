@@ -40,7 +40,7 @@ const AgencySettingsSchema = new Schema<IAgencySettingsDocument>(
   {
     agencyName: {
       type: String,
-      default: 'New Chirag Tours & Travels',
+      default: 'New Chirag Tours and Travels',
       trim: true,
     },
     founderName: {

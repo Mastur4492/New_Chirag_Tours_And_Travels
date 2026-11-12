@@ -558,7 +558,7 @@ describe('Phase 7: Agent Web Portal Live MongoDB Scoping & Security Integrity', 
       expect(publicQuote.destinationName).toBe('Kashmir Valley');
       expect(publicQuote.status).toBe('ISSUED');
       expect(publicQuote.pricingSummary.finalSellingPrice).toBeGreaterThan(0);
-      expect(publicQuote.companyInfo.name).toBe('New Chirag Tours & Travels');
+      expect(publicQuote.companyInfo.name).toBe('New Chirag Tours and Travels');
 
       // Security: no supplier costs or profit exposed to public traveler
       expect((publicQuote as any).pricingSummary.totalBaseSupplierCost).toBeUndefined();

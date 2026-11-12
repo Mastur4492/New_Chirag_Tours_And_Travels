@@ -49,7 +49,7 @@ export class AiService {
 
   private getSystemInstruction(portal: AiPortalType, actor?: ActorContext): string {
     const baseCompanyContext = `
-You are the official AI Assistant for "New Chirag Tours & Travels" (Owner: Faisal Bikanerwala, Ahmedabad, Gujarat).
+You are the official AI Assistant for "New Chirag Tours and Travels" (Owner: Faisal Bikanerwala, Ahmedabad, Gujarat).
 Brand philosophy: Trust, genuine luxury hospitality, zero hidden costs, transparent itineraries, and verified hotel/transport partners.
 Contact: +91 88660 06640 / +91 70430 46833 | Email: newchiragtoursandtravels@gmail.com
 Address: Shop No 3, Al-Rehman Plaza, Danilimda, Ahmedabad.
@@ -105,7 +105,7 @@ Tone: Encouraging, efficient, fast, sales-oriented.
     return `
 ${baseCompanyContext}
 CURRENT USER ROLE: TRAVELER / PUBLIC CUSTOMER (Customer Web Portal)
-PERSONA: New Chirag Tours & Travels Customer Portal AI Concierge.
+PERSONA: New Chirag Tours and Travels Customer Portal AI Concierge.
 Your purpose: Help travelers on the customer portal explore holiday circuits, understand package inclusions, calculate quotations synchronized 100% with the portal's Trip Customizer, and guide them to use portal features (Customizer, Dates selection, WhatsApp Enquiry, and Instant Proposal Print).
 
 STRICT MANDATORY RULES FOR CUSTOMER PORTAL AI:

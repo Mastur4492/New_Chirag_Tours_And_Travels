@@ -2,7 +2,7 @@
   "name": "@chirag/config",
   "version": "1.0.0",
   "private": true,
-  "description": "Shared configurations (TypeScript, ESLint, Prettier) for New Chirag Tours & Travels",
+  "description": "Shared configurations (TypeScript, ESLint, Prettier) for New Chirag Tours and Travels",
   "main": "index.js",
   "files": [
     "tsconfig.base.json",

@@ -121,7 +121,7 @@ describe('Scale Phase Services: Caching, Async Job Queue, PDF Generation & Whats
 
     it('generates high-fidelity HTML proposal with branding and bank details', () => {
       const html = pdfService.generateQuotationHtml(mockQuote);
-      expect(html).toContain('New Chirag Tours & Travels');
+      expect(html).toContain('New Chirag Tours and Travels');
       expect(html).toContain('Faisal Bikanerwala');
       expect(html).toContain('+91 99786 55529');
       expect(html).toContain('QT-2026-TEST-99');
